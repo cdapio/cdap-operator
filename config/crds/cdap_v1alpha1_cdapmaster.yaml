@@ -27,8 +27,54 @@ spec:
         metadata:
           type: object
         spec:
+          properties:
+            config:
+              type: object
+            image:
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "make" to regenerate code after modifying this file'
+              type: string
+            imagePullPolicy:
+              type: string
+            locationURI:
+              type: string
+            securitySecret:
+              type: object
+            services:
+              items:
+                properties:
+                  instances:
+                    format: int32
+                    type: integer
+                  nodeSelector:
+                    type: object
+                  resources:
+                    type: object
+                  type:
+                    type: string
+                  volumeSpec:
+                    type: object
+                required:
+                - type
+                - instances
+                type: object
+              type: array
+          required:
+          - services
+          - locationURI
           type: object
         status:
+          properties:
+            observedGeneration:
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "make" to regenerate code after modifying
+                this file'
+              format: int64
+              type: integer
+            routerService:
+              type: string
+            userInterfaceService:
+              type: string
           type: object
   version: v1alpha1
 status:
