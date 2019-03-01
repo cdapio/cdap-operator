@@ -1,7 +1,7 @@
 required = [
     "github.com/emicklei/go-restful",
     "github.com/onsi/ginkgo", # for test framework
-    "github.com/onsi/gomega", # for test matchers
+    "github.com/onsi/gomega", # for test matchers,
     "k8s.io/client-go/plugin/pkg/client/auth/gcp", # for development against gcp
     "k8s.io/code-generator/cmd/client-gen", # for go generate
     "k8s.io/code-generator/cmd/deepcopy-gen", # for go generate
@@ -29,10 +29,6 @@ required = [
 [[constraint]]
   name="sigs.k8s.io/controller-tools"
   version="v0.1.1"
-
-[[override]]
-  name = "github.com/kubernetes-sigs/application"
-  branch = "master"
 
 # For dependency below: Refer to issue https://github.com/golang/dep/issues/1799
 [[override]]
