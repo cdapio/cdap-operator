@@ -16,6 +16,8 @@ required = [
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
     ]
 
+ignored=["sigs.k8s.io/kubesdk*", "github.com/kubernetes-sigs/kubesdk*"]
+
 [prune]
   go-tests = true
 
@@ -29,6 +31,10 @@ required = [
 [[constraint]]
   name="sigs.k8s.io/controller-tools"
   version="v0.1.1"
+
+[[override]]
+  branch = "master"
+  name = "github.com/kubernetes-sigs/application"
 
 # For dependency below: Refer to issue https://github.com/golang/dep/issues/1799
 [[override]]

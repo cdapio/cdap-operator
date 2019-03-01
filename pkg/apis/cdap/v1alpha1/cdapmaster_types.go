@@ -58,7 +58,7 @@ type CDAPMasterSpec struct {
 	// List of specifications for customizing each individual CDAP master service.
 	Services []CDAPMasterServiceSpec `json:"services,omitempty"`
 	// Secret that contains security related configurations for CDAP.
-	SecuritySecret *corev1.SecretReference `json:"securitySecret,omitempty"`
+	SecuritySecret string `json:"securitySecret,omitempty"`
 	// An URI specifying an object storage for CDAP.
 	LocationURI string `json:"locationURI"`
 	// A set of configurations that goes into cdap-site.xml.
@@ -71,6 +71,8 @@ type CDAPMasterServiceSpec struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	// The ServiceType that this specification is applying to
 	Type ServiceType `json:"type"`
+	// The service account for the service pods
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 	// Number of replicas for the service.
 	// The value will be ignored for services that doesn't support more than one replica
 	Replicas *int32 `json:"replicas,omitempty"`

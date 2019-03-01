@@ -43,7 +43,7 @@ spec:
             securitySecret:
               description: Secret that contains security related configurations for
                 CDAP.
-              type: object
+              type: string
             services:
               description: List of specifications for customizing each individual
                 CDAP master service.
@@ -64,6 +64,9 @@ spec:
                   resources:
                     description: Compute Resources required by the service.
                     type: object
+                  serviceAccountName:
+                    description: The service account for the service pods
+                    type: string
                   type:
                     description: The ServiceType that this specification is applying
                       to
