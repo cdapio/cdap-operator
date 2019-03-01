@@ -29,46 +29,63 @@ spec:
         spec:
           properties:
             config:
+              description: A set of configurations that goes into cdap-site.xml.
               type: object
             image:
-              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                Important: Run "make" to regenerate code after modifying this file'
+              description: Docker image name for the CDAP backend.
               type: string
             imagePullPolicy:
+              description: Policy for pulling docker images on Pod creation.
               type: string
             locationURI:
+              description: An URI specifying an object storage for CDAP.
               type: string
             securitySecret:
+              description: Secret that contains security related configurations for
+                CDAP.
               type: object
             services:
+              description: List of specifications for customizing each individual
+                CDAP master service.
               items:
                 properties:
-                  instances:
+                  metadata:
+                    description: Metadata for the service.
+                    type: object
+                  nodeSelector:
+                    description: A selector which must be true for the pod to fit
+                      on a node.
+                    type: object
+                  replicas:
+                    description: Number of replicas for the service. The value will
+                      be ignored for services that doesn't support more than one replica
                     format: int32
                     type: integer
-                  nodeSelector:
-                    type: object
                   resources:
+                    description: Compute Resources required by the service.
                     type: object
                   type:
+                    description: The ServiceType that this specification is applying
+                      to
                     type: string
                   volumeSpec:
+                    description: Specification for the persistent volumn used by the
+                      service. The spec will be ignored for services that doesn't
+                      use persistent volume
                     type: object
                 required:
                 - type
-                - instances
                 type: object
               type: array
+            userInterfaceImage:
+              description: Docker image name for the CDAP UI.
+              type: string
           required:
-          - services
           - locationURI
           type: object
         status:
           properties:
             observedGeneration:
-              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                of cluster Important: Run "make" to regenerate code after modifying
-                this file'
               format: int64
               type: integer
             routerService:
