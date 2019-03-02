@@ -1,54 +1,43 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{.Service.Name}}
+  name: {{.Name}}
   namespace: {{.Master.Namespace}}
+{{if .Master.Labels}}
   labels:
-    {{range $k,$v := .Labels }}
+    {{range $k,$v := .Master.Labels}}
     {{$k}}: {{$v}}
     {{end}}
-  annotations:
-    {{range $k,$v := .Annotations }}
-    {{$k}}: {{$v}}
-    {{end}}
+{{end}}
 spec:
   selector:
     matchLabels:
-      cdap.container: app-fabric
-  replicas: 1
+      cdap.container: {{.Name}}
+      {{range $k,$v := .Service.Labels}}
+      {{$k}}: {{$v}}
+      {{end}}
+  replicas: {{.Service.Replicas}}
   template:
     metadata:
       labels:
-        cdap.container: app-fabric
+        cdap.container: {{.Name}}
+        {{range $k,$v := .Service.Labels }}
+        {{$k}}: {{$v}}
+        {{end}}
     spec:
-      serviceAccountName: cdap
-      initContainers:
-        - image: gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.0-SNAPSHOT
-          name: create-storage
-          args: ["co.cask.cdap.master.environment.k8s.StorageMain"]
-          imagePullPolicy: Always
-          volumeMounts:
-            - name: podinfo
-              mountPath: /etc/podinfo
-              readOnly: true
-            - name: cdap-conf
-              mountPath: /etc/cdap/conf
-              readOnly: true
-            - name: cdap-security
-              mountPath: /etc/cdap/security
-              readOnly: true
-            - name: hadoop-conf
-              mountPath: /etc/hadoop/conf
-              readOnly: true
+    {{if .Service.ServiceAccountName}}
+      serviceAccountName: {{.Service.ServiceAccountName}}
+    {{end}}
       containers:
-        - image: gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.0-SNAPSHOT
-          args: ["co.cask.cdap.master.environment.k8s.AppFabricServiceMain", "--env=k8s"]
-          name: cdap-app-fabric
-          imagePullPolicy: Always
-          resources:
-            limits:
-              memory: "1.6Gi"
-              cpu: "400m"
+        - image: {{.Master.Spec.Image}}
+          args: ["co.cask.cdap.master.environment.k8s.{{.ServiceType}}ServiceMain", "--env=k8s"]
+          name: {{.Name}}
+        {{if .Master.Spec.ImagePullPolicy}}
+          imagePullPolicy: {{.Master.Spec.ImagePullPolicy}}
+        {{end}}
+        {{if .Service.Resources}}
+          {{.Service.Resources}}
+        {{end}}
           volumeMounts:
             - name: podinfo
               mountPath: /etc/podinfo
@@ -56,9 +45,11 @@ spec:
             - name: cdap-conf
               mountPath: /etc/cdap/conf
               readOnly: true
+          {{if .Master.Spec.SecuritySecret}}
             - name: cdap-security
               mountPath: /etc/cdap/security
               readOnly: true
+          {{end}}
             - name: hadoop-conf
               mountPath: /etc/hadoop/conf
               readOnly: true
@@ -71,10 +62,12 @@ spec:
                   fieldPath: metadata.labels
         - name: cdap-conf
           configMap:
-            name: cdap-conf
+            name: {{.CConfName}}
+      {{if .Master.Spec.SecuritySecret}}
         - name: cdap-security
           secret:
-            secretName: cdap-security
+            secretName: {{.Master.Spec.SecuritySecret}}
+      {{end}}
         - name: hadoop-conf
           configMap:
-            name: hadoop-conf
+            name: {{.HConfName}}

@@ -3,47 +3,48 @@ kind: CDAPMaster
 metadata:
   labels:
     cdap.version: "6.0.0"
-  name: cdap-master-instance-1
+  name: master-1
 spec:
   image: gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.0-SNAPSHOT
   userInterfaceImage: gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.0.0-SNAPSHOT
   imagePullPolicy: Always
   # No need to list out all services. Only list the one that needs customizing
-  Messaging:
+  messaging:
     metadata:
       labels:
         cdap.label: extra-label
     # Only support 1
     replicas: 1
     resources:
-      requests:
-        memory: "2.5Gi"
-        cpu: "500m"
       limits:
-        memory: "2.5Gi"
-        cpu: "900m"
+        memory: "2Gi"
+        cpu: "500m"
     storageSize: "100Gi"
-    nodeSelector:
-      cloud.google.com/gke-accelerator: nvidia-tesla-k80
-  AppFabric:
+    # nodeSelector:
+    #   cloud.google.com/gke-accelerator: nvidia-tesla-k80
+  appFabric:
     # Only support 1
     replicas: 1
-  Log:
+  log:
     # Only support 1
     replicas: 1
-  Metadata:
+  metadata:
+    # Supports >= 1
+    replicas: 2
+  metrics:
+    # Only support 1
+    replicas: 1
+  preview:
+    # Only support 1
+    replicas: 1
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+  userInterface:
     # Supports >= 1
     replicas: 1
-  Metrics:
-    # Only support 1
-    replicas: 1
-  Preview:
-    # Only support 1
-    replicas: 1
-  UserInterface:
-    # Supports >= 1
-    replicas: 1
-  Router:
+  router:
     # Supports >= 1
     replicas: 1
   securitySecret: cdap-security

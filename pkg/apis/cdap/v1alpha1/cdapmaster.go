@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 
@@ -62,29 +63,33 @@ func (r *CDAPMaster) HandleError(err error) {
 	logger.Error(err, "Error")
 }
 
+func (r *CDAPMaster) serviceComponent(s *CDAPMasterServiceSpec, serviceType ServiceType, maxReplicas int32, hasStorage bool) component.Component {
+	s.Name = strings.ToLower(string(serviceType))
+	if s.Replicas == nil {
+		s.Replicas = int32Ptr(1)
+	}
+	if *s.Replicas > maxReplicas {
+		s.Replicas = &maxReplicas
+	}
+	if hasStorage && s.StorageSize == "" {
+		s.StorageSize = "50Gi"
+	}
+	// Remove the cdap.container label, as it is set through the template via service Name
+	delete(s.Labels, containerLabel)
+	return component.Component{
+		Handle:   s,
+		Name:     string(serviceType),
+		CR:       r,
+		OwnerRef: r.OwnerRef(),
+	}
+}
+
 // Components returns components for this resource
 func (r *CDAPMaster) Components() []component.Component {
 	components := []component.Component{}
-
-	messaging := &r.Spec.Messaging
-	messaging.Name = "tms"
-	if messaging.Replicas == nil {
-		messaging.Replicas = int32Ptr(1)
-	}
-	if messaging.StorageSize == "" {
-		messaging.StorageSize = "50Gi"
-	}
-	// Remove the cdap.container label, as it is set through the template via service Name
-	delete(messaging.Labels, containerLabel)
-	// messaging.Name = r.Name + "-cdap-tms"
-	components = append(components, component.Component{
-		Handle: messaging,
-		// This is used to generate the main class name in the form of {{Name}}ServiceMain
-		Name:     "Messaging",
-		CR:       r,
-		OwnerRef: r.OwnerRef(),
-	},
-	)
+	components = append(components, r.serviceComponent(&r.Spec.Messaging, Messaging, 1, true))
+	components = append(components, r.serviceComponent(&r.Spec.Metrics, Metrics, 1, true))
+	components = append(components, r.serviceComponent(&r.Spec.Preview, Preview, 1, true))
 
 	return components
 }
@@ -98,7 +103,12 @@ func (r *CDAPMaster) OwnerRef() *metav1.OwnerReference {
 	})
 }
 
+func (s *CDAPMasterServiceSpec) getServiceName(r *CDAPMaster) string {
+	return fmt.Sprintf("cdap-%s-%s", r.Name, s.Name)
+}
+
 type serviceData struct {
+	Name        string
 	Master      *CDAPMaster
 	Service     *CDAPMasterServiceSpec
 	ServiceType string
@@ -114,8 +124,10 @@ func (s *CDAPMasterServiceSpec) sts(v interface{}) (*resource.Item, error) {
 // ExpectedResources - returns resources for a cdap master service
 func (s *CDAPMasterServiceSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
 	var resources *resource.Bag = new(resource.Bag)
+	master := rsrc.(*CDAPMaster)
 	ngdata := serviceData{
-		Master:      rsrc.(*CDAPMaster),
+		Name:        s.getServiceName(master),
+		Master:      master,
 		Service:     s,
 		ServiceType: rsrclabels[component.LabelComponent],
 		DataDir:     localDataDir,
@@ -128,7 +140,11 @@ func (s *CDAPMasterServiceSpec) ExpectedResources(rsrc interface{}, rsrclabels m
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("SS: %v\n", rinfo.Obj)
+		sts := rinfo.Obj.(*k8s.Object).Obj.(*appsv1.StatefulSet)
+		if s.Resources != nil {
+			sts.Spec.Template.Spec.Containers[0].Resources = *s.Resources
+		}
+
 		resources.Add(*rinfo)
 	}
 

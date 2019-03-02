@@ -40,6 +40,9 @@ const (
 	// Metrics defines the service type for metrics process and serving
 	Metrics ServiceType = "Metrics"
 
+	// Preview defines the service type for preview service
+	Preview ServiceType = "Preview"
+
 	// Router defines the service type for the router
 	Router ServiceType = "Router"
 
