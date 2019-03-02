@@ -3,19 +3,17 @@ kind: StatefulSet
 metadata:
   name: {{.Service.Name}}
   namespace: {{.Master.Namespace}}
+{{if .Master.Labels}}
   labels:
-    {{range $k,$v := .Labels }}
+    {{range $k,$v := .Master.Labels}}
     {{$k}}: {{$v}}
     {{end}}
-  annotations:
-    {{range $k,$v := .Annotations }}
-    {{$k}}: {{$v}}
-    {{end}}
+{{end}}
 spec:
   selector:
     matchLabels:
-      cdap.container: {{.Service.Type}}
-      {{range $k,$v := .Service.Labels }}
+      cdap.container: {{.Service.Name}}
+      {{range $k,$v := .Service.Labels}}
       {{$k}}: {{$v}}
       {{end}}
   serviceName: {{.Service.Name}}
@@ -23,21 +21,21 @@ spec:
   template:
     metadata:
       labels:
-        cdap.container: {{.Service.Type}}
+        cdap.container: {{.Service.Name}}
         {{range $k,$v := .Service.Labels }}
         {{$k}}: {{$v}}
         {{end}}
-      annotations:
-        {{range $k,$v := .Service.Annotations }}
-        {{$k}}: {{$v}}
-        {{end}}
     spec:
+    {{if .Service.ServiceAccountName}}
       serviceAccountName: {{.Service.ServiceAccountName}}
+    {{end}}
       initContainers:
         - image: {{.Master.Spec.Image}}
           name: create-storage
           args: ["co.cask.cdap.master.environment.k8s.StorageMain"]
+        {{if .Master.Spec.ImagePullPolicy}}
           imagePullPolicy: {{.Master.Spec.ImagePullPolicy}}
+        {{end}}
           resources: {}
           volumeMounts:
             - name: podinfo
@@ -46,20 +44,26 @@ spec:
             - name: cdap-conf
               mountPath: /etc/cdap/conf
               readOnly: true
+          {{if .Master.Spec.SecuritySecret}}
             - name: cdap-security
               mountPath: /etc/cdap/security
               readOnly: true
+          {{end}}
             - name: hadoop-conf
               mountPath: /etc/hadoop/conf
               readOnly: true
-            - name: {{.Service.Type}}-data
+            - name: {{.Service.Name}}-data
               mountPath: {{.DataDir}}
       containers:
         - image: {{.Master.Spec.Image}}
-          args: ["co.cask.cdap.master.environment.k8s.{{.Service.Type}}ServiceMain", "--env=k8s"]
-          name: {{.Service.Type}}
+          args: ["co.cask.cdap.master.environment.k8s.{{.ServiceType}}ServiceMain", "--env=k8s"]
+          name: {{.Service.Name}}
+        {{if .Master.Spec.ImagePullPolicy}}
           imagePullPolicy: {{.Master.Spec.ImagePullPolicy}}
-          resources: {}
+        {{end}}
+        {{if .Service.Resources}}
+          {{.Service.Resources}}
+        {{end}}
           volumeMounts:
             - name: podinfo
               mountPath: /etc/podinfo
@@ -67,13 +71,15 @@ spec:
             - name: cdap-conf
               mountPath: /etc/cdap/conf
               readOnly: true
+          {{if .Master.Spec.SecuritySecret}}
             - name: cdap-security
               mountPath: /etc/cdap/security
               readOnly: true
+          {{end}}
             - name: hadoop-conf
               mountPath: /etc/hadoop/conf
               readOnly: true
-            - name: {{.Service.Type}}-data
+            - name: {{.Service.Name}}-data
               mountPath: {{.DataDir}}
       volumes:
         - name: podinfo
@@ -84,14 +90,20 @@ spec:
                   fieldPath: metadata.labels
         - name: cdap-conf
           configMap:
-            name: {{.ConfigName}}
+            name: {{.CConfName}}
+      {{if .Master.Spec.SecuritySecret}}
         - name: cdap-security
           secret:
             secretName: {{.Master.Spec.SecuritySecret}}
+      {{end}}
         - name: hadoop-conf
           configMap:
-            name: {{.HadoopConfigName}}
+            name: {{.HConfName}}
   volumeClaimTemplates:
   - metadata:
-      name: {{.Service.Type}}-data
-    spec: {}
+      name: {{.Service.Name}}-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: {{.Service.StorageSize}}

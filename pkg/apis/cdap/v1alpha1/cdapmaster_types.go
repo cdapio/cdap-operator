@@ -55,22 +55,34 @@ type CDAPMasterSpec struct {
 	UserInterfaceImage string `json:"userInterfaceImage,omitempty"`
 	// Policy for pulling docker images on Pod creation.
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// List of specifications for customizing each individual CDAP master service.
-	Services []CDAPMasterServiceSpec `json:"services,omitempty"`
 	// Secret that contains security related configurations for CDAP.
 	SecuritySecret string `json:"securitySecret,omitempty"`
 	// An URI specifying an object storage for CDAP.
 	LocationURI string `json:"locationURI"`
 	// A set of configurations that goes into cdap-site.xml.
 	Config map[string]string `json:"config,omitempty"`
+	// Specification for the CDAP app-fabric service
+	AppFabric CDAPMasterServiceSpec `json:"appFabric,omitempty"`
+	// Specification for the CDAP logging service
+	Log CDAPMasterServiceSpec `json:"log,omitempty"`
+	// Specification for the CDAP messaging service
+	Messaging CDAPMasterServiceSpec `json:"messaging,omitempty"`
+	// Specification for the CDAP metadata service
+	Metadata CDAPMasterServiceSpec `json:"metadata,omitempty"`
+	// Specification for the CDAP metrics service
+	Metrics CDAPMasterServiceSpec `json:"metrics,omitempty"`
+	// Specification for the CDAP preview service
+	Preview CDAPMasterServiceSpec `json:"preview,omitempty"`
+	// Specification for the CDAP router service
+	Router CDAPMasterServiceSpec `json:"router,omitempty"`
+	// Specification for the CDAP UI service
+	UserInterface CDAPMasterServiceSpec `json:"userInterface,omitempty"`
 }
 
 // CDAPMasterServiceSpec defines specification for one CDAP master service
 type CDAPMasterServiceSpec struct {
 	// Metadata for the service.
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	// The ServiceType that this specification is applying to
-	Type ServiceType `json:"type"`
 	// The service account for the service pods
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 	// Number of replicas for the service.
@@ -78,11 +90,11 @@ type CDAPMasterServiceSpec struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 	// Compute Resources required by the service.
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-	// Specification for the persistent volumn used by the service.
-	// The spec will be ignored for services that doesn't use persistent volume
-	VolumeSpec *corev1.PersistentVolumeClaimSpec `json:"volumeSpec,omitempty"`
 	// A selector which must be true for the pod to fit on a node.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Specification for the persistent volumn size used by the service.
+	// The spec will be ignored for services that doesn't use persistent volume
+	StorageSize string `json:"storageSize,omitempty"`
 }
 
 // CDAPMasterStatus defines the observed state of CDAPMaster

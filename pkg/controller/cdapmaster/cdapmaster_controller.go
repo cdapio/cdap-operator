@@ -20,17 +20,14 @@ import (
 	cdapv1alpha1 "cdap.io/cdap-operator/pkg/apis/cdap/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	reconciler "sigs.k8s.io/kubesdk/pkg/genericreconciler"
 	kbc "sigs.k8s.io/kubesdk/pkg/kbcontroller"
 )
 
-var log = logf.Log.WithName("controller")
-
 // Add creates a new ESCluster Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-func Add(mgr manager.Manager, isESNodeController bool) error {
+func Add(mgr manager.Manager) error {
 	return kbc.CreateController("escluster", mgr, &cdapv1alpha1.CDAPMaster{}, newReconciler(mgr))
 }
 

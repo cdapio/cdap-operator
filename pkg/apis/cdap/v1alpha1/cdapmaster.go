@@ -17,33 +17,76 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	appsv1 "k8s.io/api/apps/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/kubesdk/pkg/component"
 	"sigs.k8s.io/kubesdk/pkg/resource"
 	"sigs.k8s.io/kubesdk/pkg/resource/manager/k8s"
 )
 
+var logger = logf.Log.WithName("cdap.controller")
+
 const (
-	// TemplatePath is the directory for storing the templates
-	TemplatePath = "templates/"
+	// Property key in cdap-site.xml for configuring local data directory
+	localDataDirKey = "local.data.dir"
+	// Value for the local data directory
+	localDataDir              = "/data"
+	containerLabel            = "cdap.container"
+	templatePath              = "templates/"
+	defaultImage              = "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.0-SNAPSHOT"
+	defaultUserInterfaceImage = "gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.0.0-SNAPSHOT"
 )
+
+// ApplyDefaults will default missing values from the CDAPMaster
+func (r *CDAPMaster) ApplyDefaults() {
+	spec := r.Spec
+	if spec.Image == "" {
+		spec.Image = defaultImage
+	}
+	if spec.UserInterfaceImage == "" {
+		spec.UserInterfaceImage = defaultUserInterfaceImage
+	}
+}
+
+func int32Ptr(value int32) *int32 {
+	return &value
+}
 
 // HandleError records status or error in status
 func (r *CDAPMaster) HandleError(err error) {
+	logger.Error(err, "Error")
 }
 
 // Components returns components for this resource
 func (r *CDAPMaster) Components() []component.Component {
-	return []component.Component{
-		{
-			Handle:   &r.Spec,
-			Name:     "cdapmaster",
-			CR:       r,
-			OwnerRef: r.OwnerRef(),
-		},
+	components := []component.Component{}
+
+	messaging := &r.Spec.Messaging
+	messaging.Name = "tms"
+	if messaging.Replicas == nil {
+		messaging.Replicas = int32Ptr(1)
 	}
+	if messaging.StorageSize == "" {
+		messaging.StorageSize = "50Gi"
+	}
+	// Remove the cdap.container label, as it is set through the template via service Name
+	delete(messaging.Labels, containerLabel)
+	// messaging.Name = r.Name + "-cdap-tms"
+	components = append(components, component.Component{
+		Handle: messaging,
+		// This is used to generate the main class name in the form of {{Name}}ServiceMain
+		Name:     "Messaging",
+		CR:       r,
+		OwnerRef: r.OwnerRef(),
+	},
+	)
+
+	return components
 }
 
 // OwnerRef returns owner ref object with the component's resource as owner
@@ -55,26 +98,29 @@ func (r *CDAPMaster) OwnerRef() *metav1.OwnerReference {
 	})
 }
 
-// TemplateValues contains values for template
-type TemplateValues struct {
-	Name      string
-	Namespace string
-	Master    *CDAPMaster
+type serviceData struct {
+	Master      *CDAPMaster
+	Service     *CDAPMasterServiceSpec
+	ServiceType string
+	DataDir     string
+	CConfName   string
+	HConfName   string
 }
 
-func (s *CDAPMasterSpec) sts(v interface{}) (*resource.Item, error) {
-	return k8s.ItemFromFile(TemplatePath+"cdap-sts.yaml", v, &appsv1.StatefulSetList{})
+func (s *CDAPMasterServiceSpec) sts(v interface{}) (*resource.Item, error) {
+	return k8s.ItemFromFile(templatePath+"cdap-sts.yaml", v, &appsv1.StatefulSetList{})
 }
 
-// ExpectedResources - returns resources
-func (s *CDAPMasterSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
+// ExpectedResources - returns resources for a cdap master service
+func (s *CDAPMasterServiceSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
 	var resources *resource.Bag = new(resource.Bag)
-	r := rsrc.(*CDAPMaster)
-
-	var ngdata = TemplateValues{
-		Name:      r.Name,
-		Namespace: r.Namespace,
-		Master:    r,
+	ngdata := serviceData{
+		Master:      rsrc.(*CDAPMaster),
+		Service:     s,
+		ServiceType: rsrclabels[component.LabelComponent],
+		DataDir:     localDataDir,
+		CConfName:   "cdap-conf",
+		HConfName:   "hadoop-conf",
 	}
 
 	for _, fn := range []resource.GetItemFn{s.sts} {
@@ -82,6 +128,7 @@ func (s *CDAPMasterSpec) ExpectedResources(rsrc interface{}, rsrclabels map[stri
 		if err != nil {
 			return nil, err
 		}
+		fmt.Printf("SS: %v\n", rinfo.Obj)
 		resources.Add(*rinfo)
 	}
 

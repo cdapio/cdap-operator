@@ -8,53 +8,48 @@ spec:
   image: gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.0-SNAPSHOT
   userInterfaceImage: gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.0.0-SNAPSHOT
   imagePullPolicy: Always
-  services:
-    # No need to list out all services. Only list the one that needs customizing
-    - type: Messaging
-      metadata:
-        labels:
-          cdap.label: extra-label
-      # Only support 1
-      replicas: 1
-      resources:
-        requests:
-          memory: "2.5Gi"
-          cpu: "500m"
-        limits:
-          memory: "2.5Gi"
-          cpu: "900m"
-      volumeSpec:
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: 100Gi
-      nodeSelector:
-        cloud.google.com/gke-accelerator: nvidia-tesla-k80
-    - type: AppFabric
-      # Only support 1
-      replicas: 1
-    - type: Log
-      # Only support 1
-      replicas: 1
-    - type: Metadata
-      # Supports >= 1
-      replicas: 1
-    - type: Metrics
-      # Only support 1
-      replicas: 1
-    - type: UserInterface
-      # Supports >= 1
-      replicas: 1
-    - type: Router
-      # Supports >= 1
-      replicas: 1
-  securitySecret:
-    name: secret-name
-    # optional, default to same namespace
-    namespace: secret-namespace
+  # No need to list out all services. Only list the one that needs customizing
+  Messaging:
+    metadata:
+      labels:
+        cdap.label: extra-label
+    # Only support 1
+    replicas: 1
+    resources:
+      requests:
+        memory: "2.5Gi"
+        cpu: "500m"
+      limits:
+        memory: "2.5Gi"
+        cpu: "900m"
+    storageSize: "100Gi"
+    nodeSelector:
+      cloud.google.com/gke-accelerator: nvidia-tesla-k80
+  AppFabric:
+    # Only support 1
+    replicas: 1
+  Log:
+    # Only support 1
+    replicas: 1
+  Metadata:
+    # Supports >= 1
+    replicas: 1
+  Metrics:
+    # Only support 1
+    replicas: 1
+  Preview:
+    # Only support 1
+    replicas: 1
+  UserInterface:
+    # Supports >= 1
+    replicas: 1
+  Router:
+    # Supports >= 1
+    replicas: 1
+  securitySecret: cdap-security
   locationURI: gs://somebucket
   config:
-    enable.preview: true
+    enable.preview: "true"
     data.storage.implementation: postgresql
     data.storage.sql.jdbc.connection.url: jdbc:postgresql://google/cdap?socketFactory=com.google.cloud.sql.postgres.SocketFactory&cloudSqlInstance=cloud-data-fusion-builds:us-central1:cdap-demo
     data.storage.sql.jdbc.driver.name: org.postgresql.Driver
