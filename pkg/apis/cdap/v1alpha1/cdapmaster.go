@@ -20,8 +20,10 @@ import (
 	"fmt"
 	"strings"
 
-	appsv1 "k8s.io/api/apps/v1"
+	"reflect"
 
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -38,7 +40,10 @@ const (
 	// Value for the local data directory
 	localDataDir              = "/data"
 	containerLabel            = "cdap.container"
-	templatePath              = "templates/"
+	templateLabel             = ".cdap.template"
+	templateDir               = "templates/"
+	deploymentTemplate        = "cdap-deployment.yaml"
+	statefulSetTemplate       = "cdap-sts.yaml"
 	defaultImage              = "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.0-SNAPSHOT"
 	defaultUserInterfaceImage = "gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.0.0-SNAPSHOT"
 )
@@ -63,7 +68,7 @@ func (r *CDAPMaster) HandleError(err error) {
 	logger.Error(err, "Error")
 }
 
-func (r *CDAPMaster) serviceComponent(s *CDAPMasterServiceSpec, serviceType ServiceType, maxReplicas int32, hasStorage bool) component.Component {
+func (r *CDAPMaster) serviceComponent(s *CDAPMasterServiceSpec, serviceType ServiceType, maxReplicas int32, hasStorage bool, template string) component.Component {
 	s.Name = strings.ToLower(string(serviceType))
 	if s.Replicas == nil {
 		s.Replicas = int32Ptr(1)
@@ -74,8 +79,15 @@ func (r *CDAPMaster) serviceComponent(s *CDAPMasterServiceSpec, serviceType Serv
 	if hasStorage && s.StorageSize == "" {
 		s.StorageSize = "50Gi"
 	}
-	// Remove the cdap.container label, as it is set through the template via service Name
-	delete(s.Labels, containerLabel)
+	if s.Labels == nil {
+		s.Labels = make(map[string]string)
+	} else {
+		// Remove the cdap.container label, as it is set through the template via service Name
+		delete(s.Labels, containerLabel)
+	}
+	// Set the template to use via label. It will be removed in the ExpectedResources method
+	s.Labels[templateLabel] = template
+
 	return component.Component{
 		Handle:   s,
 		Name:     string(serviceType),
@@ -87,9 +99,17 @@ func (r *CDAPMaster) serviceComponent(s *CDAPMasterServiceSpec, serviceType Serv
 // Components returns components for this resource
 func (r *CDAPMaster) Components() []component.Component {
 	components := []component.Component{}
-	components = append(components, r.serviceComponent(&r.Spec.Messaging, Messaging, 1, true))
-	components = append(components, r.serviceComponent(&r.Spec.Metrics, Metrics, 1, true))
-	components = append(components, r.serviceComponent(&r.Spec.Preview, Preview, 1, true))
+
+	// Create components for each of the CDAP services
+	components = append(components, r.serviceComponent(&r.Spec.AppFabric, AppFabric, 1, false, deploymentTemplate))
+	// TODO: uncomment log when it is ready
+	// components = append(components, r.serviceComponent(&r.Spec.Log, Log, 1, true, statefulSetTemplate))
+	components = append(components, r.serviceComponent(&r.Spec.Messaging, Messaging, 1, true, statefulSetTemplate))
+	components = append(components, r.serviceComponent(&r.Spec.Metadata, Metadata, 4, false, deploymentTemplate))
+	components = append(components, r.serviceComponent(&r.Spec.Metrics, Metrics, 1, true, statefulSetTemplate))
+	components = append(components, r.serviceComponent(&r.Spec.Preview, Preview, 1, true, statefulSetTemplate))
+	components = append(components, r.serviceComponent(&r.Spec.Router, Router, 10, false, deploymentTemplate))
+	// TODO: Add UI deployment
 
 	return components
 }
@@ -117,14 +137,43 @@ type serviceData struct {
 	HConfName   string
 }
 
-func (s *CDAPMasterServiceSpec) sts(v interface{}) (*resource.Item, error) {
-	return k8s.ItemFromFile(templatePath+"cdap-sts.yaml", v, &appsv1.StatefulSetList{})
+// Creates a resource.Item based on the given CDAPMasterServiceSpec and template
+func (s *CDAPMasterServiceSpec) createResourceItem(v interface{}, template string) (*resource.Item, error) {
+	rinfo, err := k8s.ItemFromFile(templateDir+template, v, &appsv1.StatefulSetList{})
+	if err != nil {
+		return nil, err
+	}
+	// Set resource to the first container if needed
+	if s.Resources != nil {
+		setResources(rinfo.Obj.(*k8s.Object).Obj, s.Resources)
+	}
+	return rinfo, err
+}
+
+// Sets resources to the given object. It uses reflection to find and set the
+// field `Spec.Template.Spec.Containers[0].Resources`
+func setResources(obj interface{}, resources *corev1.ResourceRequirements) {
+	value := reflect.ValueOf(obj).Elem()
+
+	for _, fieldName := range []string{"Spec", "Template", "Spec", "Containers"} {
+		value = value.FieldByName(fieldName)
+		if !value.IsValid() {
+			return
+		}
+	}
+	resourcesValue := value.Index(0).FieldByName("Resources")
+	resourcesValue.Set(reflect.ValueOf(*resources))
 }
 
 // ExpectedResources - returns resources for a cdap master service
 func (s *CDAPMasterServiceSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
 	var resources *resource.Bag = new(resource.Bag)
 	master := rsrc.(*CDAPMaster)
+
+	// Get the template name and remove it from the spec
+	template := s.Labels[templateLabel]
+	delete(s.Labels, templateLabel)
+
 	ngdata := serviceData{
 		Name:        s.getServiceName(master),
 		Master:      master,
@@ -135,18 +184,11 @@ func (s *CDAPMasterServiceSpec) ExpectedResources(rsrc interface{}, rsrclabels m
 		HConfName:   "hadoop-conf",
 	}
 
-	for _, fn := range []resource.GetItemFn{s.sts} {
-		rinfo, err := fn(&ngdata)
-		if err != nil {
-			return nil, err
-		}
-		sts := rinfo.Obj.(*k8s.Object).Obj.(*appsv1.StatefulSet)
-		if s.Resources != nil {
-			sts.Spec.Template.Spec.Containers[0].Resources = *s.Resources
-		}
-
-		resources.Add(*rinfo)
+	rinfo, err := s.createResourceItem(&ngdata, template)
+	if err != nil {
+		return nil, err
 	}
-
+	fmt.Printf("template: %v\n", rinfo.Obj.(*k8s.Object).Obj)
+	// resources.Add(*rinfo)
 	return resources, nil
 }

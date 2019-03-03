@@ -49,16 +49,16 @@ spec:
             - name: cdap-conf
               mountPath: /etc/cdap/conf
               readOnly: true
-          {{if .Master.Spec.SecuritySecret}}
-            - name: cdap-security
-              mountPath: /etc/cdap/security
-              readOnly: true
-          {{end}}
             - name: hadoop-conf
               mountPath: /etc/hadoop/conf
               readOnly: true
             - name: {{.Name}}-data
               mountPath: {{.DataDir}}
+          {{if .Master.Spec.SecuritySecret}}
+            - name: cdap-security
+              mountPath: /etc/cdap/security
+              readOnly: true
+          {{end}}
       containers:
         - image: {{.Master.Spec.Image}}
           args: ["co.cask.cdap.master.environment.k8s.{{.ServiceType}}ServiceMain", "--env=k8s"]
@@ -74,16 +74,16 @@ spec:
             - name: cdap-conf
               mountPath: /etc/cdap/conf
               readOnly: true
-          {{if .Master.Spec.SecuritySecret}}
-            - name: cdap-security
-              mountPath: /etc/cdap/security
-              readOnly: true
-          {{end}}
             - name: hadoop-conf
               mountPath: /etc/hadoop/conf
               readOnly: true
             - name: {{.Name}}-data
               mountPath: {{.DataDir}}
+          {{if .Master.Spec.SecuritySecret}}
+            - name: cdap-security
+              mountPath: /etc/cdap/security
+              readOnly: true
+          {{end}}
       volumes:
         - name: podinfo
           downwardAPI:
@@ -94,14 +94,14 @@ spec:
         - name: cdap-conf
           configMap:
             name: {{.CConfName}}
+        - name: hadoop-conf
+          configMap:
+            name: {{.HConfName}}
       {{if .Master.Spec.SecuritySecret}}
         - name: cdap-security
           secret:
             secretName: {{.Master.Spec.SecuritySecret}}
       {{end}}
-        - name: hadoop-conf
-          configMap:
-            name: {{.HConfName}}
   volumeClaimTemplates:
   - metadata:
       name: {{.Name}}-data

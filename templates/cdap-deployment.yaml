@@ -28,6 +28,12 @@ spec:
     {{if .Service.ServiceAccountName}}
       serviceAccountName: {{.Service.ServiceAccountName}}
     {{end}}
+    {{if .Service.NodeSelector}}
+      nodeSelector:
+        {{range $k,$v := .Service.NodeSelector}}
+        {{$k}}: {{$v}}
+        {{end}}
+    {{end}}
       containers:
         - image: {{.Master.Spec.Image}}
           args: ["co.cask.cdap.master.environment.k8s.{{.ServiceType}}ServiceMain", "--env=k8s"]
@@ -35,9 +41,7 @@ spec:
         {{if .Master.Spec.ImagePullPolicy}}
           imagePullPolicy: {{.Master.Spec.ImagePullPolicy}}
         {{end}}
-        {{if .Service.Resources}}
-          {{.Service.Resources}}
-        {{end}}
+          resources: {}
           volumeMounts:
             - name: podinfo
               mountPath: /etc/podinfo
@@ -45,14 +49,14 @@ spec:
             - name: cdap-conf
               mountPath: /etc/cdap/conf
               readOnly: true
+            - name: hadoop-conf
+              mountPath: /etc/hadoop/conf
+              readOnly: true
           {{if .Master.Spec.SecuritySecret}}
             - name: cdap-security
               mountPath: /etc/cdap/security
               readOnly: true
           {{end}}
-            - name: hadoop-conf
-              mountPath: /etc/hadoop/conf
-              readOnly: true
       volumes:
         - name: podinfo
           downwardAPI:
@@ -63,11 +67,11 @@ spec:
         - name: cdap-conf
           configMap:
             name: {{.CConfName}}
+        - name: hadoop-conf
+          configMap:
+            name: {{.HConfName}}
       {{if .Master.Spec.SecuritySecret}}
         - name: cdap-security
           secret:
             secretName: {{.Master.Spec.SecuritySecret}}
       {{end}}
-        - name: hadoop-conf
-          configMap:
-            name: {{.HConfName}}
