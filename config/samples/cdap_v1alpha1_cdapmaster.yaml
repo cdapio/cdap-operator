@@ -20,39 +20,37 @@ spec:
         memory: "2Gi"
         cpu: "500m"
     storageSize: "100Gi"
+    # If need to use node selector
     # nodeSelector:
     #   cloud.google.com/gke-accelerator: nvidia-tesla-k80
   appFabric:
-    # Only support 1
+    # Only support 1, storage not supported
     replicas: 1
   log:
-    # Only support 1
+    # Only support 1, storage supported
     replicas: 1
   metadata:
-    # Supports >= 1
+    # Supports >= 1, storage not supported
     replicas: 2
   metrics:
-    # Only support 1
+    # Only support 1, storage supported
     replicas: 1
   preview:
-    # Only support 1
+    # Only support 1, storage supported
     replicas: 1
     resources:
       limits:
         memory: "2Gi"
         cpu: "1000m"
   userInterface:
-    # Supports >= 1
+    # Supports >= 1, storage not supported
     replicas: 1
   router:
-    # Supports >= 1
+    # Supports >= 1, storage not supported
     replicas: 1
   securitySecret: cdap-security
   locationURI: gs://somebucket
   config:
     enable.preview: "true"
-    data.storage.implementation: postgresql
-    data.storage.sql.jdbc.connection.url: jdbc:postgresql://google/cdap?socketFactory=com.google.cloud.sql.postgres.SocketFactory&cloudSqlInstance=cloud-data-fusion-builds:us-central1:cdap-demo
-    data.storage.sql.jdbc.driver.name: org.postgresql.Driver
     metadata.storage.implementation: elastic
-    security.store.system.properties.gcp-cloudkms.keyring.id: keystringId
+    metadata.elasticsearch.cluster.hosts: escluster-master:9200

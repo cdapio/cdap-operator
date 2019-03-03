@@ -18,9 +18,8 @@ package v1alpha1
 
 import (
 	"fmt"
-	"strings"
-
 	"reflect"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -43,6 +42,7 @@ const (
 	templateLabel             = ".cdap.template"
 	templateDir               = "templates/"
 	deploymentTemplate        = "cdap-deployment.yaml"
+	uiDeploymentTemplate      = "cdap-ui-deployment.yaml"
 	statefulSetTemplate       = "cdap-sts.yaml"
 	defaultImage              = "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.0-SNAPSHOT"
 	defaultUserInterfaceImage = "gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.0.0-SNAPSHOT"
@@ -68,6 +68,7 @@ func (r *CDAPMaster) HandleError(err error) {
 	logger.Error(err, "Error")
 }
 
+// Creates a component.Component representing the given CDAP master service
 func (r *CDAPMaster) serviceComponent(s *CDAPMasterServiceSpec, serviceType ServiceType, maxReplicas int32, hasStorage bool, template string) component.Component {
 	s.Name = strings.ToLower(string(serviceType))
 	if s.Replicas == nil {
@@ -81,9 +82,6 @@ func (r *CDAPMaster) serviceComponent(s *CDAPMasterServiceSpec, serviceType Serv
 	}
 	if s.Labels == nil {
 		s.Labels = make(map[string]string)
-	} else {
-		// Remove the cdap.container label, as it is set through the template via service Name
-		delete(s.Labels, containerLabel)
 	}
 	// Set the template to use via label. It will be removed in the ExpectedResources method
 	s.Labels[templateLabel] = template
@@ -100,6 +98,14 @@ func (r *CDAPMaster) serviceComponent(s *CDAPMasterServiceSpec, serviceType Serv
 func (r *CDAPMaster) Components() []component.Component {
 	components := []component.Component{}
 
+	// Add the master spect as a component
+	components = append(components, component.Component{
+		Handle:   &r.Spec,
+		Name:     r.Name,
+		CR:       r,
+		OwnerRef: r.OwnerRef(),
+	})
+
 	// Create components for each of the CDAP services
 	components = append(components, r.serviceComponent(&r.Spec.AppFabric, AppFabric, 1, false, deploymentTemplate))
 	// TODO: uncomment log when it is ready
@@ -109,7 +115,7 @@ func (r *CDAPMaster) Components() []component.Component {
 	components = append(components, r.serviceComponent(&r.Spec.Metrics, Metrics, 1, true, statefulSetTemplate))
 	components = append(components, r.serviceComponent(&r.Spec.Preview, Preview, 1, true, statefulSetTemplate))
 	components = append(components, r.serviceComponent(&r.Spec.Router, Router, 10, false, deploymentTemplate))
-	// TODO: Add UI deployment
+	components = append(components, r.serviceComponent(&r.Spec.UserInterface, UserInterface, 10, false, uiDeploymentTemplate))
 
 	return components
 }
@@ -127,6 +133,7 @@ func (s *CDAPMasterServiceSpec) getServiceName(r *CDAPMaster) string {
 	return fmt.Sprintf("cdap-%s-%s", r.Name, s.Name)
 }
 
+// serviceData carries value for templating
 type serviceData struct {
 	Name        string
 	Master      *CDAPMaster
@@ -165,6 +172,12 @@ func setResources(obj interface{}, resources *corev1.ResourceRequirements) {
 	resourcesValue.Set(reflect.ValueOf(*resources))
 }
 
+// ExpectedResources - returns resources for the CDAP master
+func (s *CDAPMasterSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
+	var resources *resource.Bag = new(resource.Bag)
+	return resources, nil
+}
+
 // ExpectedResources - returns resources for a cdap master service
 func (s *CDAPMasterServiceSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
 	var resources *resource.Bag = new(resource.Bag)
@@ -174,8 +187,12 @@ func (s *CDAPMasterServiceSpec) ExpectedResources(rsrc interface{}, rsrclabels m
 	template := s.Labels[templateLabel]
 	delete(s.Labels, templateLabel)
 
+	// Set the cdap.container label. It is for service selector to route correctly
+	name := s.getServiceName(master)
+	s.Labels[containerLabel] = name
+
 	ngdata := serviceData{
-		Name:        s.getServiceName(master),
+		Name:        name,
 		Master:      master,
 		Service:     s,
 		ServiceType: rsrclabels[component.LabelComponent],
@@ -188,7 +205,6 @@ func (s *CDAPMasterServiceSpec) ExpectedResources(rsrc interface{}, rsrclabels m
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("template: %v\n", rinfo.Obj.(*k8s.Object).Obj)
-	// resources.Add(*rinfo)
+	resources.Add(*rinfo)
 	return resources, nil
 }

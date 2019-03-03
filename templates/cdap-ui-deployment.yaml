@@ -33,43 +33,27 @@ spec:
         {{end}}
     {{end}}
       containers:
-        - image: {{.Master.Spec.Image}}
-          args: ["co.cask.cdap.master.environment.k8s.{{.ServiceType}}ServiceMain", "--env=k8s"]
+        - image: {{.Master.Spec.UserInterfaceImage}}
+          args: ["start"]
           name: {{.Name}}
         {{if .Master.Spec.ImagePullPolicy}}
           imagePullPolicy: {{.Master.Spec.ImagePullPolicy}}
         {{end}}
           resources: {}
+          env:
+            - name: NODE_ENV
+              value: production
           volumeMounts:
-            - name: podinfo
-              mountPath: /etc/podinfo
-              readOnly: true
             - name: cdap-conf
               mountPath: /etc/cdap/conf
               readOnly: true
             - name: hadoop-conf
               mountPath: /etc/hadoop/conf
               readOnly: true
-          {{if .Master.Spec.SecuritySecret}}
-            - name: cdap-security
-              mountPath: /etc/cdap/security
-              readOnly: true
-          {{end}}
       volumes:
-        - name: podinfo
-          downwardAPI:
-            items:
-              - path: "pod.labels.properties"
-                fieldRef:
-                  fieldPath: metadata.labels
         - name: cdap-conf
           configMap:
             name: {{.CConfName}}
         - name: hadoop-conf
           configMap:
             name: {{.HConfName}}
-      {{if .Master.Spec.SecuritySecret}}
-        - name: cdap-security
-          secret:
-            secretName: {{.Master.Spec.SecuritySecret}}
-      {{end}}
