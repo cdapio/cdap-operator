@@ -94,6 +94,9 @@ spec:
                     use persistent volume
                   type: string
               type: object
+            logLevels:
+              description: A set of logger name to log level settings
+              type: object
             messaging:
               description: Specification for the CDAP messaging service
               properties:

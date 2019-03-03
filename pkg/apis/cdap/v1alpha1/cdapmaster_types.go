@@ -64,6 +64,8 @@ type CDAPMasterSpec struct {
 	LocationURI string `json:"locationURI"`
 	// A set of configurations that goes into cdap-site.xml.
 	Config map[string]string `json:"config,omitempty"`
+	// A set of logger name to log level settings
+	LogLevels map[string]string `json:"logLevels,omitempty"`
 	// Specification for the CDAP app-fabric service
 	AppFabric CDAPMasterServiceSpec `json:"appFabric,omitempty"`
 	// Specification for the CDAP logging service

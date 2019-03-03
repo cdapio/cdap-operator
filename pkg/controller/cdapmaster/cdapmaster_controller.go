@@ -28,7 +28,7 @@ import (
 // Add creates a new ESCluster Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
-	return kbc.CreateController("escluster", mgr, &cdapv1alpha1.CDAPMaster{}, newReconciler(mgr))
+	return kbc.CreateController("cdapmaster", mgr, &cdapv1alpha1.CDAPMaster{}, newReconciler(mgr))
 }
 
 // TBD kubebuilder:rbac:groups=app.k8s.io,resources=applications,verbs=get;list;watch;create;update;patch;delete

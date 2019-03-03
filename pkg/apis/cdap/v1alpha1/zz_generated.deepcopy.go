@@ -129,6 +129,13 @@ func (in *CDAPMasterSpec) DeepCopyInto(out *CDAPMasterSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.LogLevels != nil {
+		in, out := &in.LogLevels, &out.LogLevels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	in.AppFabric.DeepCopyInto(&out.AppFabric)
 	in.Log.DeepCopyInto(&out.Log)
 	in.Messaging.DeepCopyInto(&out.Messaging)
