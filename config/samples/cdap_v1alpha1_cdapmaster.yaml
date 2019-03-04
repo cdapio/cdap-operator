@@ -1,0 +1,56 @@
+apiVersion: cdap.cdap.io/v1alpha1
+kind: CDAPMaster
+metadata:
+  labels:
+    cdap.version: "6.0.0"
+  name: master-1
+spec:
+  image: gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.0-SNAPSHOT
+  userInterfaceImage: gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.0.0-SNAPSHOT
+  imagePullPolicy: Always
+  # No need to list out all services. Only list the one that needs customizing
+  messaging:
+    metadata:
+      labels:
+        cdap.label: extra-label
+    # Only support 1
+    replicas: 1
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "500m"
+    storageSize: "100Gi"
+    # If need to use node selector
+    # nodeSelector:
+    #   cloud.google.com/gke-accelerator: nvidia-tesla-k80
+  appFabric:
+    # Only support 1, storage not supported
+    replicas: 1
+  log:
+    # Only support 1, storage supported
+    replicas: 1
+  metadata:
+    # Supports >= 1, storage not supported
+    replicas: 2
+  metrics:
+    # Only support 1, storage supported
+    replicas: 1
+  preview:
+    # Only support 1, storage supported
+    replicas: 1
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+  userInterface:
+    # Supports >= 1, storage not supported
+    replicas: 1
+  router:
+    # Supports >= 1, storage not supported
+    replicas: 1
+  securitySecret: cdap-security
+  locationURI: gs://somebucket
+  config:
+    enable.preview: "true"
+    metadata.storage.implementation: elastic
+    metadata.elasticsearch.cluster.hosts: escluster-master:9200

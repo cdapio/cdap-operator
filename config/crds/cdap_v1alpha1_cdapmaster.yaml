@@ -1,0 +1,331 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: cdapmasters.cdap.cdap.io
+spec:
+  group: cdap.cdap.io
+  names:
+    kind: CDAPMaster
+    plural: cdapmasters
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            appFabric:
+              description: Specification for the CDAP app-fabric service
+              properties:
+                metadata:
+                  description: Metadata for the service.
+                  type: object
+                nodeSelector:
+                  description: A selector which must be true for the pod to fit on
+                    a node.
+                  type: object
+                replicas:
+                  description: Number of replicas for the service. The value will
+                    be ignored for services that doesn't support more than one replica
+                  format: int32
+                  type: integer
+                resources:
+                  description: Compute Resources required by the service.
+                  type: object
+                serviceAccountName:
+                  description: Overrides the service account for the service pods
+                  type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
+                storageSize:
+                  description: Specification for the persistent volumn size used by
+                    the service. The spec will be ignored for services that doesn't
+                    use persistent volume
+                  type: string
+              type: object
+            config:
+              description: A set of configurations that goes into cdap-site.xml.
+              type: object
+            image:
+              description: Docker image name for the CDAP backend.
+              type: string
+            imagePullPolicy:
+              description: Policy for pulling docker images on Pod creation.
+              type: string
+            locationURI:
+              description: An URI specifying an object storage for CDAP.
+              type: string
+            log:
+              description: Specification for the CDAP logging service
+              properties:
+                metadata:
+                  description: Metadata for the service.
+                  type: object
+                nodeSelector:
+                  description: A selector which must be true for the pod to fit on
+                    a node.
+                  type: object
+                replicas:
+                  description: Number of replicas for the service. The value will
+                    be ignored for services that doesn't support more than one replica
+                  format: int32
+                  type: integer
+                resources:
+                  description: Compute Resources required by the service.
+                  type: object
+                serviceAccountName:
+                  description: Overrides the service account for the service pods
+                  type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
+                storageSize:
+                  description: Specification for the persistent volumn size used by
+                    the service. The spec will be ignored for services that doesn't
+                    use persistent volume
+                  type: string
+              type: object
+            logLevels:
+              description: A set of logger name to log level settings
+              type: object
+            messaging:
+              description: Specification for the CDAP messaging service
+              properties:
+                metadata:
+                  description: Metadata for the service.
+                  type: object
+                nodeSelector:
+                  description: A selector which must be true for the pod to fit on
+                    a node.
+                  type: object
+                replicas:
+                  description: Number of replicas for the service. The value will
+                    be ignored for services that doesn't support more than one replica
+                  format: int32
+                  type: integer
+                resources:
+                  description: Compute Resources required by the service.
+                  type: object
+                serviceAccountName:
+                  description: Overrides the service account for the service pods
+                  type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
+                storageSize:
+                  description: Specification for the persistent volumn size used by
+                    the service. The spec will be ignored for services that doesn't
+                    use persistent volume
+                  type: string
+              type: object
+            metadata:
+              description: Specification for the CDAP metadata service
+              properties:
+                metadata:
+                  description: Metadata for the service.
+                  type: object
+                nodeSelector:
+                  description: A selector which must be true for the pod to fit on
+                    a node.
+                  type: object
+                replicas:
+                  description: Number of replicas for the service. The value will
+                    be ignored for services that doesn't support more than one replica
+                  format: int32
+                  type: integer
+                resources:
+                  description: Compute Resources required by the service.
+                  type: object
+                serviceAccountName:
+                  description: Overrides the service account for the service pods
+                  type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
+                storageSize:
+                  description: Specification for the persistent volumn size used by
+                    the service. The spec will be ignored for services that doesn't
+                    use persistent volume
+                  type: string
+              type: object
+            metrics:
+              description: Specification for the CDAP metrics service
+              properties:
+                metadata:
+                  description: Metadata for the service.
+                  type: object
+                nodeSelector:
+                  description: A selector which must be true for the pod to fit on
+                    a node.
+                  type: object
+                replicas:
+                  description: Number of replicas for the service. The value will
+                    be ignored for services that doesn't support more than one replica
+                  format: int32
+                  type: integer
+                resources:
+                  description: Compute Resources required by the service.
+                  type: object
+                serviceAccountName:
+                  description: Overrides the service account for the service pods
+                  type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
+                storageSize:
+                  description: Specification for the persistent volumn size used by
+                    the service. The spec will be ignored for services that doesn't
+                    use persistent volume
+                  type: string
+              type: object
+            preview:
+              description: Specification for the CDAP preview service
+              properties:
+                metadata:
+                  description: Metadata for the service.
+                  type: object
+                nodeSelector:
+                  description: A selector which must be true for the pod to fit on
+                    a node.
+                  type: object
+                replicas:
+                  description: Number of replicas for the service. The value will
+                    be ignored for services that doesn't support more than one replica
+                  format: int32
+                  type: integer
+                resources:
+                  description: Compute Resources required by the service.
+                  type: object
+                serviceAccountName:
+                  description: Overrides the service account for the service pods
+                  type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
+                storageSize:
+                  description: Specification for the persistent volumn size used by
+                    the service. The spec will be ignored for services that doesn't
+                    use persistent volume
+                  type: string
+              type: object
+            router:
+              description: Specification for the CDAP router service
+              properties:
+                metadata:
+                  description: Metadata for the service.
+                  type: object
+                nodeSelector:
+                  description: A selector which must be true for the pod to fit on
+                    a node.
+                  type: object
+                replicas:
+                  description: Number of replicas for the service. The value will
+                    be ignored for services that doesn't support more than one replica
+                  format: int32
+                  type: integer
+                resources:
+                  description: Compute Resources required by the service.
+                  type: object
+                serviceAccountName:
+                  description: Overrides the service account for the service pods
+                  type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
+                storageSize:
+                  description: Specification for the persistent volumn size used by
+                    the service. The spec will be ignored for services that doesn't
+                    use persistent volume
+                  type: string
+              type: object
+            securitySecret:
+              description: Secret that contains security related configurations for
+                CDAP.
+              type: string
+            serviceAccountName:
+              description: The service account for all the service pods.
+              type: string
+            userInterface:
+              description: Specification for the CDAP UI service
+              properties:
+                metadata:
+                  description: Metadata for the service.
+                  type: object
+                nodeSelector:
+                  description: A selector which must be true for the pod to fit on
+                    a node.
+                  type: object
+                replicas:
+                  description: Number of replicas for the service. The value will
+                    be ignored for services that doesn't support more than one replica
+                  format: int32
+                  type: integer
+                resources:
+                  description: Compute Resources required by the service.
+                  type: object
+                serviceAccountName:
+                  description: Overrides the service account for the service pods
+                  type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
+                storageSize:
+                  description: Specification for the persistent volumn size used by
+                    the service. The spec will be ignored for services that doesn't
+                    use persistent volume
+                  type: string
+              type: object
+            userInterfaceImage:
+              description: Docker image name for the CDAP UI.
+              type: string
+          required:
+          - locationURI
+          type: object
+        status:
+          properties:
+            observedGeneration:
+              format: int64
+              type: integer
+            routerService:
+              type: string
+            userInterfaceService:
+              type: string
+          type: object
+  version: v1alpha1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
