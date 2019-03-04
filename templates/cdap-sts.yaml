@@ -46,6 +46,7 @@ spec:
         {{$k}}: {{$v}}
         {{end}}
     {{end}}
+      terminationGracePeriodSeconds: 120
       initContainers:
         - image: {{.Master.Spec.Image}}
           name: create-storage

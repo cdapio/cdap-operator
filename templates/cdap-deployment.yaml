@@ -45,6 +45,7 @@ spec:
         {{$k}}: '{{$v}}'
         {{end}}
     {{end}}
+      terminationGracePeriodSeconds: 120
       containers:
         - image: {{.Master.Spec.Image}}
           args: ["co.cask.cdap.master.environment.k8s.{{.ServiceType}}ServiceMain", "--env=k8s"]
