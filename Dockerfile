@@ -14,4 +14,6 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager cdap.io/cdap-op
 FROM ubuntu:latest
 WORKDIR /
 COPY --from=builder /go/src/cdap.io/cdap-operator/manager .
+COPY templates/ templates/
+COPY config/crds/ crds/
 ENTRYPOINT ["/manager"]
