@@ -42,7 +42,7 @@ type CDAPMasterSpec struct {
 	// Specification for the CDAP app-fabric service
 	AppFabric CDAPMasterServiceSpec `json:"appFabric,omitempty"`
 	// Specification for the CDAP logging service
-	Log CDAPMasterServiceSpec `json:"log,omitempty"`
+	Logs CDAPMasterServiceSpec `json:"logs,omitempty"`
 	// Specification for the CDAP messaging service
 	Messaging CDAPMasterServiceSpec `json:"messaging,omitempty"`
 	// Specification for the CDAP metadata service

@@ -142,7 +142,7 @@ func (in *CDAPMasterSpec) DeepCopyInto(out *CDAPMasterSpec) {
 		}
 	}
 	in.AppFabric.DeepCopyInto(&out.AppFabric)
-	in.Log.DeepCopyInto(&out.Log)
+	in.Logs.DeepCopyInto(&out.Logs)
 	in.Messaging.DeepCopyInto(&out.Messaging)
 	in.Metadata.DeepCopyInto(&out.Metadata)
 	in.Metrics.DeepCopyInto(&out.Metrics)

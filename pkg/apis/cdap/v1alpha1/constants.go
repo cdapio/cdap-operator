@@ -23,8 +23,8 @@ const (
 	// AppFabric defines the service type for app-fabric
 	AppFabric ServiceType = "AppFabric"
 
-	// Log defines the service type for log processing and serving service
-	Log ServiceType = "Log"
+	// Logs defines the service type for log processing and serving service
+	Logs ServiceType = "Logs"
 
 	// Messaging defines the service type for TMS
 	Messaging ServiceType = "Messaging"

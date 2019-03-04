@@ -72,7 +72,10 @@ spec:
             locationURI:
               description: An URI specifying an object storage for CDAP.
               type: string
-            log:
+            logLevels:
+              description: A set of logger name to log level settings
+              type: object
+            logs:
               description: Specification for the CDAP logging service
               properties:
                 metadata:
@@ -103,9 +106,6 @@ spec:
                     the service. The spec will be ignored for services that doesn't
                     use persistent volume
                   type: string
-              type: object
-            logLevels:
-              description: A set of logger name to log level settings
               type: object
             messaging:
               description: Specification for the CDAP messaging service

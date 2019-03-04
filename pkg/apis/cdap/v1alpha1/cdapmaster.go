@@ -53,7 +53,7 @@ func (r *CDAPMaster) ApplyDefaults() {
 
 	// Only UI and router supports exposing service port.
 	spec.AppFabric.ServicePort = nil
-	spec.Log.ServicePort = nil
+	spec.Logs.ServicePort = nil
 	spec.Messaging.ServicePort = nil
 	spec.Metadata.ServicePort = nil
 	spec.Metrics.ServicePort = nil
@@ -99,8 +99,7 @@ func (r *CDAPMaster) Components() []component.Component {
 	components = append(components, r.serviceComponent(&r.Spec.AppFabric, AppFabric, 1, false, deploymentTemplate))
 	components = append(components, r.serviceComponent(&r.Spec.Metadata, Metadata, 4, false, deploymentTemplate))
 	components = append(components, r.serviceComponent(&r.Spec.Metrics, Metrics, 1, true, statefulSetTemplate))
-	// TODO: uncomment log when it is ready
-	// components = append(components, r.serviceComponent(&r.Spec.Log, Log, 1, true, statefulSetTemplate))
+	components = append(components, r.serviceComponent(&r.Spec.Logs, Logs, 1, true, statefulSetTemplate))
 	components = append(components, r.serviceComponent(&r.Spec.Preview, Preview, 1, true, statefulSetTemplate))
 	components = append(components, r.serviceComponent(&r.Spec.Router, Router, 10, false, deploymentTemplate))
 	components = append(components, r.serviceComponent(&r.Spec.UserInterface, UserInterface, 10, false, uiDeploymentTemplate))

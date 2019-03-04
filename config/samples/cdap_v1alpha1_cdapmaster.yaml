@@ -26,7 +26,7 @@ spec:
   appFabric:
     # Only support 1, storage not supported
     replicas: 1
-  log:
+  logs:
     # Only support 1, storage supported
     replicas: 1
   metadata:
