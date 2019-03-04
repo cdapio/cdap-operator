@@ -5,6 +5,9 @@ metadata:
   namespace: {{.Master.Namespace}}
   labels:
     cdap.service: {{.Name}}
+    {{range $k,$v := .Labels}}
+    {{$k}}: '{{$v}}'
+    {{end}}
 {{if .Service.Annotations}}
   annotations:
     {{range $k,$v := .Service.Annotations}}
