@@ -21,35 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ServiceType is the name identifying various CDAP master services
-type ServiceType string
-
-const (
-	// AppFabric defines the service type for app-fabric
-	AppFabric ServiceType = "AppFabric"
-
-	// Log defines the service type for log processing and serving service
-	Log ServiceType = "Log"
-
-	// Messaging defines the service type for TMS
-	Messaging ServiceType = "Messaging"
-
-	// Metadata defines the service type for metadata service
-	Metadata ServiceType = "Metadata"
-
-	// Metrics defines the service type for metrics process and serving
-	Metrics ServiceType = "Metrics"
-
-	// Preview defines the service type for preview service
-	Preview ServiceType = "Preview"
-
-	// Router defines the service type for the router
-	Router ServiceType = "Router"
-
-	// UserInterface defines the service type for user interface
-	UserInterface ServiceType = "UserInterface"
-)
-
 // CDAPMasterSpec defines the desired state of CDAPMaster
 type CDAPMasterSpec struct {
 	// Docker image name for the CDAP backend.
@@ -60,6 +31,8 @@ type CDAPMasterSpec struct {
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// Secret that contains security related configurations for CDAP.
 	SecuritySecret string `json:"securitySecret,omitempty"`
+	// The service account for all the service pods.
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 	// An URI specifying an object storage for CDAP.
 	LocationURI string `json:"locationURI"`
 	// A set of configurations that goes into cdap-site.xml.
@@ -88,7 +61,7 @@ type CDAPMasterSpec struct {
 type CDAPMasterServiceSpec struct {
 	// Metadata for the service.
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	// The service account for the service pods
+	// Overrides the service account for the service pods
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 	// Number of replicas for the service.
 	// The value will be ignored for services that doesn't support more than one replica
@@ -97,6 +70,9 @@ type CDAPMasterServiceSpec struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// A selector which must be true for the pod to fit on a node.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// The port number for the service.
+	// The value will be ignored for services that doesn't exposed to outside of the cluster
+	ServicePort *int32 `json:"servicePort,omitempty"`
 	// Specification for the persistent volumn size used by the service.
 	// The spec will be ignored for services that doesn't use persistent volume
 	StorageSize string `json:"storageSize,omitempty"`

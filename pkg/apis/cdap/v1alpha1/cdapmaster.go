@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -35,22 +36,6 @@ import (
 
 var logger = logf.Log.WithName("cdap.controller")
 
-const (
-	// Property key in cdap-site.xml for configuring local data directory
-	localDataDirKey = "local.data.dir"
-	// Value for the local data directory
-	localDataDir              = "/data"
-	instanceLabel             = "cdap.instance"
-	containerLabel            = "cdap.container"
-	templateLabel             = ".cdap.template"
-	templateDir               = "templates/"
-	deploymentTemplate        = "cdap-deployment.yaml"
-	uiDeploymentTemplate      = "cdap-ui-deployment.yaml"
-	statefulSetTemplate       = "cdap-sts.yaml"
-	defaultImage              = "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.0-SNAPSHOT"
-	defaultUserInterfaceImage = "gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.0.0-SNAPSHOT"
-)
-
 // ApplyDefaults will default missing values from the CDAPMaster
 func (r *CDAPMaster) ApplyDefaults() {
 	if r.Labels == nil {
@@ -58,13 +43,37 @@ func (r *CDAPMaster) ApplyDefaults() {
 	}
 	r.Labels[instanceLabel] = r.Name
 
-	spec := r.Spec
+	spec := &r.Spec
 	if spec.Image == "" {
 		spec.Image = defaultImage
 	}
 	if spec.UserInterfaceImage == "" {
 		spec.UserInterfaceImage = defaultUserInterfaceImage
 	}
+
+	// Only UI and router supports exposing service port.
+	spec.AppFabric.ServicePort = nil
+	spec.Log.ServicePort = nil
+	spec.Messaging.ServicePort = nil
+	spec.Metadata.ServicePort = nil
+	spec.Metrics.ServicePort = nil
+	spec.Preview.ServicePort = nil
+
+	if spec.Router.ServicePort == nil {
+		spec.Router.ServicePort = int32Ptr(defaultRouterPort)
+	}
+	if spec.UserInterface.ServicePort == nil {
+		spec.UserInterface.ServicePort = int32Ptr(defaultUserInterfacePort)
+	}
+
+	// Set the cconf entry for the router and UI service and ports
+	if spec.Config == nil {
+		spec.Config = make(map[string]string)
+	}
+	spec.Config[localDataDirKey] = localDataDir
+	spec.Config[confRouterServerAddress] = fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(string(Router)))
+	spec.Config[confRouterBindPort] = strconv.Itoa(int(*spec.Router.ServicePort))
+	spec.Config[confUserInterfaceBindPort] = strconv.Itoa(int(*spec.UserInterface.ServicePort))
 }
 
 // HandleError records status or error in status
@@ -105,10 +114,6 @@ func (r *CDAPMaster) OwnerRef() *metav1.OwnerReference {
 		Version: SchemeGroupVersion.Version,
 		Kind:    "CDAPMaster",
 	})
-}
-
-func (s *CDAPMasterServiceSpec) getServiceName(r *CDAPMaster) string {
-	return fmt.Sprintf("cdap-%s-%s", r.Name, s.Name)
 }
 
 func (r *CDAPMaster) getConfigName(confType string) string {
@@ -167,7 +172,7 @@ func (s *CDAPMasterServiceSpec) ExpectedResources(rsrc interface{}, rsrclabels m
 	}
 
 	// Set the cdap.container label. It is for service selector to route correctly
-	name := s.getServiceName(master)
+	name := fmt.Sprintf("cdap-%s-%s", master.Name, s.Name)
 	labels[containerLabel] = name
 
 	ngdata := templateData{
@@ -181,11 +186,19 @@ func (s *CDAPMasterServiceSpec) ExpectedResources(rsrc interface{}, rsrclabels m
 		HConfName:   master.getConfigName("hconf"),
 	}
 
-	rinfo, err := s.createServiceItem(&ngdata, template)
-	if err != nil {
-		return nil, err
+	// Generates resources
+	templates := []string{template}
+	if s.ServicePort != nil {
+		templates = append(templates, serviceTemplate)
 	}
-	resources.Add(*rinfo)
+
+	for _, tmpl := range templates {
+		rinfo, err := s.createResourceItem(&ngdata, tmpl)
+		if err != nil {
+			return nil, err
+		}
+		resources.Add(*rinfo)
+	}
 	return resources, nil
 }
 
@@ -196,6 +209,9 @@ func int32Ptr(value int32) *int32 {
 // Creates a component.Component representing the given CDAP master service
 func (r *CDAPMaster) serviceComponent(s *CDAPMasterServiceSpec, serviceType ServiceType, maxReplicas int32, hasStorage bool, template string) component.Component {
 	s.Name = strings.ToLower(string(serviceType))
+	if s.ServiceAccountName == "" {
+		s.ServiceAccountName = r.Spec.ServiceAccountName
+	}
 	if s.Replicas == nil {
 		s.Replicas = int32Ptr(1)
 	}
@@ -227,6 +243,8 @@ func getListType(tmpl string) (metav1.ListInterface, error) {
 		return &appsv1.DeploymentList{}, nil
 	case statefulSetTemplate:
 		return &appsv1.StatefulSetList{}, nil
+	case serviceTemplate:
+		return &corev1.ServiceList{}, nil
 	default:
 		return nil, errors.New("Unsupported template type " + tmpl)
 	}
@@ -267,7 +285,7 @@ func (r *CDAPMaster) createConfigMapItem(name string, templates []string) (*reso
 }
 
 // Creates a resource.Item based on the given CDAPMasterServiceSpec and template
-func (s *CDAPMasterServiceSpec) createServiceItem(v interface{}, template string) (*resource.Item, error) {
+func (s *CDAPMasterServiceSpec) createResourceItem(v interface{}, template string) (*resource.Item, error) {
 	listType, err := getListType(template)
 	if err != nil {
 		return nil, err

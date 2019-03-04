@@ -47,8 +47,13 @@ spec:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
-                  description: The service account for the service pods
+                  description: Overrides the service account for the service pods
                   type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
                 storageSize:
                   description: Specification for the persistent volumn size used by
                     the service. The spec will be ignored for services that doesn't
@@ -86,8 +91,13 @@ spec:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
-                  description: The service account for the service pods
+                  description: Overrides the service account for the service pods
                   type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
                 storageSize:
                   description: Specification for the persistent volumn size used by
                     the service. The spec will be ignored for services that doesn't
@@ -116,8 +126,13 @@ spec:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
-                  description: The service account for the service pods
+                  description: Overrides the service account for the service pods
                   type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
                 storageSize:
                   description: Specification for the persistent volumn size used by
                     the service. The spec will be ignored for services that doesn't
@@ -143,8 +158,13 @@ spec:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
-                  description: The service account for the service pods
+                  description: Overrides the service account for the service pods
                   type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
                 storageSize:
                   description: Specification for the persistent volumn size used by
                     the service. The spec will be ignored for services that doesn't
@@ -170,8 +190,13 @@ spec:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
-                  description: The service account for the service pods
+                  description: Overrides the service account for the service pods
                   type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
                 storageSize:
                   description: Specification for the persistent volumn size used by
                     the service. The spec will be ignored for services that doesn't
@@ -197,8 +222,13 @@ spec:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
-                  description: The service account for the service pods
+                  description: Overrides the service account for the service pods
                   type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
                 storageSize:
                   description: Specification for the persistent volumn size used by
                     the service. The spec will be ignored for services that doesn't
@@ -224,8 +254,13 @@ spec:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
-                  description: The service account for the service pods
+                  description: Overrides the service account for the service pods
                   type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
                 storageSize:
                   description: Specification for the persistent volumn size used by
                     the service. The spec will be ignored for services that doesn't
@@ -235,6 +270,9 @@ spec:
             securitySecret:
               description: Secret that contains security related configurations for
                 CDAP.
+              type: string
+            serviceAccountName:
+              description: The service account for all the service pods.
               type: string
             userInterface:
               description: Specification for the CDAP UI service
@@ -255,8 +293,13 @@ spec:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
-                  description: The service account for the service pods
+                  description: Overrides the service account for the service pods
                   type: string
+                servicePort:
+                  description: The port number for the service. The value will be
+                    ignored for services that doesn't exposed to outside of the cluster
+                  format: int32
+                  type: integer
                 storageSize:
                   description: Specification for the persistent volumn size used by
                     the service. The spec will be ignored for services that doesn't

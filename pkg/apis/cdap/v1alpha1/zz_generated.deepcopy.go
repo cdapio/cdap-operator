@@ -106,6 +106,11 @@ func (in *CDAPMasterServiceSpec) DeepCopyInto(out *CDAPMasterServiceSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.ServicePort != nil {
+		in, out := &in.ServicePort, &out.ServicePort
+		*out = new(int32)
+		**out = **in
+	}
 	return
 }
 

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Name}}
+  namespace: {{.Master.Namespace}}
+  labels:
+    cdap.service: {{.Name}}
+{{if .Service.Annotations}}
+  annotations:
+    {{range $k,$v := .Service.Annotations}}
+    {{$k}}: '{{$v}}'
+    {{end}}
+{{end}}
+spec:
+  type: NodePort
+  selector:
+    {{range $k,$v := .Labels}}
+    {{$k}}: '{{$v}}'
+    {{end}}
+  ports:
+  - protocol: TCP
+    port: {{.Service.ServicePort}}
+    targetPort: {{.Service.ServicePort}}

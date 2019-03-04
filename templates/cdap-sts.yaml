@@ -102,6 +102,9 @@ spec:
               - path: "pod.labels.properties"
                 fieldRef:
                   fieldPath: metadata.labels
+              - path: "pod.name"
+                fieldRef:
+                  fieldPath: metadata.name
         - name: cdap-conf
           configMap:
             name: {{.CConfName}}

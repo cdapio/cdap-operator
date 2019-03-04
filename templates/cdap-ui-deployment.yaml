@@ -19,21 +19,21 @@ metadata:
 {{if .Labels}}
   labels:
     {{range $k,$v := .Labels}}
-    {{$k}}: {{$v}}
+    {{$k}}: '{{$v}}'
     {{end}}
 {{end}}
 spec:
   selector:
     matchLabels:
       {{range $k,$v := .Labels}}
-      {{$k}}: {{$v}}
+      {{$k}}: '{{$v}}'
       {{end}}
   replicas: {{.Service.Replicas}}
   template:
     metadata:
       labels:
         {{range $k,$v := .Labels }}
-        {{$k}}: {{$v}}
+        {{$k}}: '{{$v}}'
         {{end}}
     spec:
     {{if .Service.ServiceAccountName}}
@@ -42,7 +42,7 @@ spec:
     {{if .Service.NodeSelector}}
       nodeSelector:
         {{range $k,$v := .Service.NodeSelector}}
-        {{$k}}: {{$v}}
+        {{$k}}: '{{$v}}'
         {{end}}
     {{end}}
       containers:
