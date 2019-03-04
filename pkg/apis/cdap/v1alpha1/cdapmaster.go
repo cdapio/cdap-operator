@@ -137,6 +137,9 @@ func (s *CDAPMasterSpec) ExpectedResources(rsrc interface{}, rsrclabels map[stri
 	var resources *resource.Bag = new(resource.Bag)
 	master := rsrc.(*CDAPMaster)
 
+	labels := make(component.KVMap)
+	labels.Merge(master.Labels, rsrclabels)
+
 	// Add the cdap and hadoop ConfigMap
 	configs := map[string][]string{
 		"cconf": []string{"cdap-site.xml", "logback.xml", "logback-container.xml"},
@@ -144,7 +147,7 @@ func (s *CDAPMasterSpec) ExpectedResources(rsrc interface{}, rsrclabels map[stri
 	}
 
 	for k, v := range configs {
-		rinfo, err := master.createConfigMapItem(master.getConfigName(k), v)
+		rinfo, err := master.createConfigMapItem(master.getConfigName(k), labels, v)
 		if err != nil {
 			return nil, err
 		}
@@ -163,13 +166,8 @@ func (s *CDAPMasterServiceSpec) ExpectedResources(rsrc interface{}, rsrclabels m
 	template := s.Labels[templateLabel]
 	delete(s.Labels, templateLabel)
 
-	labels := make(map[string]string)
-	for k, v := range master.Labels {
-		labels[k] = v
-	}
-	for k, v := range s.Labels {
-		labels[k] = v
-	}
+	labels := make(component.KVMap)
+	labels.Merge(master.Labels, s.Labels, rsrclabels)
 
 	// Set the cdap.container label. It is for service selector to route correctly
 	name := fmt.Sprintf("cdap-%s-%s", master.Name, s.Name)
@@ -250,13 +248,13 @@ func getListType(tmpl string) (metav1.ListInterface, error) {
 	}
 }
 
-func (r *CDAPMaster) createConfigMapItem(name string, templates []string) (*resource.Item, error) {
+func (r *CDAPMaster) createConfigMapItem(name string, labels map[string]string, templates []string) (*resource.Item, error) {
 	// Creates the configMap object
 	configMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: r.Namespace,
-			Labels:    r.Labels,
+			Labels:    labels,
 		},
 		Data: make(map[string]string),
 	}
