@@ -44,7 +44,7 @@ spec:
       containers:
       - command:
         - /manager
-        image: controller:latest
+        image: gcr.io/cloud-data-fusion-images/cdap-operator:0.1.0
         imagePullPolicy: Always
         name: manager
         env:
