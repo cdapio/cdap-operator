@@ -94,12 +94,13 @@ func (r *CDAPMaster) Components() []component.Component {
 	})
 
 	// Create components for each of the CDAP services
-	components = append(components, r.serviceComponent(&r.Spec.AppFabric, AppFabric, 1, false, deploymentTemplate))
-	// TODO: uncomment log when it is ready
-	// components = append(components, r.serviceComponent(&r.Spec.Log, Log, 1, true, statefulSetTemplate))
+	// There is no requirement on the start order, but try to put more essential one first
 	components = append(components, r.serviceComponent(&r.Spec.Messaging, Messaging, 1, true, statefulSetTemplate))
+	components = append(components, r.serviceComponent(&r.Spec.AppFabric, AppFabric, 1, false, deploymentTemplate))
 	components = append(components, r.serviceComponent(&r.Spec.Metadata, Metadata, 4, false, deploymentTemplate))
 	components = append(components, r.serviceComponent(&r.Spec.Metrics, Metrics, 1, true, statefulSetTemplate))
+	// TODO: uncomment log when it is ready
+	// components = append(components, r.serviceComponent(&r.Spec.Log, Log, 1, true, statefulSetTemplate))
 	components = append(components, r.serviceComponent(&r.Spec.Preview, Preview, 1, true, statefulSetTemplate))
 	components = append(components, r.serviceComponent(&r.Spec.Router, Router, 10, false, deploymentTemplate))
 	components = append(components, r.serviceComponent(&r.Spec.UserInterface, UserInterface, 10, false, uiDeploymentTemplate))
