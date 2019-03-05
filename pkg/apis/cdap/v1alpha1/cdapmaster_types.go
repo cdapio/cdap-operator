@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/kubesdk/pkg/status"
 )
 
 // CDAPMasterSpec defines the desired state of CDAPMaster
@@ -132,9 +133,8 @@ type UserInterfaceSpec struct {
 
 // CDAPMasterStatus defines the observed state of CDAPMaster
 type CDAPMasterStatus struct {
-	ObservedGeneration   int64  `json:"observedGeneration,omitempty" protobuf:"varint,1,opt,name=observedGeneration"`
-	RouterService        string `json:"routerService,omitempty"`
-	UserInterfaceService string `json:"userInterfaceService,omitempty"`
+	status.Meta          `json:",inline"`
+	status.ComponentMeta `json:",inline"`
 }
 
 // +genclient

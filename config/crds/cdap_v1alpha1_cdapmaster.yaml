@@ -226,13 +226,108 @@ spec:
           type: object
         status:
           properties:
+            components:
+              description: Object status array for all matching objects
+              items:
+                properties:
+                  group:
+                    description: Object group
+                    type: string
+                  kind:
+                    description: Kind of object
+                    type: string
+                  link:
+                    description: Link to object
+                    type: string
+                  name:
+                    description: Name of object
+                    type: string
+                  pdb:
+                    description: PDB status
+                    properties:
+                      currenthealthy:
+                        description: currentHealthy
+                        format: int32
+                        type: integer
+                      desiredhealthy:
+                        description: desiredHealthy
+                        format: int32
+                        type: integer
+                    required:
+                    - currenthealthy
+                    - desiredhealthy
+                    type: object
+                  status:
+                    description: 'Status. Values: InProgress, Ready, Unknown'
+                    type: string
+                  sts:
+                    description: StatefulSet status
+                    properties:
+                      currentcount:
+                        description: CurrentReplicas defines the no of MySQL instances
+                          that are created
+                        format: int32
+                        type: integer
+                      progress:
+                        description: 'progress is a fuzzy indicator. Interpret as
+                          a percentage (0-100) eg: for statefulsets, progress = 100*readyreplicas/replicas'
+                        format: int32
+                        type: integer
+                      readycount:
+                        description: ReadyReplicas defines the no of MySQL instances
+                          that are ready
+                        format: int32
+                        type: integer
+                      replicas:
+                        description: Replicas defines the no of MySQL instances desired
+                        format: int32
+                        type: integer
+                    required:
+                    - replicas
+                    - readycount
+                    - currentcount
+                    - progress
+                    type: object
+                type: object
+              type: array
+            conditions:
+              description: Conditions represents the latest state of the object +patchMergeKey=type
+                +patchStrategy=merge
+              items:
+                properties:
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another.
+                    format: date-time
+                    type: string
+                  lastUpdateTime:
+                    description: Last time the condition was probed
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition.
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of condition.
+                    type: string
+                required:
+                - type
+                - status
+                type: object
+              type: array
             observedGeneration:
+              description: ObservedGeneration is the most recent generation observed.
+                It corresponds to the Object's generation, which is updated on mutation
+                by the API Server.
               format: int64
               type: integer
-            routerService:
-              type: string
-            userInterfaceService:
-              type: string
           type: object
   version: v1alpha1
 status:

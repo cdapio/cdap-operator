@@ -37,6 +37,9 @@ var logger = logf.Log.WithName("cdap.controller")
 
 // ApplyDefaults will default missing values from the CDAPMaster
 func (r *CDAPMaster) ApplyDefaults() {
+	r.Status.EnsureStandardConditions()
+	r.Status.ResetComponentList()
+
 	if r.Labels == nil {
 		r.Labels = make(map[string]string)
 	}
@@ -71,7 +74,11 @@ func (r *CDAPMaster) ApplyDefaults() {
 
 // HandleError records status or error in status
 func (r *CDAPMaster) HandleError(err error) {
-	logger.Error(err, "Error: "+err.Error())
+	if err != nil {
+		r.Status.SetError("ErrorSeen", err.Error())
+	} else {
+		r.Status.ClearError()
+	}
 }
 
 // Components returns components for this resource
