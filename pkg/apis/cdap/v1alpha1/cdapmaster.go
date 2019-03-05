@@ -64,12 +64,15 @@ func (r *CDAPMaster) ApplyDefaults() {
 		spec.Config = make(map[string]string)
 	}
 	// Set the local data directory
-	spec.Config[localDataDirKey] = localDataDir
+	spec.Config[confLocalDataDirKey] = localDataDir
 
 	// Set the cconf entry for the router and UI service and ports
 	spec.Config[confRouterServerAddress] = fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(string(Router)))
 	spec.Config[confRouterBindPort] = strconv.Itoa(int(*spec.Router.ServicePort))
 	spec.Config[confUserInterfaceBindPort] = strconv.Itoa(int(*spec.UserInterface.ServicePort))
+
+	// Disable explore
+	spec.Config[confExploreEnabled] = "false"
 }
 
 // HandleError records status or error in status

@@ -46,21 +46,22 @@ const (
 )
 
 const (
+	confExploreEnabled = "explore.enabled"
 	// Property key in cdap-site.xml for configuring local data directory
-	localDataDirKey = "local.data.dir"
+	confLocalDataDirKey       = "local.data.dir"
+	confRouterServerAddress   = "router.server.address"
+	confRouterBindPort        = "router.bind.port"
+	confUserInterfaceBindPort = "dashboard.bind.port"
+
 	// Value for the local data directory
 	localDataDir              = "/data"
 	instanceLabel             = "cdap.instance"
 	containerLabel            = "cdap.container"
-	templateLabel             = ".cdap.template"
 	templateDir               = "templates/"
 	deploymentTemplate        = "cdap-deployment.yaml"
 	uiDeploymentTemplate      = "cdap-ui-deployment.yaml"
 	statefulSetTemplate       = "cdap-sts.yaml"
 	serviceTemplate           = "cdap-service.yaml"
-	confRouterServerAddress   = "router.server.address"
-	confRouterBindPort        = "router.bind.port"
-	confUserInterfaceBindPort = "dashboard.bind.port"
 	defaultImage              = "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.0-SNAPSHOT"
 	defaultUserInterfaceImage = "gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.0.0-SNAPSHOT"
 	defaultRouterPort         = 11015
