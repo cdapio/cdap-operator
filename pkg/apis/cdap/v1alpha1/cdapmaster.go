@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -51,14 +50,6 @@ func (r *CDAPMaster) ApplyDefaults() {
 		spec.UserInterfaceImage = defaultUserInterfaceImage
 	}
 
-	// Only UI and router supports exposing service port.
-	spec.AppFabric.ServicePort = nil
-	spec.Logs.ServicePort = nil
-	spec.Messaging.ServicePort = nil
-	spec.Metadata.ServicePort = nil
-	spec.Metrics.ServicePort = nil
-	spec.Preview.ServicePort = nil
-
 	if spec.Router.ServicePort == nil {
 		spec.Router.ServicePort = int32Ptr(defaultRouterPort)
 	}
@@ -66,11 +57,13 @@ func (r *CDAPMaster) ApplyDefaults() {
 		spec.UserInterface.ServicePort = int32Ptr(defaultUserInterfacePort)
 	}
 
-	// Set the cconf entry for the router and UI service and ports
 	if spec.Config == nil {
 		spec.Config = make(map[string]string)
 	}
+	// Set the local data directory
 	spec.Config[localDataDirKey] = localDataDir
+
+	// Set the cconf entry for the router and UI service and ports
 	spec.Config[confRouterServerAddress] = fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(string(Router)))
 	spec.Config[confRouterBindPort] = strconv.Itoa(int(*spec.Router.ServicePort))
 	spec.Config[confUserInterfaceBindPort] = strconv.Itoa(int(*spec.UserInterface.ServicePort))
@@ -92,17 +85,56 @@ func (r *CDAPMaster) Components() []component.Component {
 		CR:       r,
 		OwnerRef: r.OwnerRef(),
 	})
-
 	// Create components for each of the CDAP services
 	// There is no requirement on the start order, but try to put more essential one first
-	components = append(components, r.serviceComponent(&r.Spec.Messaging, Messaging, 1, true, statefulSetTemplate))
-	components = append(components, r.serviceComponent(&r.Spec.AppFabric, AppFabric, 1, false, deploymentTemplate))
-	components = append(components, r.serviceComponent(&r.Spec.Metadata, Metadata, 4, false, deploymentTemplate))
-	components = append(components, r.serviceComponent(&r.Spec.Metrics, Metrics, 1, true, statefulSetTemplate))
-	components = append(components, r.serviceComponent(&r.Spec.Logs, Logs, 1, true, statefulSetTemplate))
-	components = append(components, r.serviceComponent(&r.Spec.Preview, Preview, 1, true, statefulSetTemplate))
-	components = append(components, r.serviceComponent(&r.Spec.Router, Router, 10, false, deploymentTemplate))
-	components = append(components, r.serviceComponent(&r.Spec.UserInterface, UserInterface, 10, false, uiDeploymentTemplate))
+	components = append(components, component.Component{
+		Handle:   &r.Spec.Messaging,
+		Name:     string(Messaging),
+		CR:       r,
+		OwnerRef: r.OwnerRef(),
+	})
+	components = append(components, component.Component{
+		Handle:   &r.Spec.AppFabric,
+		Name:     string(AppFabric),
+		CR:       r,
+		OwnerRef: r.OwnerRef(),
+	})
+	components = append(components, component.Component{
+		Handle:   &r.Spec.Metrics,
+		Name:     string(Metrics),
+		CR:       r,
+		OwnerRef: r.OwnerRef(),
+	})
+	components = append(components, component.Component{
+		Handle:   &r.Spec.Logs,
+		Name:     string(Logs),
+		CR:       r,
+		OwnerRef: r.OwnerRef(),
+	})
+	components = append(components, component.Component{
+		Handle:   &r.Spec.Metadata,
+		Name:     string(Metadata),
+		CR:       r,
+		OwnerRef: r.OwnerRef(),
+	})
+	components = append(components, component.Component{
+		Handle:   &r.Spec.Preview,
+		Name:     string(Preview),
+		CR:       r,
+		OwnerRef: r.OwnerRef(),
+	})
+	components = append(components, component.Component{
+		Handle:   &r.Spec.Router,
+		Name:     string(Router),
+		CR:       r,
+		OwnerRef: r.OwnerRef(),
+	})
+	components = append(components, component.Component{
+		Handle:   &r.Spec.UserInterface,
+		Name:     string(UserInterface),
+		CR:       r,
+		OwnerRef: r.OwnerRef(),
+	})
 
 	return components
 }
@@ -114,22 +146,6 @@ func (r *CDAPMaster) OwnerRef() *metav1.OwnerReference {
 		Version: SchemeGroupVersion.Version,
 		Kind:    "CDAPMaster",
 	})
-}
-
-func (r *CDAPMaster) getConfigName(confType string) string {
-	return fmt.Sprintf("cdap-%s-%s", r.Name, confType)
-}
-
-// templateData carries value for templating
-type templateData struct {
-	Name        string
-	Labels      map[string]string
-	Master      *CDAPMaster
-	Service     *CDAPMasterServiceSpec
-	ServiceType string
-	DataDir     string
-	CConfName   string
-	HConfName   string
 }
 
 // ExpectedResources - returns resources for the CDAP master
@@ -147,108 +163,175 @@ func (s *CDAPMasterSpec) ExpectedResources(rsrc interface{}, rsrclabels map[stri
 	}
 
 	for k, v := range configs {
-		rinfo, err := master.createConfigMapItem(master.getConfigName(k), labels, v)
+		_, err := master.addConfigMapItem(master.getConfigName(k), labels, v, resources)
 		if err != nil {
 			return nil, err
 		}
-		resources.Add(*rinfo)
 	}
 
 	return resources, nil
 }
 
-// ExpectedResources - returns resources for a cdap master service
-func (s *CDAPMasterServiceSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
-	var resources *resource.Bag = new(resource.Bag)
+// ExpectedResources for AppFabric service
+func (s *AppFabricSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
+	return s.getServiceResources(rsrc, rsrclabels, AppFabric)
+}
+
+// ExpectedResources for Logs service
+func (s *LogsSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
+	return s.getStatefulServiceResources(rsrc, rsrclabels, Logs)
+}
+
+// ExpectedResources for Messaging service
+func (s *MessagingSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
+	return s.getStatefulServiceResources(rsrc, rsrclabels, Messaging)
+}
+
+// ExpectedResources for Metadata service
+func (s *MetadataSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
+	return s.getServiceResources(rsrc, rsrclabels, Metadata)
+}
+
+// ExpectedResources for Metrics service
+func (s *MetricsSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
+	return s.getStatefulServiceResources(rsrc, rsrclabels, Metrics)
+}
+
+// ExpectedResources for Preview service
+func (s *PreviewSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
+	return s.getStatefulServiceResources(rsrc, rsrclabels, Preview)
+}
+
+// ExpectedResources for Router service
+func (s *RouterSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
+	return s.getExternalServiceResources(rsrc, rsrclabels, Router, deploymentTemplate)
+}
+
+// ExpectedResources for UserInterface service
+func (s *UserInterfaceSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
+	return s.getExternalServiceResources(rsrc, rsrclabels, UserInterface, uiDeploymentTemplate)
+}
+
+// Struct containing data for templatization
+type templateBaseValue struct {
+	Name               string
+	Labels             map[string]string
+	Master             *CDAPMaster
+	Replicas           *int32
+	ServiceAccountName string
+	ServiceType        ServiceType
+	DataDir            string
+	CConfName          string
+	HConfName          string
+}
+
+// Struct containing data for templatization using CDAPServiceSpec
+type serviceValue struct {
+	templateBaseValue
+	Service *CDAPServiceSpec
+}
+
+// Struct containing data for templatization using CDAPStatefulServiceSpec
+type statefulServiceValue struct {
+	templateBaseValue
+	Service *CDAPStatefulServiceSpec
+}
+
+// Struct containing data for templatization using CDAPExternalServiceSpec
+type externalServiceValue struct {
+	templateBaseValue
+	Service *CDAPExternalServiceSpec
+}
+
+// Returns the config map name for the given configuration type
+func (r *CDAPMaster) getConfigName(confType string) string {
+	return fmt.Sprintf("cdap-%s-%s", r.Name, confType)
+}
+
+// Sets values to the given templateBaseValue based on the resources provided
+func (v *templateBaseValue) setTemplateValue(rsrc interface{}, rsrclabels map[string]string, serviceType ServiceType, serviceLabels map[string]string, serviceAccount string) {
 	master := rsrc.(*CDAPMaster)
-
-	// Get the template name and remove it from the spec
-	template := s.Labels[templateLabel]
-	delete(s.Labels, templateLabel)
-
 	labels := make(component.KVMap)
-	labels.Merge(master.Labels, s.Labels, rsrclabels)
+	labels.Merge(master.Labels, serviceLabels, rsrclabels)
 
 	// Set the cdap.container label. It is for service selector to route correctly
-	name := fmt.Sprintf("cdap-%s-%s", master.Name, s.Name)
+	name := fmt.Sprintf("cdap-%s-%s", master.Name, strings.ToLower(string(serviceType)))
 	labels[containerLabel] = name
 
-	ngdata := templateData{
-		Name:        name,
-		Labels:      labels,
-		Master:      master,
-		Service:     s,
-		ServiceType: rsrclabels[component.LabelComponent],
-		DataDir:     localDataDir,
-		CConfName:   master.getConfigName("cconf"),
-		HConfName:   master.getConfigName("hconf"),
+	ServiceAccountName := master.Spec.ServiceAccountName
+	if serviceAccount != "" {
+		ServiceAccountName = serviceAccount
 	}
 
-	// Generates resources
-	templates := []string{template}
-	if s.ServicePort != nil {
-		templates = append(templates, serviceTemplate)
-	}
+	v.Name = name
+	v.Labels = labels
+	v.Master = master
+	v.ServiceAccountName = ServiceAccountName
+	v.ServiceType = serviceType
+	v.DataDir = localDataDir
+	v.CConfName = master.getConfigName("cconf")
+	v.HConfName = master.getConfigName("hconf")
+}
 
-	for _, tmpl := range templates {
-		rinfo, err := s.createResourceItem(&ngdata, tmpl)
-		if err != nil {
-			return nil, err
-		}
-		resources.Add(*rinfo)
+// Gets the set of resources for the given service represented by the CDAPServiceSpec.
+// It consists of a Deployment for the given serviceType
+func (s *CDAPServiceSpec) getServiceResources(rsrc interface{}, rsrclabels map[string]string, serviceType ServiceType) (*resource.Bag, error) {
+	ngdata := &serviceValue{
+		Service: s,
+	}
+	ngdata.setTemplateValue(rsrc, rsrclabels, serviceType, s.Labels, s.ServiceAccountName)
+	return s.addResourceItem(deploymentTemplate, ngdata, &appsv1.DeploymentList{}, new(resource.Bag))
+}
+
+// Gets the set of resources for the given service represented by the CDAPStatefulServiceSpec
+// It consists of a StatefulSet for the given serviceType
+func (s *CDAPStatefulServiceSpec) getStatefulServiceResources(rsrc interface{}, rsrclabels map[string]string, serviceType ServiceType) (*resource.Bag, error) {
+	ngdata := &statefulServiceValue{
+		Service: s,
+	}
+	ngdata.setTemplateValue(rsrc, rsrclabels, serviceType, s.Labels, s.ServiceAccountName)
+	return s.addResourceItem(statefulSetTemplate, ngdata, &appsv1.StatefulSetList{}, new(resource.Bag))
+}
+
+// Gets the set of resources for the given service represented by the CDAPExternalServiceSpec
+// It consists of a Deployment and a NodePort Service for the given serviceType
+func (s *CDAPExternalServiceSpec) getExternalServiceResources(rsrc interface{}, rsrclabels map[string]string, serviceType ServiceType, template string) (*resource.Bag, error) {
+	ngdata := &externalServiceValue{
+		Service: s,
+	}
+	ngdata.Replicas = s.Replicas
+	ngdata.setTemplateValue(rsrc, rsrclabels, serviceType, s.Labels, s.ServiceAccountName)
+
+	resources, err := s.addResourceItem(template, ngdata, &appsv1.DeploymentList{}, new(resource.Bag))
+	if err != nil {
+		return nil, err
+	}
+	resources, err = s.addResourceItem(serviceTemplate, ngdata, &corev1.ServiceList{}, resources)
+	if err != nil {
+		return nil, err
 	}
 	return resources, nil
 }
 
+// Adds a resource.Item to the given resource.Bag by executing the given template.
+func (s *CDAPServiceSpec) addResourceItem(template string, v interface{}, listType metav1.ListInterface, resources *resource.Bag) (*resource.Bag, error) {
+	rinfo, err := k8s.ItemFromFile(templateDir+template, v, listType)
+	if err != nil {
+		return nil, err
+	}
+	// Set the resource for the first container if the object has container
+	setResources(rinfo.Obj.(*k8s.Object).Obj, s.Resources)
+	resources.Add(*rinfo)
+	return resources, nil
+}
+
+// Creates a int32 pointer for the given value
 func int32Ptr(value int32) *int32 {
 	return &value
 }
 
-// Creates a component.Component representing the given CDAP master service
-func (r *CDAPMaster) serviceComponent(s *CDAPMasterServiceSpec, serviceType ServiceType, maxReplicas int32, hasStorage bool, template string) component.Component {
-	s.Name = strings.ToLower(string(serviceType))
-	if s.ServiceAccountName == "" {
-		s.ServiceAccountName = r.Spec.ServiceAccountName
-	}
-	if s.Replicas == nil {
-		s.Replicas = int32Ptr(1)
-	}
-	if *s.Replicas > maxReplicas {
-		s.Replicas = &maxReplicas
-	}
-	if hasStorage && s.StorageSize == "" {
-		s.StorageSize = "50Gi"
-	}
-	if s.Labels == nil {
-		s.Labels = make(map[string]string)
-	}
-	// Set the template to use via label. It will be removed in the ExpectedResources method
-	s.Labels[templateLabel] = template
-
-	return component.Component{
-		Handle:   s,
-		Name:     string(serviceType),
-		CR:       r,
-		OwnerRef: r.OwnerRef(),
-	}
-}
-
-func getListType(tmpl string) (metav1.ListInterface, error) {
-	switch t := tmpl; t {
-	case deploymentTemplate:
-		return &appsv1.DeploymentList{}, nil
-	case uiDeploymentTemplate:
-		return &appsv1.DeploymentList{}, nil
-	case statefulSetTemplate:
-		return &appsv1.StatefulSetList{}, nil
-	case serviceTemplate:
-		return &corev1.ServiceList{}, nil
-	default:
-		return nil, errors.New("Unsupported template type " + tmpl)
-	}
-}
-
-func (r *CDAPMaster) createConfigMapItem(name string, labels map[string]string, templates []string) (*resource.Item, error) {
+// Adds a resource.Item of ConfigMap type to the given resource.Bag
+func (r *CDAPMaster) addConfigMapItem(name string, labels map[string]string, templates []string, resources *resource.Bag) (*resource.Bag, error) {
 	// Creates the configMap object
 	configMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -259,50 +342,37 @@ func (r *CDAPMaster) createConfigMapItem(name string, labels map[string]string, 
 		Data: make(map[string]string),
 	}
 
-	ngdata := templateData{
+	ngdata := &templateBaseValue{
 		Master: r,
 	}
 
 	// Load template files that goes into config map
 	for _, tmplFile := range templates {
-		content, err := logbackFromFile(tmplFile, &ngdata)
+		content, err := logbackFromFile(tmplFile, ngdata)
 		if err != nil {
 			return nil, err
 		}
 		configMap.Data[tmplFile] = content
 	}
 
-	return &resource.Item{
+	resources.Add(resource.Item{
 		Type:      k8s.Type,
 		Lifecycle: resource.LifecycleManaged,
 		Obj: &k8s.Object{
 			Obj:     configMap.DeepCopyObject().(metav1.Object),
 			ObjList: &corev1.ConfigMapList{},
 		},
-	}, nil
-}
+	})
 
-// Creates a resource.Item based on the given CDAPMasterServiceSpec and template
-func (s *CDAPMasterServiceSpec) createResourceItem(v interface{}, template string) (*resource.Item, error) {
-	listType, err := getListType(template)
-	if err != nil {
-		return nil, err
-	}
-
-	rinfo, err := k8s.ItemFromFile(templateDir+template, v, listType)
-	if err != nil {
-		return nil, err
-	}
-	// Set resource to the first container if needed
-	if s.Resources != nil {
-		setResources(rinfo.Obj.(*k8s.Object).Obj, s.Resources)
-	}
-	return rinfo, err
+	return resources, nil
 }
 
 // Sets resources to the given object. It uses reflection to find and set the
 // field `Spec.Template.Spec.Containers[0].Resources`
 func setResources(obj interface{}, resources *corev1.ResourceRequirements) {
+	if resources == nil {
+		return
+	}
 	value := reflect.ValueOf(obj).Elem()
 
 	for _, fieldName := range []string{"Spec", "Template", "Spec", "Containers"} {

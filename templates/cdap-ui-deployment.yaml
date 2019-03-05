@@ -28,7 +28,11 @@ spec:
       {{range $k,$v := .Labels}}
       {{$k}}: '{{$v}}'
       {{end}}
-  replicas: {{.Service.Replicas}}
+{{if .Replicas}}
+  replicas: {{.Replicas}}
+{{else}}
+  replicas: 1
+{{end}}
   template:
     metadata:
       labels:
@@ -36,8 +40,8 @@ spec:
         {{$k}}: '{{$v}}'
         {{end}}
     spec:
-    {{if .Service.ServiceAccountName}}
-      serviceAccountName: {{.Service.ServiceAccountName}}
+    {{if .ServiceAccountName}}
+      serviceAccountName: {{.ServiceAccountName}}
     {{end}}
     {{if .Service.NodeSelector}}
       nodeSelector:

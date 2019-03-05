@@ -40,42 +40,94 @@ type CDAPMasterSpec struct {
 	// A set of logger name to log level settings
 	LogLevels map[string]string `json:"logLevels,omitempty"`
 	// Specification for the CDAP app-fabric service
-	AppFabric CDAPMasterServiceSpec `json:"appFabric,omitempty"`
+	AppFabric AppFabricSpec `json:"appFabric,omitempty"`
 	// Specification for the CDAP logging service
-	Logs CDAPMasterServiceSpec `json:"logs,omitempty"`
+	Logs LogsSpec `json:"logs,omitempty"`
 	// Specification for the CDAP messaging service
-	Messaging CDAPMasterServiceSpec `json:"messaging,omitempty"`
+	Messaging MessagingSpec `json:"messaging,omitempty"`
 	// Specification for the CDAP metadata service
-	Metadata CDAPMasterServiceSpec `json:"metadata,omitempty"`
+	Metadata MetadataSpec `json:"metadata,omitempty"`
 	// Specification for the CDAP metrics service
-	Metrics CDAPMasterServiceSpec `json:"metrics,omitempty"`
+	Metrics MetricsSpec `json:"metrics,omitempty"`
 	// Specification for the CDAP preview service
-	Preview CDAPMasterServiceSpec `json:"preview,omitempty"`
+	Preview PreviewSpec `json:"preview,omitempty"`
 	// Specification for the CDAP router service
-	Router CDAPMasterServiceSpec `json:"router,omitempty"`
+	Router RouterSpec `json:"router,omitempty"`
 	// Specification for the CDAP UI service
-	UserInterface CDAPMasterServiceSpec `json:"userInterface,omitempty"`
+	UserInterface UserInterfaceSpec `json:"userInterface,omitempty"`
 }
 
-// CDAPMasterServiceSpec defines specification for one CDAP master service
-type CDAPMasterServiceSpec struct {
+// CDAPServiceSpec defines the base set of specifications applicable to all master services
+type CDAPServiceSpec struct {
 	// Metadata for the service.
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	// Overrides the service account for the service pods
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
-	// Number of replicas for the service.
-	// The value will be ignored for services that doesn't support more than one replica
-	Replicas *int32 `json:"replicas,omitempty"`
 	// Compute Resources required by the service.
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// A selector which must be true for the pod to fit on a node.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+}
+
+// CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance
+type CDAPScalableServiceSpec struct {
+	CDAPServiceSpec `json:",inline"`
+	// Number of replicas for the service.
+	Replicas *int32 `json:"replicas,omitempty"`
+}
+
+// CDAPExternalServiceSpec defines the base specification for master services that expose to outside of the cluster
+type CDAPExternalServiceSpec struct {
+	CDAPScalableServiceSpec `json:",inline"`
 	// The port number for the service.
-	// The value will be ignored for services that doesn't exposed to outside of the cluster
 	ServicePort *int32 `json:"servicePort,omitempty"`
+}
+
+// CDAPStatefulServiceSpec defines the base specification for stateful master services
+type CDAPStatefulServiceSpec struct {
+	CDAPServiceSpec `json:",inline"`
 	// Specification for the persistent volumn size used by the service.
-	// The spec will be ignored for services that doesn't use persistent volume
 	StorageSize string `json:"storageSize,omitempty"`
+}
+
+// AppFabricSpec defines the specification for the AppFabric service
+type AppFabricSpec struct {
+	CDAPServiceSpec `json:",inline"`
+}
+
+// LogsSpec defines the specification for the Logs service
+type LogsSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+// MessagingSpec defines the specification for the TMS service
+type MessagingSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+// MetadataSpec defines the specification for the Metadata service
+type MetadataSpec struct {
+	CDAPServiceSpec `json:",inline"`
+}
+
+// MetricsSpec defines the specification for the Metrics service
+type MetricsSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+// PreviewSpec defines the specification for the Preview service
+type PreviewSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+// RouterSpec defines the specification for the Router service
+type RouterSpec struct {
+	CDAPExternalServiceSpec `json:",inline"`
+}
+
+// UserInterfaceSpec defines the specification for the UI service
+type UserInterfaceSpec struct {
+	CDAPExternalServiceSpec `json:",inline"`
 }
 
 // CDAPMasterStatus defines the observed state of CDAPMaster

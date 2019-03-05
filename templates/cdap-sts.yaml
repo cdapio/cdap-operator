@@ -29,7 +29,11 @@ spec:
       {{$k}}: {{$v}}
       {{end}}
   serviceName: {{.Name}}
-  replicas: {{.Service.Replicas}}
+{{if .Replicas}}
+  replicas: {{.Replicas}}
+{{else}}
+  replicas: 1
+{{end}}
   template:
     metadata:
       labels:
@@ -37,8 +41,8 @@ spec:
         {{$k}}: {{$v}}
         {{end}}
     spec:
-    {{if .Service.ServiceAccountName}}
-      serviceAccountName: {{.Service.ServiceAccountName}}
+    {{if .ServiceAccountName}}
+      serviceAccountName: {{.ServiceAccountName}}
     {{end}}
     {{if .Service.NodeSelector}}
       nodeSelector:
@@ -124,4 +128,8 @@ spec:
       accessModes: ["ReadWriteOnce"]
       resources:
         requests:
+        {{if .Service.StorageSize}}
           storage: {{.Service.StorageSize}}
+        {{else}}
+          storage: "50Gi"
+        {{end}}

@@ -38,26 +38,11 @@ spec:
                   description: A selector which must be true for the pod to fit on
                     a node.
                   type: object
-                replicas:
-                  description: Number of replicas for the service. The value will
-                    be ignored for services that doesn't support more than one replica
-                  format: int32
-                  type: integer
                 resources:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
                   description: Overrides the service account for the service pods
-                  type: string
-                servicePort:
-                  description: The port number for the service. The value will be
-                    ignored for services that doesn't exposed to outside of the cluster
-                  format: int32
-                  type: integer
-                storageSize:
-                  description: Specification for the persistent volumn size used by
-                    the service. The spec will be ignored for services that doesn't
-                    use persistent volume
                   type: string
               type: object
             config:
@@ -85,26 +70,15 @@ spec:
                   description: A selector which must be true for the pod to fit on
                     a node.
                   type: object
-                replicas:
-                  description: Number of replicas for the service. The value will
-                    be ignored for services that doesn't support more than one replica
-                  format: int32
-                  type: integer
                 resources:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
                   description: Overrides the service account for the service pods
                   type: string
-                servicePort:
-                  description: The port number for the service. The value will be
-                    ignored for services that doesn't exposed to outside of the cluster
-                  format: int32
-                  type: integer
                 storageSize:
                   description: Specification for the persistent volumn size used by
-                    the service. The spec will be ignored for services that doesn't
-                    use persistent volume
+                    the service.
                   type: string
               type: object
             messaging:
@@ -117,26 +91,15 @@ spec:
                   description: A selector which must be true for the pod to fit on
                     a node.
                   type: object
-                replicas:
-                  description: Number of replicas for the service. The value will
-                    be ignored for services that doesn't support more than one replica
-                  format: int32
-                  type: integer
                 resources:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
                   description: Overrides the service account for the service pods
                   type: string
-                servicePort:
-                  description: The port number for the service. The value will be
-                    ignored for services that doesn't exposed to outside of the cluster
-                  format: int32
-                  type: integer
                 storageSize:
                   description: Specification for the persistent volumn size used by
-                    the service. The spec will be ignored for services that doesn't
-                    use persistent volume
+                    the service.
                   type: string
               type: object
             metadata:
@@ -149,26 +112,11 @@ spec:
                   description: A selector which must be true for the pod to fit on
                     a node.
                   type: object
-                replicas:
-                  description: Number of replicas for the service. The value will
-                    be ignored for services that doesn't support more than one replica
-                  format: int32
-                  type: integer
                 resources:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
                   description: Overrides the service account for the service pods
-                  type: string
-                servicePort:
-                  description: The port number for the service. The value will be
-                    ignored for services that doesn't exposed to outside of the cluster
-                  format: int32
-                  type: integer
-                storageSize:
-                  description: Specification for the persistent volumn size used by
-                    the service. The spec will be ignored for services that doesn't
-                    use persistent volume
                   type: string
               type: object
             metrics:
@@ -181,26 +129,15 @@ spec:
                   description: A selector which must be true for the pod to fit on
                     a node.
                   type: object
-                replicas:
-                  description: Number of replicas for the service. The value will
-                    be ignored for services that doesn't support more than one replica
-                  format: int32
-                  type: integer
                 resources:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
                   description: Overrides the service account for the service pods
                   type: string
-                servicePort:
-                  description: The port number for the service. The value will be
-                    ignored for services that doesn't exposed to outside of the cluster
-                  format: int32
-                  type: integer
                 storageSize:
                   description: Specification for the persistent volumn size used by
-                    the service. The spec will be ignored for services that doesn't
-                    use persistent volume
+                    the service.
                   type: string
               type: object
             preview:
@@ -213,26 +150,15 @@ spec:
                   description: A selector which must be true for the pod to fit on
                     a node.
                   type: object
-                replicas:
-                  description: Number of replicas for the service. The value will
-                    be ignored for services that doesn't support more than one replica
-                  format: int32
-                  type: integer
                 resources:
                   description: Compute Resources required by the service.
                   type: object
                 serviceAccountName:
                   description: Overrides the service account for the service pods
                   type: string
-                servicePort:
-                  description: The port number for the service. The value will be
-                    ignored for services that doesn't exposed to outside of the cluster
-                  format: int32
-                  type: integer
                 storageSize:
                   description: Specification for the persistent volumn size used by
-                    the service. The spec will be ignored for services that doesn't
-                    use persistent volume
+                    the service.
                   type: string
               type: object
             router:
@@ -246,8 +172,7 @@ spec:
                     a node.
                   type: object
                 replicas:
-                  description: Number of replicas for the service. The value will
-                    be ignored for services that doesn't support more than one replica
+                  description: Number of replicas for the service.
                   format: int32
                   type: integer
                 resources:
@@ -257,15 +182,9 @@ spec:
                   description: Overrides the service account for the service pods
                   type: string
                 servicePort:
-                  description: The port number for the service. The value will be
-                    ignored for services that doesn't exposed to outside of the cluster
+                  description: The port number for the service.
                   format: int32
                   type: integer
-                storageSize:
-                  description: Specification for the persistent volumn size used by
-                    the service. The spec will be ignored for services that doesn't
-                    use persistent volume
-                  type: string
               type: object
             securitySecret:
               description: Secret that contains security related configurations for
@@ -285,8 +204,7 @@ spec:
                     a node.
                   type: object
                 replicas:
-                  description: Number of replicas for the service. The value will
-                    be ignored for services that doesn't support more than one replica
+                  description: Number of replicas for the service.
                   format: int32
                   type: integer
                 resources:
@@ -296,15 +214,9 @@ spec:
                   description: Overrides the service account for the service pods
                   type: string
                 servicePort:
-                  description: The port number for the service. The value will be
-                    ignored for services that doesn't exposed to outside of the cluster
+                  description: The port number for the service.
                   format: int32
                   type: integer
-                storageSize:
-                  description: Specification for the persistent volumn size used by
-                    the service. The spec will be ignored for services that doesn't
-                    use persistent volume
-                  type: string
               type: object
             userInterfaceImage:
               description: Docker image name for the CDAP UI.
