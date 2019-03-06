@@ -27,13 +27,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/kubesdk/pkg/component"
 	"sigs.k8s.io/kubesdk/pkg/resource"
 	"sigs.k8s.io/kubesdk/pkg/resource/manager/k8s"
 )
-
-var logger = logf.Log.WithName("cdap.controller")
 
 // ApplyDefaults will default missing values from the CDAPMaster
 func (r *CDAPMaster) ApplyDefaults() {
