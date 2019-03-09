@@ -219,6 +219,46 @@ func (s *UserInterfaceSpec) ExpectedResources(rsrc interface{}, rsrclabels map[s
 	return s.getExternalServiceResources(rsrc, rsrclabels, UserInterface, uiDeploymentTemplate)
 }
 
+// Mutate for Router service. This is needed to fix the nodePort
+func (s *RouterSpec) Mutate(rsrc interface{}, rsrclabels map[string]string, expected, dependent, observed *resource.Bag) (*resource.Bag, error) {
+	s.setNodePort(expected, observed)
+	return expected, nil
+}
+
+// Mutate for UserInterface service. This is needed to fix the nodePort
+func (s *UserInterfaceSpec) Mutate(rsrc interface{}, rsrclabels map[string]string, expected, dependent, observed *resource.Bag) (*resource.Bag, error) {
+	s.setNodePort(expected, observed)
+	return expected, nil
+}
+
+func (s *CDAPExternalServiceSpec) setNodePort(expected, observed *resource.Bag) {
+	// Get the service from the expected list.
+	var expectedService *corev1.Service
+	for _, item := range expected.ByType(k8s.Type) {
+		if service, ok := item.Obj.(*k8s.Object).Obj.(*corev1.Service); ok {
+			expectedService = service
+			break
+		}
+	}
+	// Find the service being observed. Extract nodePort from the service spec and set it to expected
+	for _, item := range observed.ByType(k8s.Type) {
+		if observedService, ok := item.Obj.(*k8s.Object).Obj.(*corev1.Service); ok {
+			var nodePorts = make(map[string]int32)
+			for _, p := range observedService.Spec.Ports {
+				nodePorts[p.Name] = p.NodePort
+			}
+
+			// Assigning existing node ports to the expected service
+			for i := range expectedService.Spec.Ports {
+				p := &expectedService.Spec.Ports[i]
+				if nodePort, ok := nodePorts[p.Name]; ok {
+					p.NodePort = nodePort
+				}
+			}
+		}
+	}
+}
+
 // Struct containing data for templatization
 type templateBaseValue struct {
 	Name               string
