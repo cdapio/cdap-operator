@@ -165,8 +165,8 @@ func (s *CDAPMasterSpec) ExpectedResources(rsrc interface{}, rsrclabels map[stri
 
 	// Add the cdap and hadoop ConfigMap
 	configs := map[string][]string{
-		"cconf": []string{"cdap-site.xml", "logback.xml", "logback-container.xml"},
-		"hconf": []string{"core-site.xml"},
+		"cconf": {"cdap-site.xml", "logback.xml", "logback-container.xml"},
+		"hconf": {"core-site.xml"},
 	}
 
 	for k, v := range configs {
@@ -231,6 +231,7 @@ func (s *UserInterfaceSpec) Mutate(rsrc interface{}, rsrclabels map[string]strin
 	return expected, nil
 }
 
+// Set the nodePort in the expected service based on the observed service
 func (s *CDAPExternalServiceSpec) setNodePort(expected, observed *resource.Bag) {
 	// Get the service from the expected list.
 	var expectedService *corev1.Service
@@ -270,6 +271,7 @@ type templateBaseValue struct {
 	DataDir            string
 	CConfName          string
 	HConfName          string
+	Env                map[string]string
 }
 
 // Struct containing data for templatization using CDAPServiceSpec
@@ -296,7 +298,7 @@ func (r *CDAPMaster) getConfigName(confType string) string {
 }
 
 // Sets values to the given templateBaseValue based on the resources provided
-func (v *templateBaseValue) setTemplateValue(rsrc interface{}, rsrclabels map[string]string, serviceType ServiceType, serviceLabels map[string]string, serviceAccount string) {
+func (v *templateBaseValue) setTemplateValue(rsrc interface{}, rsrclabels map[string]string, serviceType ServiceType, serviceLabels map[string]string, serviceAccount string, resources *corev1.ResourceRequirements) {
 	master := rsrc.(*CDAPMaster)
 	labels := make(component.KVMap)
 	labels.Merge(master.Labels, serviceLabels, rsrclabels)
@@ -308,6 +310,26 @@ func (v *templateBaseValue) setTemplateValue(rsrc interface{}, rsrclabels map[st
 	ServiceAccountName := master.Spec.ServiceAccountName
 	if serviceAccount != "" {
 		ServiceAccountName = serviceAccount
+	}
+
+	// Set the JAVA_HEAPMAX environment
+	if resources != nil {
+		memory := resources.Requests.Memory().Value()
+		if resources.Limits.Memory().Value() > memory {
+			memory = resources.Limits.Memory().Value()
+		}
+		// If resources memory is provided, set the Xmx.
+		// The Xmx value is subtracted with 768M, with min heap ratio of 0.6
+		// These values are from cdap default
+		if memory > 0 {
+			xmx := memory - javaReservedNonHeap
+			minHeapSize := int64(float64(memory) * javaMinHeapRatio)
+			if xmx < 0 || xmx < minHeapSize {
+				xmx = minHeapSize
+			}
+			v.Env = make(map[string]string)
+			v.Env["JAVA_HEAPMAX"] = fmt.Sprintf("-Xmx%v", xmx)
+		}
 	}
 
 	v.Name = name
@@ -326,7 +348,7 @@ func (s *CDAPServiceSpec) getServiceResources(rsrc interface{}, rsrclabels map[s
 	ngdata := &serviceValue{
 		Service: s,
 	}
-	ngdata.setTemplateValue(rsrc, rsrclabels, serviceType, s.Labels, s.ServiceAccountName)
+	ngdata.setTemplateValue(rsrc, rsrclabels, serviceType, s.Labels, s.ServiceAccountName, s.Resources)
 	return s.addResourceItem(deploymentTemplate, ngdata, &appsv1.DeploymentList{}, new(resource.Bag))
 }
 
@@ -336,7 +358,7 @@ func (s *CDAPStatefulServiceSpec) getStatefulServiceResources(rsrc interface{}, 
 	ngdata := &statefulServiceValue{
 		Service: s,
 	}
-	ngdata.setTemplateValue(rsrc, rsrclabels, serviceType, s.Labels, s.ServiceAccountName)
+	ngdata.setTemplateValue(rsrc, rsrclabels, serviceType, s.Labels, s.ServiceAccountName, s.Resources)
 	return s.addResourceItem(statefulSetTemplate, ngdata, &appsv1.StatefulSetList{}, new(resource.Bag))
 }
 
@@ -347,7 +369,7 @@ func (s *CDAPExternalServiceSpec) getExternalServiceResources(rsrc interface{}, 
 		Service: s,
 	}
 	ngdata.Replicas = s.Replicas
-	ngdata.setTemplateValue(rsrc, rsrclabels, serviceType, s.Labels, s.ServiceAccountName)
+	ngdata.setTemplateValue(rsrc, rsrclabels, serviceType, s.Labels, s.ServiceAccountName, s.Resources)
 
 	resources, err := s.addResourceItem(template, ngdata, &appsv1.DeploymentList{}, new(resource.Bag))
 	if err != nil {

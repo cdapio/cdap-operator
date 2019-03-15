@@ -66,4 +66,8 @@ const (
 	defaultUserInterfaceImage = "gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.0.0-SNAPSHOT"
 	defaultRouterPort         = 11015
 	defaultUserInterfacePort  = 11011
+
+	// Heap memory related constants
+	javaMinHeapRatio    = float64(0.6)
+	javaReservedNonHeap = int64(768 * 1024 * 1024)
 )
