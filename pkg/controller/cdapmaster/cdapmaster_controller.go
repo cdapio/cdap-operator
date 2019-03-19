@@ -379,7 +379,7 @@ func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 	return resources, nil
 }
 
-// Observables for messaging
+// Observables for base
 func (b *Base) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
 	return []reconciler.Observable{}
 }
@@ -401,7 +401,7 @@ func (s *AppFabric) Objects(rsrc interface{}, rsrclabels map[string]string, obse
 	return getServiceResources(&r.Spec.AppFabric.CDAPServiceSpec, rsrc, rsrclabels, alpha1.ServiceAppFabric)
 }
 
-// Observables for messaging
+// Observables for appfabric
 func (s *AppFabric) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
 	return []reconciler.Observable{}
 }
@@ -412,7 +412,7 @@ func (s *Logs) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 	return getStatefulServiceResources(&r.Spec.Logs.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServiceLogs)
 }
 
-// Observables for messaging
+// Observables for logs
 func (s *Logs) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
 	return []reconciler.Observable{}
 }
@@ -423,7 +423,7 @@ func (s *Metadata) Objects(rsrc interface{}, rsrclabels map[string]string, obser
 	return getServiceResources(&r.Spec.Metadata.CDAPServiceSpec, rsrc, rsrclabels, alpha1.ServiceMetadata)
 }
 
-// Observables for messaging
+// Observables for metadata
 func (s *Metadata) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
 	return []reconciler.Observable{}
 }
@@ -434,7 +434,7 @@ func (s *Metrics) Objects(rsrc interface{}, rsrclabels map[string]string, observ
 	return getStatefulServiceResources(&r.Spec.Metrics.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServiceMetrics)
 }
 
-// Observables for messaging
+// Observables for metrics
 func (s *Metrics) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
 	return []reconciler.Observable{}
 }
@@ -445,7 +445,7 @@ func (s *Preview) Objects(rsrc interface{}, rsrclabels map[string]string, observ
 	return getStatefulServiceResources(&r.Spec.Preview.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServicePreview)
 }
 
-// Observables for messaging
+// Observables for preview
 func (s *Preview) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
 	return []reconciler.Observable{}
 }
@@ -458,7 +458,7 @@ func (s *Router) Objects(rsrc interface{}, rsrclabels map[string]string, observe
 	return expected, err
 }
 
-// Observables for messaging
+// Observables for router
 func (s *Router) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
 	return []reconciler.Observable{}
 }
@@ -471,7 +471,7 @@ func (s *UserInterface) Objects(rsrc interface{}, rsrclabels map[string]string, 
 	return expected, err
 }
 
-// Observables for messaging
+// Observables for userinterface
 func (s *UserInterface) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
 	return []reconciler.Observable{}
 }
