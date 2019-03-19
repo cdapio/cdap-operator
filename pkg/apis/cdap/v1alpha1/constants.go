@@ -20,29 +20,29 @@ package v1alpha1
 type ServiceType string
 
 const (
-	// AppFabric defines the service type for app-fabric
-	AppFabric ServiceType = "AppFabric"
+	// ServiceAppFabric defines the service type for app-fabric
+	ServiceAppFabric ServiceType = "AppFabric"
 
-	// Logs defines the service type for log processing and serving service
-	Logs ServiceType = "Logs"
+	// ServiceLogs defines the service type for log processing and serving service
+	ServiceLogs ServiceType = "Logs"
 
-	// Messaging defines the service type for TMS
-	Messaging ServiceType = "Messaging"
+	// ServiceMessaging defines the service type for TMS
+	ServiceMessaging ServiceType = "Messaging"
 
-	// Metadata defines the service type for metadata service
-	Metadata ServiceType = "Metadata"
+	// ServiceMetadata defines the service type for metadata service
+	ServiceMetadata ServiceType = "Metadata"
 
-	// Metrics defines the service type for metrics process and serving
-	Metrics ServiceType = "Metrics"
+	// ServiceMetrics defines the service type for metrics process and serving
+	ServiceMetrics ServiceType = "Metrics"
 
-	// Preview defines the service type for preview service
-	Preview ServiceType = "Preview"
+	// ServicePreview defines the service type for preview service
+	ServicePreview ServiceType = "Preview"
 
-	// Router defines the service type for the router
-	Router ServiceType = "Router"
+	// ServiceRouter defines the service type for the router
+	ServiceRouter ServiceType = "Router"
 
-	// UserInterface defines the service type for user interface
-	UserInterface ServiceType = "UserInterface"
+	// ServiceUserInterface defines the service type for user interface
+	ServiceUserInterface ServiceType = "UserInterface"
 )
 
 const (
@@ -54,20 +54,14 @@ const (
 	confUserInterfaceBindPort = "dashboard.bind.port"
 
 	// Value for the local data directory
-	localDataDir              = "/data"
-	instanceLabel             = "cdap.instance"
-	containerLabel            = "cdap.container"
-	templateDir               = "templates/"
-	deploymentTemplate        = "cdap-deployment.yaml"
-	uiDeploymentTemplate      = "cdap-ui-deployment.yaml"
-	statefulSetTemplate       = "cdap-sts.yaml"
-	serviceTemplate           = "cdap-service.yaml"
 	defaultImage              = "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.0-SNAPSHOT"
 	defaultUserInterfaceImage = "gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.0.0-SNAPSHOT"
 	defaultRouterPort         = 11015
 	defaultUserInterfacePort  = 11011
+)
 
-	// Heap memory related constants
-	javaMinHeapRatio    = float64(0.6)
-	javaReservedNonHeap = int64(768 * 1024 * 1024)
+// Exported constants
+const (
+	LocalDataDir  = "/data"
+	InstanceLabel = "cdap.instance"
 )
