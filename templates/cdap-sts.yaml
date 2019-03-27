@@ -82,13 +82,7 @@ spec:
         {{if .Master.Spec.ImagePullPolicy}}
           imagePullPolicy: {{.Master.Spec.ImagePullPolicy}}
         {{end}}
-        {{if .Env}}
-          env:
-            {{range $k,$v := .Env}}
-            - name: {{$k}}
-              value: '{{$v}}'
-            {{end}}
-        {{end}}
+          env: []
           resources: {}
           volumeMounts:
             - name: podinfo
