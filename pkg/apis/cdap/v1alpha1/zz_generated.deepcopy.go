@@ -218,6 +218,13 @@ func (in *CDAPServiceSpec) DeepCopyInto(out *CDAPServiceSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.Env != nil {
+		in, out := &in.Env, &out.Env
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 

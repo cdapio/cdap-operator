@@ -271,7 +271,7 @@ type templateBaseValue struct {
 	DataDir            string
 	CConfName          string
 	HConfName          string
-	Env                map[string]string
+	JavaMaxHeap        *int64
 }
 
 // Struct containing data for templatization using CDAPServiceSpec
@@ -327,8 +327,7 @@ func (v *templateBaseValue) setTemplateValue(rsrc interface{}, rsrclabels map[st
 			if xmx < 0 || xmx < minHeapSize {
 				xmx = minHeapSize
 			}
-			v.Env = make(map[string]string)
-			v.Env["JAVA_HEAPMAX"] = fmt.Sprintf("-Xmx%v", xmx)
+			v.JavaMaxHeap = &xmx
 		}
 	}
 
@@ -383,13 +382,15 @@ func (s *CDAPExternalServiceSpec) getExternalServiceResources(rsrc interface{}, 
 }
 
 // Adds a resource.Item to the given resource.Bag by executing the given template.
-func (s *CDAPServiceSpec) addResourceItem(template string, v interface{}, listType metav1.ListInterface, resources *resource.Bag) (*resource.Bag, error) {
-	rinfo, err := k8s.ItemFromFile(templateDir+template, v, listType)
+func (s *CDAPServiceSpec) addResourceItem(template string, ngdata interface{}, listType metav1.ListInterface, resources *resource.Bag) (*resource.Bag, error) {
+	rinfo, err := k8s.ItemFromFile(templateDir+template, ngdata, listType)
 	if err != nil {
 		return nil, err
 	}
 	// Set the resource for the first container if the object has container
 	setResources(rinfo.Obj.(*k8s.Object).Obj, s.Resources)
+	// Set the environment for the first container if the object has container
+	setEnv(rinfo.Obj.(*k8s.Object).Obj, ngdata, s.Env)
 	resources.Add(*rinfo)
 	return resources, nil
 }
@@ -452,6 +453,37 @@ func setResources(obj interface{}, resources *corev1.ResourceRequirements) {
 	}
 	resourcesValue := value.Index(0).FieldByName("Resources")
 	resourcesValue.Set(reflect.ValueOf(*resources))
+}
+
+// Set the environment for the first container object. It uses reflection to find and set the field
+// `Spec.Template.Spec.Containers[0].Env`
+func setEnv(obj interface{}, ngdata interface{}, env []corev1.EnvVar) {
+	if len(env) == 0 {
+		return
+	}
+
+	value := reflect.ValueOf(obj).Elem()
+
+	for _, fieldName := range []string{"Spec", "Template", "Spec", "Containers"} {
+		value = value.FieldByName(fieldName)
+		if !value.IsValid() {
+			return
+		}
+	}
+	envValue := value.Index(0).FieldByName("Env")
+	// Add all environment variables
+	envSlice := reflect.AppendSlice(envValue, reflect.ValueOf(env))
+
+	// Add the JAVA_HEAPMAX env
+	maxHeapValue := reflect.ValueOf(ngdata).Elem().FieldByName("JavaMaxHeap")
+	if maxHeapValue.IsValid() && !maxHeapValue.IsNil() {
+		envSlice = reflect.Append(envSlice, reflect.ValueOf(corev1.EnvVar{
+			Name:  "JAVA_HEAPMAX",
+			Value: fmt.Sprintf("-Xmx%v", maxHeapValue.Elem().Int()),
+		}))
+	}
+
+	envValue.Set(envSlice)
 }
 
 // itemFromReader reads the logback xml with template substitution
