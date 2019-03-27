@@ -68,6 +68,8 @@ type CDAPServiceSpec struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// A selector which must be true for the pod to fit on a node.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// A list of environment variables for the master service container
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance
