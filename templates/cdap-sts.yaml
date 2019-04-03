@@ -54,7 +54,7 @@ spec:
       initContainers:
         - image: {{.Master.Spec.Image}}
           name: create-storage
-          args: ["co.cask.cdap.master.environment.k8s.StorageMain"]
+          args: ["io.cdap.cdap.master.environment.k8s.StorageMain"]
         {{if .Master.Spec.ImagePullPolicy}}
           imagePullPolicy: {{.Master.Spec.ImagePullPolicy}}
         {{end}}
@@ -77,7 +77,7 @@ spec:
           {{end}}
       containers:
         - image: {{.Master.Spec.Image}}
-          args: ["co.cask.cdap.master.environment.k8s.{{.ServiceType}}ServiceMain", "--env=k8s"]
+          args: ["io.cdap.cdap.master.environment.k8s.{{.ServiceType}}ServiceMain", "--env=k8s"]
           name: {{.Name}}
         {{if .Master.Spec.ImagePullPolicy}}
           imagePullPolicy: {{.Master.Spec.ImagePullPolicy}}
