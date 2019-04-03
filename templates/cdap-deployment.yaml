@@ -52,7 +52,7 @@ spec:
       terminationGracePeriodSeconds: 120
       containers:
         - image: {{.Master.Spec.Image}}
-          args: ["co.cask.cdap.master.environment.k8s.{{.ServiceType}}ServiceMain", "--env=k8s"]
+          args: ["io.cdap.cdap.master.environment.k8s.{{.ServiceType}}ServiceMain", "--env=k8s"]
           name: {{.Name}}
         {{if .Master.Spec.ImagePullPolicy}}
           imagePullPolicy: {{.Master.Spec.ImagePullPolicy}}
