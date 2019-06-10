@@ -30,7 +30,6 @@ spec:
       - command:
         - /manager
         image: <IMAGE_URL>
-        imagePullPolicy: Always
         name: manager
         env:
           - name: POD_NAMESPACE
