@@ -51,7 +51,9 @@ spec:
     {{end}}
       containers:
         - image: {{.Master.Spec.UserInterfaceImage}}
-          args: ["start"]
+          workingDir: "/opt/cdap/ui"
+          command: ["bin/node"]
+          args: ["index.js", "start"]
           name: {{.Name}}
         {{if .Master.Spec.ImagePullPolicy}}
           imagePullPolicy: {{.Master.Spec.ImagePullPolicy}}
