@@ -62,8 +62,7 @@ const (
 	uiDeploymentTemplate      = "cdap-ui-deployment.yaml"
 	statefulSetTemplate       = "cdap-sts.yaml"
 	serviceTemplate           = "cdap-service.yaml"
-	defaultImage              = "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.0-SNAPSHOT"
-	defaultUserInterfaceImage = "gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.0.0-SNAPSHOT"
+	defaultImage              = "gcr.io/cdapio/cdap:latest"
 	defaultRouterPort         = 11015
 	defaultUserInterfacePort  = 11011
 
