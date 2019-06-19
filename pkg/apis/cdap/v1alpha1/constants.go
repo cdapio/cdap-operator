@@ -54,17 +54,17 @@ const (
 	confUserInterfaceBindPort = "dashboard.bind.port"
 
 	// Value for the local data directory
-	localDataDir              = "/data"
-	instanceLabel             = "cdap.instance"
-	containerLabel            = "cdap.container"
-	templateDir               = "templates/"
-	deploymentTemplate        = "cdap-deployment.yaml"
-	uiDeploymentTemplate      = "cdap-ui-deployment.yaml"
-	statefulSetTemplate       = "cdap-sts.yaml"
-	serviceTemplate           = "cdap-service.yaml"
-	defaultImage              = "gcr.io/cdapio/cdap:latest"
-	defaultRouterPort         = 11015
-	defaultUserInterfacePort  = 11011
+	localDataDir             = "/data"
+	instanceLabel            = "cdap.instance"
+	containerLabel           = "cdap.container"
+	templateDir              = "templates/"
+	deploymentTemplate       = "cdap-deployment.yaml"
+	uiDeploymentTemplate     = "cdap-ui-deployment.yaml"
+	statefulSetTemplate      = "cdap-sts.yaml"
+	serviceTemplate          = "cdap-service.yaml"
+	defaultImage             = "gcr.io/cdapio/cdap:latest"
+	defaultRouterPort        = 11015
+	defaultUserInterfacePort = 11011
 
 	// Heap memory related constants
 	javaMinHeapRatio    = float64(0.6)
