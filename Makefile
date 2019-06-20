@@ -54,3 +54,7 @@ docker-build: generate fmt vet manifests
 # Push the docker image
 docker-push:
 	docker push ${IMG}
+
+# Run against the configured Kubernetes cluster in ~/.kube/config
+debug: generate fmt vet
+	dlv debug cmd/manager/main.go

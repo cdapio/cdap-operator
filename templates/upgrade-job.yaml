@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pre-upgrade
+  namespace: default
+{{if .Labels}}
+  labels:
+    {{range $k,$v := .Labels}}
+    {{$k}}: '{{$v}}'
+    {{end}}
+{{end}}
+spec:
+  template:
+    metadata:
+    {{if .Labels}}
+      labels:
+        {{range $k,$v := .Labels}}
+        {{$k}}: '{{$v}}'
+        {{end}}
+    {{end}}
+    spec:
+      containers:
+        - name: pre-upgrade
+          image: {{.Jerb.Image}}
+      restartPolicy: Never
+  backoffLimit: 4

@@ -3,48 +3,49 @@ kind: CDAPMaster
 metadata:
   labels:
     cdap.version: "6.0.0"
-  name: master-1
+  name: owooo
 spec:
-  image: gcr.io/cloud-data-fusion-images/cloud-data-fusion:latest
-  userInterfaceImage: gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:latest
+  image: gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.1.0
+  userInterfaceImage: gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.0.1.0
+  upgradeImage: gcr.io/jay-test-dev/uwuuso:latest
   appFabric:
     resources:
       requests:
         memory: "3Gi"
-        cpu: "1000m"
+        cpu: "2000m"
   logs:
     resources:
       requests:
-        memory: "2Gi"
-        cpu: "500m"
-    storageSize: "100Gi"
+        memory: "2500Mi"
+        cpu: "2000m"
+    storageSize: "125Gi"
   messaging:
     resources:
       requests:
-        memory: "1500Mi"
-        cpu: "500m"
-    storageSize: "60Gi"
+        memory: "2500Mi"
+        cpu: "2000m"
+    storageSize: "125Gi"
   metadata:
     resources:
       requests:
-        memory: "1500Mi"
-        cpu: "500m"
+        memory: "2500Mi"
+        cpu: "1500m"
   metrics:
     resources:
       requests:
-        memory: "2Gi"
-        cpu: "500m"
-    storageSize: "100Gi"
+        memory: "2500Mi"
+        cpu: "1500m"
+    storageSize: "125Gi"
   preview:
     resources:
       requests:
-        memory: "2Gi"
-        cpu: "500m"
-    storageSize: "100Gi"
+        memory: "2500Mi"
+        cpu: "1500m"
+    storageSize: "125Gi"
   userInterface:
-    replicas: 2
+    replicas: 1
   router:
-    replicas: 2
+    replicas: 1
   securitySecret: cdap-security
   locationURI: gs://somebucket
   config:

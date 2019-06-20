@@ -258,6 +258,7 @@ func (rm *RsrcManager) ObservablesFromObjects(bag *resource.Bag, labels map[stri
 						Labels:  labels,
 					},
 				}
+				//fmt.Println("objlist: ", obj.ObjList)
 				observables = append(observables, observable)
 			}
 		} else {

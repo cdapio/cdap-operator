@@ -24,6 +24,7 @@ import (
 	"text/template"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -175,7 +176,6 @@ func (s *CDAPMasterSpec) ExpectedResources(rsrc interface{}, rsrclabels map[stri
 			return nil, err
 		}
 	}
-
 	return resources, nil
 }
 
@@ -191,7 +191,17 @@ func (s *LogsSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]str
 
 // ExpectedResources for Messaging service
 func (s *MessagingSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
-	return s.getStatefulServiceResources(rsrc, rsrclabels, Messaging)
+	resources, err := s.getStatefulServiceResources(rsrc, rsrclabels, Messaging)
+	master := rsrc.(*CDAPMaster)
+	ngdata := &upgradeValue{Jerb: &UpgradeJobSpec{Image: master.Spec.UpgradeImage}}
+	ngdata.Labels = rsrclabels
+	fmt.Println("labels ", ngdata.Labels)
+	item, err := k8s.ItemFromFile(templateDir+"upgrade-job.yaml", ngdata, &batchv1.JobList{})
+	if err != nil {
+		return nil, err
+	}
+	resources.Add(*item)
+	return resources, err
 }
 
 // ExpectedResources for Metadata service
@@ -217,6 +227,74 @@ func (s *RouterSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]s
 // ExpectedResources for UserInterface service
 func (s *UserInterfaceSpec) ExpectedResources(rsrc interface{}, rsrclabels map[string]string, dependent, aggregated *resource.Bag) (*resource.Bag, error) {
 	return s.getExternalServiceResources(rsrc, rsrclabels, UserInterface, uiDeploymentTemplate)
+}
+
+func (s *MessagingSpec) Mutate(rsrc interface{}, rsrclabels map[string]string, expected, dependent, observed *resource.Bag) (*resource.Bag, error) {
+	master := rsrc.(*CDAPMaster)
+	observedImage := ""
+	for _, item := range observed.Items() {
+		if deployment, ok := item.Obj.(*k8s.Object).Obj.(*appsv1.StatefulSet); ok {
+			fmt.Println("found deployment~~~~~~~~~ ")
+			for _, container := range deployment.Spec.Template.Spec.Containers {
+				image := container.Image
+				if strings.Contains(image, "cloud-data-fusion") {
+					observedImage = image
+					break
+				}
+			}
+		}
+	}
+	fmt.Println("observed~~~~~~~~~ " + observedImage)
+	var upgradeJob *batchv1.Job
+	for _, item := range observed.Items() {
+		fmt.Println("observed resource ~~~~~~~~~ " + item.Obj.(*k8s.Object).GetName())
+		if job, ok := item.Obj.(*k8s.Object).Obj.(*batchv1.Job); ok {
+			if job.Name == "pre-upgrade" {
+				upgradeJob = job
+				break
+			}
+		}
+	}
+	if upgradeJob == nil && observedImage != "" && observedImage != master.Spec.Image {
+		master.Spec.AwaitingImage = master.Spec.Image
+		master.Spec.Image = observedImage
+		expected, err := s.ExpectedResources(rsrc, rsrclabels, nil, nil)
+		// do same for ui
+		fmt.Println("launched job~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+		return expected, err
+	} else if upgradeJob != nil && upgradeJob.Status.Succeeded == 0 {
+		fmt.Println("job running~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	} else if upgradeJob != nil && upgradeJob.Status.Succeeded > 0 {
+		fmt.Println("job finished~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+		master.Spec.Image = master.Spec.AwaitingImage
+		master.Spec.UserInterfaceImage = master.Spec.AwaitingUserInterfaceImage
+		//expected, _ := s.ExpectedResources(rsrc, rsrclabels, nil, nil)
+		// remove the job from expected
+		updatedExpected := new(resource.Bag)
+		for _, item := range expected.ByType(k8s.Type) {
+			if job, ok := item.Obj.(*k8s.Object).Obj.(*batchv1.Job); !ok || job.Name != "pre-upgrade" {
+				updatedExpected.Add(item)
+			}
+		}
+		expected = updatedExpected
+		// delete the job
+	} else {
+		// remove the job from expected
+		updatedExpected := new(resource.Bag)
+		for _, item := range expected.ByType(k8s.Type) {
+			if job, ok := item.Obj.(*k8s.Object).Obj.(*batchv1.Job); !ok || job.Name != "pre-upgrade" {
+				updatedExpected.Add(item)
+			}
+		}
+		expected = updatedExpected
+	}
+	//if observedService, ok := item.Obj.(*k8s.Object).Obj.(*corev1.Service); ok {
+	// get current image version
+	// if image != s.image && job in observed finished, continue
+	// if image != s.image
+	//   s.image = expected
+	//   if job not in observed, launch job
+	return expected, nil
 }
 
 // Mutate for Router service. This is needed to fix the nodePort
@@ -284,6 +362,11 @@ type serviceValue struct {
 type statefulServiceValue struct {
 	templateBaseValue
 	Service *CDAPStatefulServiceSpec
+}
+
+type upgradeValue struct {
+	templateBaseValue
+	Jerb *UpgradeJobSpec
 }
 
 // Struct containing data for templatization using CDAPExternalServiceSpec

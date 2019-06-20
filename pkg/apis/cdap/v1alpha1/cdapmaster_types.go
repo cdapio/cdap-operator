@@ -28,6 +28,12 @@ type CDAPMasterSpec struct {
 	Image string `json:"image,omitempty"`
 	// Docker image name for the CDAP UI.
 	UserInterfaceImage string `json:"userInterfaceImage,omitempty"`
+	// UpgradeImage is the docker image name for the upgrade task.
+	UpgradeImage string `json:"upgradeImage,omitempty"`
+	// Docker image of CDAP backend awaiting upgrade, for internal use only
+	AwaitingImage string `json:"awaitingImage,omitempty"`
+	// Docker image of CDAP UI awaiting upgrade, for internal use only
+	AwaitingUserInterfaceImage string `json:"awaitingUserInterfaceImage,omitempty"`
 	// Policy for pulling docker images on Pod creation.
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// Secret that contains security related configurations for CDAP.
@@ -70,6 +76,10 @@ type CDAPServiceSpec struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// A list of environment variables for the master service container
 	Env []corev1.EnvVar `json:"env,omitempty"`
+}
+
+type UpgradeJobSpec struct {
+	Image string `json:"image,omitempty"`
 }
 
 // CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance

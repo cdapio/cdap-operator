@@ -51,6 +51,14 @@ spec:
                   description: Overrides the service account for the service pods
                   type: string
               type: object
+            awaitingImage:
+              description: Docker image of CDAP backend awaiting upgrade, for internal
+                use only
+              type: string
+            awaitingUserInterfaceImage:
+              description: Docker image of CDAP UI awaiting upgrade, for internal
+                use only
+              type: string
             config:
               description: A set of configurations that goes into cdap-site.xml.
               type: object
@@ -234,6 +242,9 @@ spec:
               type: string
             serviceAccountName:
               description: The service account for all the service pods.
+              type: string
+            upgradeImage:
+              description: UpgradeImage is the docker image name for the upgrade task.
               type: string
             userInterface:
               description: Specification for the CDAP UI service
