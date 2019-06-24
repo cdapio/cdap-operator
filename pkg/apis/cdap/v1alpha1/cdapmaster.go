@@ -42,7 +42,7 @@ func (r *CDAPMaster) ApplyDefaults() {
 		spec.Image = defaultImage
 	}
 	if spec.UserInterfaceImage == "" {
-		spec.UserInterfaceImage = defaultUserInterfaceImage
+		spec.UserInterfaceImage = spec.Image
 	}
 
 	if spec.Router.ServicePort == nil {

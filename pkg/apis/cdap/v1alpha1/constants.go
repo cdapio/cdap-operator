@@ -54,8 +54,7 @@ const (
 	confUserInterfaceBindPort = "dashboard.bind.port"
 
 	// Value for the local data directory
-	defaultImage              = "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.0.0-SNAPSHOT"
-	defaultUserInterfaceImage = "gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.0.0-SNAPSHOT"
+	defaultImage              = "gcr.io/cdapio/cdap:latest"
 	defaultRouterPort         = 11015
 	defaultUserInterfacePort  = 11011
 )

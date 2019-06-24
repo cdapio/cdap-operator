@@ -31,6 +31,12 @@ spec:
             appFabric:
               description: Specification for the CDAP app-fabric service
               properties:
+                env:
+                  description: A list of environment variables for the master service
+                    container
+                  items:
+                    type: object
+                  type: array
                 metadata:
                   description: Metadata for the service.
                   type: object
@@ -63,6 +69,12 @@ spec:
             logs:
               description: Specification for the CDAP logging service
               properties:
+                env:
+                  description: A list of environment variables for the master service
+                    container
+                  items:
+                    type: object
+                  type: array
                 metadata:
                   description: Metadata for the service.
                   type: object
@@ -84,6 +96,12 @@ spec:
             messaging:
               description: Specification for the CDAP messaging service
               properties:
+                env:
+                  description: A list of environment variables for the master service
+                    container
+                  items:
+                    type: object
+                  type: array
                 metadata:
                   description: Metadata for the service.
                   type: object
@@ -105,6 +123,12 @@ spec:
             metadata:
               description: Specification for the CDAP metadata service
               properties:
+                env:
+                  description: A list of environment variables for the master service
+                    container
+                  items:
+                    type: object
+                  type: array
                 metadata:
                   description: Metadata for the service.
                   type: object
@@ -122,6 +146,12 @@ spec:
             metrics:
               description: Specification for the CDAP metrics service
               properties:
+                env:
+                  description: A list of environment variables for the master service
+                    container
+                  items:
+                    type: object
+                  type: array
                 metadata:
                   description: Metadata for the service.
                   type: object
@@ -143,6 +173,12 @@ spec:
             preview:
               description: Specification for the CDAP preview service
               properties:
+                env:
+                  description: A list of environment variables for the master service
+                    container
+                  items:
+                    type: object
+                  type: array
                 metadata:
                   description: Metadata for the service.
                   type: object
@@ -164,6 +200,12 @@ spec:
             router:
               description: Specification for the CDAP router service
               properties:
+                env:
+                  description: A list of environment variables for the master service
+                    container
+                  items:
+                    type: object
+                  type: array
                 metadata:
                   description: Metadata for the service.
                   type: object
@@ -196,6 +238,12 @@ spec:
             userInterface:
               description: Specification for the CDAP UI service
               properties:
+                env:
+                  description: A list of environment variables for the master service
+                    container
+                  items:
+                    type: object
+                  type: array
                 metadata:
                   description: Metadata for the service.
                   type: object
