@@ -1,3 +1,9 @@
+ifndef NOTGCP
+  PROJECT_ID := $(shell gcloud config get-value project)
+  ZONE := $(shell gcloud config get-value compute/zone)
+  SHORT_SHA := $(shell git rev-parse --short HEAD)
+  IMG ?= gcr.io/${PROJECT_ID}/cdap-operator:${SHORT_SHA}
+endif
 
 # Image URL to use all building/pushing image targets
 IMG ?= cdap-controller:latest
@@ -6,6 +12,7 @@ all: test manager
 
 # Run tests
 test: generate fmt vet manifests
+	ln -s ../../../templates/ pkg/controller/cdapmaster/ || true
 	go test ./pkg/... ./cmd/... -coverprofile cover.out
 
 # Build manager binary
@@ -16,14 +23,22 @@ manager: generate fmt vet
 run: generate fmt vet
 	go run ./cmd/manager/main.go
 
+# Run against the configured Kubernetes cluster in ~/.kube/config
+debug: generate fmt vet
+	dlv debug cmd/manager/main.go
+
 # Install CRDs into a cluster
 install: manifests
 	kubectl apply -f config/crds
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
-	kubectl apply -f config/crds
 	kustomize build config/default | kubectl apply -f -
+
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+undeploy: manifests
+	kustomize build config/default | kubectl delete -f -
+	kubectl delete -f config/crds || true
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests:
