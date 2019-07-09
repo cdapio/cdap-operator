@@ -57,3 +57,7 @@ You can also build a docker image containing the CDAP controller and deploy it t
    ```
    make deploy
    ```
+
+### Using CDAP operator to manage CDAP instances in Kubernetes
+
+A step by step guide of running CDAP in Kubernetes using CDAP operator can be found in the (blog post)[https://link.medium.com/hpPbiUYT9X].
