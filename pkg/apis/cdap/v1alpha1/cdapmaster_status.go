@@ -23,8 +23,8 @@ import (
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
 )
 
-// UpdateComponentStatus for updating status for CDAP master
-func (s *CDAPMasterSpec) UpdateComponentStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
+// UpdateStatus for updating status for CDAP master
+func (s *CDAPMasterSpec) UpdateStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
 	var period time.Duration
 	master := rsrci.(*CDAPMaster)
 	stts := &master.Status
@@ -33,48 +33,48 @@ func (s *CDAPMasterSpec) UpdateComponentStatus(rsrci interface{}, reconciled []r
 	return period
 }
 
-// UpdateComponentStatus for updating status for AppFabric service
-func (s *AppFabricSpec) UpdateComponentStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
-	return rsrci.(*CDAPMaster).updateComponentStatus(reconciled, err)
+// UpdateStatus for updating status for AppFabric service
+func (s *AppFabricSpec) UpdateStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
+	return rsrci.(*CDAPMaster).updateStatus(reconciled, err)
 }
 
-// UpdateComponentStatus for updating status Logs service
-func (s *LogsSpec) UpdateComponentStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
-	return rsrci.(*CDAPMaster).updateComponentStatus(reconciled, err)
+// UpdateStatus for updating status Logs service
+func (s *LogsSpec) UpdateStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
+	return rsrci.(*CDAPMaster).updateStatus(reconciled, err)
 }
 
-// UpdateComponentStatus for updating status Messaging service
-func (s *MessagingSpec) UpdateComponentStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
-	return rsrci.(*CDAPMaster).updateComponentStatus(reconciled, err)
+// UpdateStatus for updating status Messaging service
+func (s *MessagingSpec) UpdateStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
+	return rsrci.(*CDAPMaster).updateStatus(reconciled, err)
 }
 
-// UpdateComponentStatus for updating status Metadata service
-func (s *MetadataSpec) UpdateComponentStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
-	return rsrci.(*CDAPMaster).updateComponentStatus(reconciled, err)
+// UpdateStatus for updating status Metadata service
+func (s *MetadataSpec) UpdateStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
+	return rsrci.(*CDAPMaster).updateStatus(reconciled, err)
 }
 
-// UpdateComponentStatus for updating status Metrics service
-func (s *MetricsSpec) UpdateComponentStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
-	return rsrci.(*CDAPMaster).updateComponentStatus(reconciled, err)
+// UpdateStatus for updating status Metrics service
+func (s *MetricsSpec) UpdateStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
+	return rsrci.(*CDAPMaster).updateStatus(reconciled, err)
 }
 
-// UpdateComponentStatus for updating status Preview service
-func (s *PreviewSpec) UpdateComponentStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
-	return rsrci.(*CDAPMaster).updateComponentStatus(reconciled, err)
+// UpdateStatus for updating status Preview service
+func (s *PreviewSpec) UpdateStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
+	return rsrci.(*CDAPMaster).updateStatus(reconciled, err)
 }
 
-// UpdateComponentStatus for updating status Router service
-func (s *RouterSpec) UpdateComponentStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
-	return rsrci.(*CDAPMaster).updateComponentStatus(reconciled, err)
+// UpdateStatus for updating status Router service
+func (s *RouterSpec) UpdateStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
+	return rsrci.(*CDAPMaster).updateStatus(reconciled, err)
 }
 
-// UpdateComponentStatus for updating status UserInterface service
-func (s *UserInterfaceSpec) UpdateComponentStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
-	return rsrci.(*CDAPMaster).updateComponentStatus(reconciled, err)
+// UpdateStatus for updating status UserInterface service
+func (s *UserInterfaceSpec) UpdateStatus(rsrci interface{}, reconciled []reconciler.Object, err error) time.Duration {
+	return rsrci.(*CDAPMaster).updateStatus(reconciled, err)
 }
 
-// Updates the component status
-func (r *CDAPMaster) updateComponentStatus(reconciled []reconciler.Object, err error) time.Duration {
+// updateStatus for updating component status
+func (r *CDAPMaster) updateStatus(reconciled []reconciler.Object, err error) time.Duration {
 	var period time.Duration
 	stts := &r.Status
 	ready := stts.ComponentMeta.UpdateStatus(reconciler.ObjectsByType(reconciled, k8s.Type))
