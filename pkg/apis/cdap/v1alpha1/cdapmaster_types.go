@@ -144,6 +144,7 @@ type CDAPMasterStatus struct {
 
 // CDAPMaster is the Schema for the cdapmasters API
 // +k8s:openapi-gen=true
+// +kubebuilder:subresource:status
 type CDAPMaster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
