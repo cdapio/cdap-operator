@@ -498,7 +498,9 @@ func (rm *RsrcManager) Observe(observables ...reconciler.Observable) ([]reconcil
 
 // Update - Generic client update
 func (rm *RsrcManager) Update(item reconciler.Object) error {
-	return rm.client.Update(context.TODO(), item.Obj.(*Object).Obj.(runtime.Object).DeepCopyObject())
+	obj := item.Obj.(*Object).Obj.(runtime.Object).DeepCopyObject()
+	rm.client.Status().Update(context.Background(), obj)
+	return rm.client.Update(context.TODO(), obj)
 
 }
 
