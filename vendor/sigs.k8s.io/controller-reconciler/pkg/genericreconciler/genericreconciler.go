@@ -340,6 +340,7 @@ func (gr *Reconciler) reconcileUsing(h Handler, resource runtime.Object, crname 
 
 	err = utilerrors.NewAggregate(errs)
 	period := updateStatus(h, resource, reconciled, err)
+	gr.manager.GetClient().Update(context.Background(), resource.DeepCopyObject())
 	return period, err
 }
 
