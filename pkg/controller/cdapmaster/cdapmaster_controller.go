@@ -19,32 +19,44 @@ package cdapmaster
 import (
 	alpha1 "cdap.io/cdap-operator/pkg/apis/cdap/v1alpha1"
 	"fmt"
+	"github.com/google/uuid"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	gr "sigs.k8s.io/controller-reconciler/pkg/genericreconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
+	"sigs.k8s.io/controller-reconciler/pkg/status"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"strings"
 	"text/template"
+	"time"
 )
 
 const (
 	containerLabel = "cdap.container"
 	// Heap memory related constants
-	javaMinHeapRatio     = float64(0.6)
-	javaReservedNonHeap  = int64(768 * 1024 * 1024)
-	templateDir          = "templates/"
-	deploymentTemplate   = "cdap-deployment.yaml"
-	uiDeploymentTemplate = "cdap-ui-deployment.yaml"
-	statefulSetTemplate  = "cdap-sts.yaml"
-	serviceTemplate      = "cdap-service.yaml"
+	javaMinHeapRatio         = float64(0.6)
+	javaReservedNonHeap      = int64(768 * 1024 * 1024)
+	templateDir              = "templates/"
+	deploymentTemplate       = "cdap-deployment.yaml"
+	uiDeploymentTemplate     = "cdap-ui-deployment.yaml"
+	statefulSetTemplate      = "cdap-sts.yaml"
+	serviceTemplate          = "cdap-service.yaml"
+	upgradeJobTemplate       = "upgrade-job.yaml"
+
+	upgradeFailed            = "upgrade-failed"
+	upgradeStartMessage      = "Upgrade started, received updated CR."
+	upgradeFailedInitMessage = "Failed to create job, upgrade failed."
+	upgradeJobFailedMessage  = "Upgrade job failed."
+	upgradeResetMessage      = "Upgrade spec reset."
+	upgradeFailureLimit      = 4
 )
 
-// Add creates a new ESCluster Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
+// Add the manager to the controller.
 func Add(mgr manager.Manager) error {
 	r := newReconciler(mgr)
 	return r.Controller(nil)
@@ -170,7 +182,7 @@ func (v *templateBaseValue) setTemplateValue(rsrc interface{}, rsrclabels map[st
 	labels.Merge(master.Labels, serviceLabels, rsrclabels)
 
 	// Set the cdap.container label. It is for service selector to route correctly
-	name := fmt.Sprintf("cdap-%s-%s", master.Name, strings.ToLower(string(serviceType)))
+	name := getResourceName(master, string(serviceType))
 	labels[containerLabel] = name
 
 	ServiceAccountName := master.Spec.ServiceAccountName
@@ -204,8 +216,8 @@ func (v *templateBaseValue) setTemplateValue(rsrc interface{}, rsrclabels map[st
 	v.ServiceAccountName = ServiceAccountName
 	v.ServiceType = serviceType
 	v.DataDir = alpha1.LocalDataDir
-	v.CConfName = getConfigName(master, "cconf")
-	v.HConfName = getConfigName(master, "hconf")
+	v.CConfName = getResourceName(master, "cconf")
+	v.HConfName = getResourceName(master, "hconf")
 }
 
 // Gets the set of resources for the given service represented by the CDAPStatefulServiceSpec
@@ -236,9 +248,43 @@ type externalServiceValue struct {
 	Service *alpha1.CDAPExternalServiceSpec
 }
 
-// Returns the config map name for the given configuration type
-func getConfigName(r *alpha1.CDAPMaster, confType string) string {
-	return fmt.Sprintf("cdap-%s-%s", r.Name, confType)
+// Struct containing data for templatization using UpgradeJobSpec
+type upgradeValue struct {
+	templateBaseValue
+	Job *upgradeJobSpec
+}
+
+// UpgradeJobSpec defines the specification for the upgrade job
+type upgradeJobSpec struct {
+	Image        string `json:"image,omitempty"`
+	JobName      string `json:"jobName,omitempty"`
+	HostName     string `json:"hostName,omitempty"`
+	BackoffLimit int32  `json:"backoffLimit,omitempty"`
+	ReferentName string `json:"referentName,omitempty"`
+	ReferentKind string `json:"referentKind,omitempty"`
+	ReferentApiVersion string `json:"referentApiVersion,omitempty"`
+	ReferentUID  types.UID `json:"referentUID,omitempty"`
+}
+
+// Returns the resource name for the given resource
+func getResourceName(r *alpha1.CDAPMaster, resource string) string {
+	return fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(resource))
+}
+
+// Gets the set of resources for the pre-upgrade job.
+func getPreUpgradeResources(s *upgradeJobSpec, rsrclabels map[string]string) ([]reconciler.Object, error) {
+	ngdata := &upgradeValue{Job: s}
+	ngdata.Labels = rsrclabels
+	item, err := k8s.ObjectFromFile(templateDir + upgradeJobTemplate, ngdata, &batchv1.JobList{})
+	if err != nil {
+		return nil, err
+	}
+	return append([]reconciler.Object{}, *item), nil
+}
+
+// Gets the name of the upgrade job based on resource version.
+func getUpgradeJobName(r *alpha1.CDAPMaster) string {
+	return fmt.Sprintf("cdap-%s-upgrade-job-%s", r.Name, r.Status.UpgradeJobVersion)
 }
 
 // Gets the set of resources for the given service represented by the CDAPServiceSpec.
@@ -273,7 +319,7 @@ func getExternalServiceResources(s *alpha1.CDAPExternalServiceSpec, rsrc interfa
 
 // Adds a resource.Item to the given resource.Bag by executing the given template.
 func addResourceItem(s *alpha1.CDAPServiceSpec, template string, v interface{}, listType metav1.ListInterface, resources []reconciler.Object) ([]reconciler.Object, error) {
-	rinfo, err := k8s.ObjectFromFile(templateDir+template, v, listType)
+	rinfo, err := k8s.ObjectFromFile(templateDir + template, v, listType)
 	if err != nil {
 		return nil, err
 	}
@@ -353,6 +399,56 @@ func logbackFromFile(t string, data interface{}) (string, error) {
 	return output.String(), nil
 }
 
+// Adds a component list object in state in progress. This will cause UpdateStatus to update the
+// ready type to state "false".
+func addUpgradeComponentNotReady(master *alpha1.CDAPMaster) {
+	os := status.ObjectStatus{}
+	os.Name = "upgrade"
+	os.Status = status.StatusInProgress
+	master.Status.ComponentMeta.ComponentList.Objects = append(master.Status.ComponentMeta.ComponentList.Objects, os)
+}
+
+func prepareNewPreUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string]string) ([]reconciler.Object, error) {
+	master.Status.UpgradeJobVersion = uuid.New().String()
+	master.Status.Meta.ClearCondition(upgradeFailed, upgradeStartMessage, upgradeStartMessage)
+
+	upgradeResources, err := getPreUpgradeJobResources(master, rsrclabels)
+	if err != nil {
+		master.Status.Meta.SetCondition(upgradeFailed, upgradeFailedInitMessage, upgradeFailedInitMessage)
+		return nil, err
+	}
+	return upgradeResources, nil
+}
+
+// Gets the job resources and sets status to not ready, since any time when we wish to add the job
+// to expected, the status is not ready.
+func getPreUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string]string) ([]reconciler.Object, error) {
+	upgradeResources, err := getPreUpgradeResources(
+		&upgradeJobSpec{
+			Image:              master.Spec.Image,
+			JobName:            getUpgradeJobName(master),
+			HostName:           getResourceName(master, string(alpha1.ServiceRouter)),
+			BackoffLimit:       upgradeFailureLimit,
+			ReferentName:       master.Name,
+			ReferentKind:       master.Kind,
+			ReferentApiVersion: master.APIVersion,
+			ReferentUID:        master.UID,
+		}, rsrclabels)
+	if err != nil {
+		return nil, err
+	}
+	return upgradeResources, nil
+}
+
+// Updates the component status
+func updateStatus(rsrc interface{}, reconciled []reconciler.Object, err error) time.Duration {
+	var period time.Duration
+	stts := &rsrc.(*alpha1.CDAPMaster).Status
+	ready := stts.ComponentMeta.UpdateStatus(reconciler.ObjectsByType(reconciled, k8s.Type))
+	stts.Meta.UpdateStatus(&ready, err)
+	return period
+}
+
 // ------------------------------ Handlers -------------------------------------
 
 // Objects - handler Objects
@@ -370,10 +466,69 @@ func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 	}
 	var err error
 	for k, v := range configs {
-		resources, err = addConfigMapItem(master, getConfigName(master, k), labels, v, resources)
+		resources, err = addConfigMapItem(master, getResourceName(master, k), labels, v, resources)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	// If upgrade has failed, do not set imageToUse, just return
+	if master.Status.Meta.IsConditionTrue(upgradeFailed) {
+		// User has reset the CR after failure. Remove upgrade failed status.
+		if master.Spec.Image == master.Status.ImageToUse {
+			master.Status.ClearCondition(upgradeFailed, upgradeResetMessage, upgradeResetMessage)
+		}
+		return resources, nil
+	}
+
+	// Early return if image does not need updating. Update imageToUse since we are in a non
+	// failure case.
+	if master.Status.ImageToUse == "" || master.Status.ImageToUse == master.Spec.Image {
+		// Currently the backend and UI are upgraded together, but this may not be the case in the future
+		master.Status.ImageToUse = master.Spec.Image
+		master.Status.UserInterfaceImageToUse = master.Spec.UserInterfaceImage
+		return resources, nil
+	}
+
+	var upgradeResources []reconciler.Object
+	var upgradeJob *batchv1.Job
+	if master.Status.UpgradeJobVersion != "" {
+		item := k8s.GetItem(observed, &batchv1.Job{}, getUpgradeJobName(master), "default")
+		if item != nil {
+			upgradeJob = item.(*batchv1.Job)
+		}
+	}
+
+	if upgradeJob == nil {
+		// Add a new job and set ready status to false
+		var err error
+		upgradeResources, err = prepareNewPreUpgradeJobResources(master, rsrclabels)
+		if err != nil {
+			return nil, err
+		}
+		addUpgradeComponentNotReady(master)
+		return append(resources, upgradeResources...), nil
+	}
+
+	if upgradeJob.Status.Succeeded > 0 {
+		// Pre upgrade job has succeeded.
+		master.Status.ImageToUse = master.Spec.Image
+		master.Status.UserInterfaceImageToUse = master.Spec.UserInterfaceImage
+		master.Status.UpgradeJobVersion = ""
+		addUpgradeComponentNotReady(master)
+	} else if upgradeJob.Status.Failed >= upgradeFailureLimit {
+		// Pre upgrade job has failed
+		master.Status.UpgradeJobVersion = ""
+		master.Status.Meta.SetCondition(upgradeFailed, upgradeJobFailedMessage, upgradeJobFailedMessage)
+	} else {
+		// Pre upgrade job has already been initialized, but has not finished
+		var err error
+		upgradeResources, err = getPreUpgradeJobResources(master, rsrclabels)
+		if err != nil{
+			return nil, err
+		}
+		addUpgradeComponentNotReady(master)
+		resources = append(resources, upgradeResources...)
 	}
 
 	return resources, nil
@@ -384,6 +539,7 @@ func (b *Base) Observables(rsrc interface{}, labels map[string]string) []reconci
 	return k8s.NewObservables().
 		WithLabels(labels).
 		For(&corev1.ConfigMapList{}).
+		For(&batchv1.JobList{}).
 		Get()
 }
 
@@ -496,7 +652,7 @@ func (s *UserInterface) Objects(rsrc interface{}, rsrclabels map[string]string, 
 	return expected, err
 }
 
-// Observables for userinterface
+// Observables for UserInterface
 func (s *UserInterface) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
 	return k8s.NewObservables().
 		WithLabels(labels).

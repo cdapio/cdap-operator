@@ -137,6 +137,12 @@ type UserInterfaceSpec struct {
 type CDAPMasterStatus struct {
 	status.Meta          `json:",inline"`
 	status.ComponentMeta `json:",inline"`
+	// ImageToUse is the Docker image of CDAP backend the operator uses to deploy.
+	ImageToUse string `json:"imageToUse,omitempty"`
+	// UserInterfaceImageToUse is the Docker image of CDAP UI the operator uses to deploy.
+	UserInterfaceImageToUse string `json:"userInterfaceImageToUse,omitempty"`
+	// UpgradeJobVersion is a unique identifier of the upgrade job.
+	UpgradeJobVersion string `json:"upgradeJobVersion,omitempty"`
 }
 
 // +genclient

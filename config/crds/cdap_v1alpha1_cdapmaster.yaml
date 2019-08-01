@@ -370,12 +370,24 @@ spec:
                 - status
                 type: object
               type: array
+            imageToUse:
+              description: ImageToUse is the Docker image of CDAP backend the operator
+                uses to deploy.
+              type: string
             observedGeneration:
               description: ObservedGeneration is the most recent generation observed.
                 It corresponds to the Object's generation, which is updated on mutation
                 by the API Server.
               format: int64
               type: integer
+            upgradeJobVersion:
+              description: UpgradeJobVersion is a unique identifier of the upgrade
+                job.
+              type: string
+            userInterfaceImageToUse:
+              description: UserInterfaceImageToUse is the Docker image of CDAP UI
+                the operator uses to deploy.
+              type: string
           type: object
   version: v1alpha1
 status:
