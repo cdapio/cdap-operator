@@ -50,7 +50,7 @@ spec:
         {{end}}
     {{end}}
       containers:
-        - image: {{.Master.Spec.UserInterfaceImage}}
+        - image: {{.Master.Status.UserInterfaceImageToUse}}
           workingDir: "/opt/cdap/ui"
           command: ["bin/node"]
           args: ["index.js", "start"]

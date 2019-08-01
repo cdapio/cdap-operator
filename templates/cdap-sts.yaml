@@ -52,7 +52,7 @@ spec:
     {{end}}
       terminationGracePeriodSeconds: 120
       initContainers:
-        - image: {{.Master.Spec.Image}}
+        - image: {{.Master.Status.ImageToUse}}
           name: create-storage
           args: ["io.cdap.cdap.master.environment.k8s.StorageMain"]
         {{if .Master.Spec.ImagePullPolicy}}
@@ -76,7 +76,7 @@ spec:
               readOnly: true
           {{end}}
       containers:
-        - image: {{.Master.Spec.Image}}
+        - image: {{.Master.Status.ImageToUse}}
           args: ["io.cdap.cdap.master.environment.k8s.{{.ServiceType}}ServiceMain", "--env=k8s"]
           name: {{.Name}}
         {{if .Master.Spec.ImagePullPolicy}}

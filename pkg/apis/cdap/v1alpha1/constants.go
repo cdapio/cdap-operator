@@ -54,9 +54,9 @@ const (
 	confUserInterfaceBindPort = "dashboard.bind.port"
 
 	// Value for the local data directory
-	defaultImage              = "gcr.io/cdapio/cdap:latest"
-	defaultRouterPort         = 11015
-	defaultUserInterfacePort  = 11011
+	defaultImage             = "gcr.io/cdapio/cdap:latest"
+	defaultRouterPort        = 11015
+	defaultUserInterfacePort = 11011
 )
 
 // Exported constants
