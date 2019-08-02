@@ -127,10 +127,13 @@ spec:
       name: {{.Name}}-data
     spec:
       accessModes: ["ReadWriteOnce"]
+    {{if .Service.StorageClassName}}
+      storageClassName: {{.Service.StorageClassName}}
+    {{end}}
       resources:
         requests:
         {{if .Service.StorageSize}}
           storage: {{.Service.StorageSize}}
         {{else}}
-          storage: "50Gi"
+          storage: "200Gi"
         {{end}}

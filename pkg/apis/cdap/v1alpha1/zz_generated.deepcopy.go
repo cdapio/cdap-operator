@@ -242,6 +242,11 @@ func (in *CDAPServiceSpec) DeepCopy() *CDAPServiceSpec {
 func (in *CDAPStatefulServiceSpec) DeepCopyInto(out *CDAPStatefulServiceSpec) {
 	*out = *in
 	in.CDAPServiceSpec.DeepCopyInto(&out.CDAPServiceSpec)
+	if in.StorageClassName != nil {
+		in, out := &in.StorageClassName, &out.StorageClassName
+		*out = new(string)
+		**out = **in
+	}
 	return
 }
 
