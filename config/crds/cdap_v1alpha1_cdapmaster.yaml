@@ -88,8 +88,12 @@ spec:
                 serviceAccountName:
                   description: Overrides the service account for the service pods
                   type: string
+                storageClassName:
+                  description: Name of the StorageClass for the persistent volume
+                    used by the service.
+                  type: string
                 storageSize:
-                  description: Specification for the persistent volumn size used by
+                  description: Specification for the persistent volume size used by
                     the service.
                   type: string
               type: object
@@ -115,8 +119,12 @@ spec:
                 serviceAccountName:
                   description: Overrides the service account for the service pods
                   type: string
+                storageClassName:
+                  description: Name of the StorageClass for the persistent volume
+                    used by the service.
+                  type: string
                 storageSize:
-                  description: Specification for the persistent volumn size used by
+                  description: Specification for the persistent volume size used by
                     the service.
                   type: string
               type: object
@@ -165,8 +173,12 @@ spec:
                 serviceAccountName:
                   description: Overrides the service account for the service pods
                   type: string
+                storageClassName:
+                  description: Name of the StorageClass for the persistent volume
+                    used by the service.
+                  type: string
                 storageSize:
-                  description: Specification for the persistent volumn size used by
+                  description: Specification for the persistent volume size used by
                     the service.
                   type: string
               type: object
@@ -192,8 +204,12 @@ spec:
                 serviceAccountName:
                   description: Overrides the service account for the service pods
                   type: string
+                storageClassName:
+                  description: Name of the StorageClass for the persistent volume
+                    used by the service.
+                  type: string
                 storageSize:
-                  description: Specification for the persistent volumn size used by
+                  description: Specification for the persistent volume size used by
                     the service.
                   type: string
               type: object

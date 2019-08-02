@@ -39,14 +39,14 @@ import (
 const (
 	containerLabel = "cdap.container"
 	// Heap memory related constants
-	javaMinHeapRatio         = float64(0.6)
-	javaReservedNonHeap      = int64(768 * 1024 * 1024)
-	templateDir              = "templates/"
-	deploymentTemplate       = "cdap-deployment.yaml"
-	uiDeploymentTemplate     = "cdap-ui-deployment.yaml"
-	statefulSetTemplate      = "cdap-sts.yaml"
-	serviceTemplate          = "cdap-service.yaml"
-	upgradeJobTemplate       = "upgrade-job.yaml"
+	javaMinHeapRatio     = float64(0.6)
+	javaReservedNonHeap  = int64(768 * 1024 * 1024)
+	templateDir          = "templates/"
+	deploymentTemplate   = "cdap-deployment.yaml"
+	uiDeploymentTemplate = "cdap-ui-deployment.yaml"
+	statefulSetTemplate  = "cdap-sts.yaml"
+	serviceTemplate      = "cdap-service.yaml"
+	upgradeJobTemplate   = "upgrade-job.yaml"
 
 	upgradeFailed            = "upgrade-failed"
 	upgradeStartMessage      = "Upgrade started, received updated CR."
@@ -134,7 +134,7 @@ type UserInterface struct{}
 // ------------------------------ Common -------------------------------------
 
 // Set the nodePort in the expected service based on the observed service
-func setNodePort(s *alpha1.CDAPExternalServiceSpec, expected, observed []reconciler.Object) {
+func setNodePort(expected, observed []reconciler.Object) {
 	// Get the service from the expected list.
 	var expectedService *corev1.Service
 	for _, item := range reconciler.ObjectsByType(expected, k8s.Type) {
@@ -142,6 +142,9 @@ func setNodePort(s *alpha1.CDAPExternalServiceSpec, expected, observed []reconci
 			expectedService = service
 			break
 		}
+	}
+	if expectedService == nil {
+		return
 	}
 	// Find the service being observed. Extract nodePort from the service spec and set it to expected
 	for _, item := range reconciler.ObjectsByType(observed, k8s.Type) {
@@ -256,14 +259,14 @@ type upgradeValue struct {
 
 // UpgradeJobSpec defines the specification for the upgrade job
 type upgradeJobSpec struct {
-	Image        string `json:"image,omitempty"`
-	JobName      string `json:"jobName,omitempty"`
-	HostName     string `json:"hostName,omitempty"`
-	BackoffLimit int32  `json:"backoffLimit,omitempty"`
-	ReferentName string `json:"referentName,omitempty"`
-	ReferentKind string `json:"referentKind,omitempty"`
-	ReferentApiVersion string `json:"referentApiVersion,omitempty"`
-	ReferentUID  types.UID `json:"referentUID,omitempty"`
+	Image              string    `json:"image,omitempty"`
+	JobName            string    `json:"jobName,omitempty"`
+	HostName           string    `json:"hostName,omitempty"`
+	BackoffLimit       int32     `json:"backoffLimit,omitempty"`
+	ReferentName       string    `json:"referentName,omitempty"`
+	ReferentKind       string    `json:"referentKind,omitempty"`
+	ReferentApiVersion string    `json:"referentApiVersion,omitempty"`
+	ReferentUID        types.UID `json:"referentUID,omitempty"`
 }
 
 // Returns the resource name for the given resource
@@ -275,7 +278,7 @@ func getResourceName(r *alpha1.CDAPMaster, resource string) string {
 func getPreUpgradeResources(s *upgradeJobSpec, rsrclabels map[string]string) ([]reconciler.Object, error) {
 	ngdata := &upgradeValue{Job: s}
 	ngdata.Labels = rsrclabels
-	item, err := k8s.ObjectFromFile(templateDir + upgradeJobTemplate, ngdata, &batchv1.JobList{})
+	item, err := k8s.ObjectFromFile(templateDir+upgradeJobTemplate, ngdata, &batchv1.JobList{})
 	if err != nil {
 		return nil, err
 	}
@@ -319,7 +322,7 @@ func getExternalServiceResources(s *alpha1.CDAPExternalServiceSpec, rsrc interfa
 
 // Adds a resource.Item to the given resource.Bag by executing the given template.
 func addResourceItem(s *alpha1.CDAPServiceSpec, template string, v interface{}, listType metav1.ListInterface, resources []reconciler.Object) ([]reconciler.Object, error) {
-	rinfo, err := k8s.ObjectFromFile(templateDir + template, v, listType)
+	rinfo, err := k8s.ObjectFromFile(templateDir+template, v, listType)
 	if err != nil {
 		return nil, err
 	}
@@ -524,7 +527,7 @@ func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 		// Pre upgrade job has already been initialized, but has not finished
 		var err error
 		upgradeResources, err = getPreUpgradeJobResources(master, rsrclabels)
-		if err != nil{
+		if err != nil {
 			return nil, err
 		}
 		addUpgradeComponentNotReady(master)
@@ -631,7 +634,7 @@ func (s *Preview) Observables(rsrc interface{}, labels map[string]string) []reco
 func (s *Router) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	r := rsrc.(*alpha1.CDAPMaster)
 	expected, err := getExternalServiceResources(&r.Spec.Router.CDAPExternalServiceSpec, rsrc, rsrclabels, alpha1.ServiceRouter, deploymentTemplate)
-	setNodePort(&r.Spec.Router.CDAPExternalServiceSpec, expected, observed)
+	setNodePort(expected, observed)
 	return expected, err
 }
 
@@ -648,7 +651,7 @@ func (s *Router) Observables(rsrc interface{}, labels map[string]string) []recon
 func (s *UserInterface) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	r := rsrc.(*alpha1.CDAPMaster)
 	expected, err := getExternalServiceResources(&r.Spec.UserInterface.CDAPExternalServiceSpec, rsrc, rsrclabels, alpha1.ServiceUserInterface, uiDeploymentTemplate)
-	setNodePort(&r.Spec.UserInterface.CDAPExternalServiceSpec, expected, observed)
+	setNodePort(expected, observed)
 	return expected, err
 }
 
