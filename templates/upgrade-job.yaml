@@ -22,6 +22,12 @@ metadata:
     {{$k}}: '{{$v}}'
     {{end}}
 {{end}}
+  ownerReferences:
+  - apiVersion: {{.Job.ReferentApiVersion}}
+    controller: false
+    kind: {{.Job.ReferentKind}}
+    name: {{.Job.ReferentName}}
+    uid: {{.Job.ReferentUID}}
 spec:
   template:
     metadata:
@@ -36,13 +42,31 @@ spec:
         - name: pre-upgrade
           image: {{.Job.Image}}
           args: ["io.cdap.cdap.master.upgrade.UpgradeJobMain", "{{.Job.HostName}}", "11015"]
+          volumeMounts:
+            - name: cdap-conf
+              mountPath: /etc/cdap/conf
+              readOnly: true
+            - name: hadoop-conf
+              mountPath: /etc/hadoop/conf
+              readOnly: true
+          {{if .Job.SecuritySecret}}
+            - name: cdap-security
+              mountPath: /etc/cdap/security
+              readOnly: true
+          {{end}}
+      volumes:
+        - name: cdap-conf
+          configMap:
+            name: {{.CConfName}}
+        - name: hadoop-conf
+          configMap:
+            name: {{.HConfName}}
+      {{if .Job.SecuritySecret}}
+        - name: cdap-security
+          secret:
+            secretName: {{.Job.SecuritySecret}}
+      {{end}}
       restartPolicy: Never
   backoffLimit: {{.Job.BackoffLimit}}
   activeDeadlineSeconds: 600
   ttlSecondsAfterFinished: 1200
-  ownerReferences:
-  - apiVersion: {{.Job.ReferentApiVersion}}
-    controller: true
-    kind: {{.Job.ReferentKind}}
-    name: {{.Job.ReferentName}}
-    uid: {{.Job.ReferentUID}}
