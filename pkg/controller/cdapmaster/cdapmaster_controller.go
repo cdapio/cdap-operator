@@ -39,14 +39,14 @@ import (
 const (
 	containerLabel = "cdap.container"
 	// Heap memory related constants
-	javaMinHeapRatio         = float64(0.6)
-	javaReservedNonHeap      = int64(768 * 1024 * 1024)
-	templateDir              = "templates/"
-	deploymentTemplate       = "cdap-deployment.yaml"
-	uiDeploymentTemplate     = "cdap-ui-deployment.yaml"
-	statefulSetTemplate      = "cdap-sts.yaml"
-	serviceTemplate          = "cdap-service.yaml"
-	upgradeJobTemplate       = "upgrade-job.yaml"
+	javaMinHeapRatio     = float64(0.6)
+	javaReservedNonHeap  = int64(768 * 1024 * 1024)
+	templateDir          = "templates/"
+	deploymentTemplate   = "cdap-deployment.yaml"
+	uiDeploymentTemplate = "cdap-ui-deployment.yaml"
+	statefulSetTemplate  = "cdap-sts.yaml"
+	serviceTemplate      = "cdap-service.yaml"
+	upgradeJobTemplate   = "upgrade-job.yaml"
 
 	upgradeFailed            = "upgrade-failed"
 	upgradeStartMessage      = "Upgrade started, received updated CR."
@@ -134,7 +134,7 @@ type UserInterface struct{}
 // ------------------------------ Common -------------------------------------
 
 // Set the nodePort in the expected service based on the observed service
-func setNodePort(s *alpha1.CDAPExternalServiceSpec, expected, observed []reconciler.Object) {
+func setNodePort(expected, observed []reconciler.Object) {
 	// Get the service from the expected list.
 	var expectedService *corev1.Service
 	for _, item := range reconciler.ObjectsByType(expected, k8s.Type) {
@@ -142,6 +142,9 @@ func setNodePort(s *alpha1.CDAPExternalServiceSpec, expected, observed []reconci
 			expectedService = service
 			break
 		}
+	}
+	if expectedService == nil {
+		return
 	}
 	// Find the service being observed. Extract nodePort from the service spec and set it to expected
 	for _, item := range reconciler.ObjectsByType(observed, k8s.Type) {
@@ -172,7 +175,7 @@ type templateBaseValue struct {
 	DataDir            string
 	CConfName          string
 	HConfName          string
-	Env                map[string]string
+	JavaMaxHeap        *int64
 }
 
 // Sets values to the given templateBaseValue based on the resources provided
@@ -205,8 +208,7 @@ func (v *templateBaseValue) setTemplateValue(rsrc interface{}, rsrclabels map[st
 			if xmx < 0 || xmx < minHeapSize {
 				xmx = minHeapSize
 			}
-			v.Env = make(map[string]string)
-			v.Env["JAVA_HEAPMAX"] = fmt.Sprintf("-Xmx%v", xmx)
+			v.JavaMaxHeap = &xmx
 		}
 	}
 
@@ -256,14 +258,14 @@ type upgradeValue struct {
 
 // UpgradeJobSpec defines the specification for the upgrade job
 type upgradeJobSpec struct {
-	Image        string `json:"image,omitempty"`
-	JobName      string `json:"jobName,omitempty"`
-	HostName     string `json:"hostName,omitempty"`
-	BackoffLimit int32  `json:"backoffLimit,omitempty"`
-	ReferentName string `json:"referentName,omitempty"`
-	ReferentKind string `json:"referentKind,omitempty"`
-	ReferentApiVersion string `json:"referentApiVersion,omitempty"`
-	ReferentUID  types.UID `json:"referentUID,omitempty"`
+	Image              string    `json:"image,omitempty"`
+	JobName            string    `json:"jobName,omitempty"`
+	HostName           string    `json:"hostName,omitempty"`
+	BackoffLimit       int32     `json:"backoffLimit,omitempty"`
+	ReferentName       string    `json:"referentName,omitempty"`
+	ReferentKind       string    `json:"referentKind,omitempty"`
+	ReferentApiVersion string    `json:"referentApiVersion,omitempty"`
+	ReferentUID        types.UID `json:"referentUID,omitempty"`
 	SecuritySecret string `json:"securitySecret,omitempty"`
 }
 
@@ -276,7 +278,7 @@ func getResourceName(r *alpha1.CDAPMaster, resource string) string {
 func getPreUpgradeResources(s *upgradeJobSpec, rsrclabels map[string]string, r *alpha1.CDAPMaster) ([]reconciler.Object, error) {
 	ngdata := &upgradeValue{Job: s}
 	ngdata.Labels = rsrclabels
-	ngdata.CConfName = getResourceName(r, "cconf")
+  ngdata.CConfName = getResourceName(r, "cconf")
 	ngdata.HConfName = getResourceName(r, "hconf")
 	item, err := k8s.ObjectFromFile(templateDir + upgradeJobTemplate, ngdata, &batchv1.JobList{})
 	if err != nil {
@@ -321,13 +323,15 @@ func getExternalServiceResources(s *alpha1.CDAPExternalServiceSpec, rsrc interfa
 }
 
 // Adds a resource.Item to the given resource.Bag by executing the given template.
-func addResourceItem(s *alpha1.CDAPServiceSpec, template string, v interface{}, listType metav1.ListInterface, resources []reconciler.Object) ([]reconciler.Object, error) {
-	rinfo, err := k8s.ObjectFromFile(templateDir + template, v, listType)
+func addResourceItem(s *alpha1.CDAPServiceSpec, template string, data interface{}, listType metav1.ListInterface, resources []reconciler.Object) ([]reconciler.Object, error) {
+	rinfo, err := k8s.ObjectFromFile(templateDir+template, data, listType)
 	if err != nil {
 		return nil, err
 	}
 	// Set the resource for the first container if the object has container
 	setResources(rinfo.Obj.(*k8s.Object).Obj, s.Resources)
+	// Set the environment for the first container if the object has container
+	setEnv(rinfo.Obj.(*k8s.Object).Obj, data, s.Env)
 	resources = append(resources, *rinfo)
 	return resources, nil
 }
@@ -385,6 +389,37 @@ func setResources(obj interface{}, resources *corev1.ResourceRequirements) {
 	}
 	resourcesValue := value.Index(0).FieldByName("Resources")
 	resourcesValue.Set(reflect.ValueOf(*resources))
+}
+
+// Set the environment for the first container object. It uses reflection to find and set the field
+// `Spec.Template.Spec.Containers[0].Env`
+func setEnv(obj interface{}, data interface{}, env []corev1.EnvVar) {
+	if len(env) == 0 {
+		return
+	}
+
+	value := reflect.ValueOf(obj).Elem()
+
+	for _, fieldName := range []string{"Spec", "Template", "Spec", "Containers"} {
+		value = value.FieldByName(fieldName)
+		if !value.IsValid() {
+			return
+		}
+	}
+	envValue := value.Index(0).FieldByName("Env")
+	// Add all environment variables
+	envSlice := reflect.AppendSlice(envValue, reflect.ValueOf(env))
+
+	// Add the JAVA_HEAPMAX env
+	maxHeapValue := reflect.ValueOf(data).Elem().FieldByName("JavaMaxHeap")
+	if maxHeapValue.IsValid() && !maxHeapValue.IsNil() {
+		envSlice = reflect.Append(envSlice, reflect.ValueOf(corev1.EnvVar{
+			Name:  "JAVA_HEAPMAX",
+			Value: fmt.Sprintf("-Xmx%v", maxHeapValue.Elem().Int()),
+		}))
+	}
+
+	envValue.Set(envSlice)
 }
 
 // itemFromReader reads the logback xml with template substitution
@@ -528,7 +563,7 @@ func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 		// Pre upgrade job has already been initialized, but has not finished
 		var err error
 		upgradeResources, err = getPreUpgradeJobResources(master, rsrclabels)
-		if err != nil{
+		if err != nil {
 			return nil, err
 		}
 		addUpgradeComponentNotReady(master)
@@ -635,7 +670,7 @@ func (s *Preview) Observables(rsrc interface{}, labels map[string]string) []reco
 func (s *Router) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	r := rsrc.(*alpha1.CDAPMaster)
 	expected, err := getExternalServiceResources(&r.Spec.Router.CDAPExternalServiceSpec, rsrc, rsrclabels, alpha1.ServiceRouter, deploymentTemplate)
-	setNodePort(&r.Spec.Router.CDAPExternalServiceSpec, expected, observed)
+	setNodePort(expected, observed)
 	return expected, err
 }
 
@@ -652,7 +687,7 @@ func (s *Router) Observables(rsrc interface{}, labels map[string]string) []recon
 func (s *UserInterface) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	r := rsrc.(*alpha1.CDAPMaster)
 	expected, err := getExternalServiceResources(&r.Spec.UserInterface.CDAPExternalServiceSpec, rsrc, rsrclabels, alpha1.ServiceUserInterface, uiDeploymentTemplate)
-	setNodePort(&r.Spec.UserInterface.CDAPExternalServiceSpec, expected, observed)
+	setNodePort(expected, observed)
 	return expected, err
 }
 

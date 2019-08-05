@@ -89,8 +89,10 @@ type CDAPExternalServiceSpec struct {
 // CDAPStatefulServiceSpec defines the base specification for stateful master services
 type CDAPStatefulServiceSpec struct {
 	CDAPServiceSpec `json:",inline"`
-	// Specification for the persistent volumn size used by the service.
+	// Specification for the persistent volume size used by the service.
 	StorageSize string `json:"storageSize,omitempty"`
+	// Name of the StorageClass for the persistent volume used by the service.
+	StorageClassName *string `json:"storageClassName,omitempty"`
 }
 
 // AppFabricSpec defines the specification for the AppFabric service
