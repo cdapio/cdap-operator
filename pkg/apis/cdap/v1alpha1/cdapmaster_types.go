@@ -22,90 +22,90 @@ import (
 	"sigs.k8s.io/controller-reconciler/pkg/status"
 )
 
-// CDAPMasterSpec defines the desired state of CDAPMaster
+// CDAPMasterSpec defines the desired state of CDAPMaster.
 type CDAPMasterSpec struct {
-	// Docker image name for the CDAP backend.
+	// Image is the docker image name for the CDAP backend.
 	Image string `json:"image,omitempty"`
-	// Docker image name for the CDAP UI.
+	// UserInterfaceImage is the docker image name for the CDAP UI.
 	UserInterfaceImage string `json:"userInterfaceImage,omitempty"`
-	// Policy for pulling docker images on Pod creation.
+	// ImagePullPolicy is the policy for pulling docker images on Pod creation.
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// Secret that contains security related configurations for CDAP.
+	// SecuritySecret is secret that contains security related configurations for CDAP.
 	SecuritySecret string `json:"securitySecret,omitempty"`
-	// The service account for all the service pods.
+	// ServiceAccountName is the service account for all the service pods.
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
-	// An URI specifying an object storage for CDAP.
+	// LocationURI is an URI specifying an object storage for CDAP.
 	LocationURI string `json:"locationURI"`
-	// A set of configurations that goes into cdap-site.xml.
+	// Config is a set of configurations that goes into cdap-site.xml.
 	Config map[string]string `json:"config,omitempty"`
-	// A set of logger name to log level settings
+	// LogLevels is a set of logger name to log level settings.
 	LogLevels map[string]string `json:"logLevels,omitempty"`
-	// Specification for the CDAP app-fabric service
+	// AppFabric is specification for the CDAP app-fabric service.
 	AppFabric AppFabricSpec `json:"appFabric,omitempty"`
-	// Specification for the CDAP logging service
+	// Logs is specification for the CDAP logging service.
 	Logs LogsSpec `json:"logs,omitempty"`
-	// Specification for the CDAP messaging service
+	// Messaging is specification for the CDAP messaging service.
 	Messaging MessagingSpec `json:"messaging,omitempty"`
-	// Specification for the CDAP metadata service
+	// Metadata is specification for the CDAP metadata service.
 	Metadata MetadataSpec `json:"metadata,omitempty"`
-	// Specification for the CDAP metrics service
+	// Metrics is specification for the CDAP metrics service.
 	Metrics MetricsSpec `json:"metrics,omitempty"`
-	// Specification for the CDAP preview service
+	// Preview is specification for the CDAP preview service.
 	Preview PreviewSpec `json:"preview,omitempty"`
-	// Specification for the CDAP router service
+	// Router is specification for the CDAP router service.
 	Router RouterSpec `json:"router,omitempty"`
-	// Specification for the CDAP UI service
+	// UserInterface is specification for the CDAP UI service.
 	UserInterface UserInterfaceSpec `json:"userInterface,omitempty"`
 }
 
-// CDAPServiceSpec defines the base set of specifications applicable to all master services
+// CDAPServiceSpec defines the base set of specifications applicable to all master services.
 type CDAPServiceSpec struct {
 	// Metadata for the service.
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	// Overrides the service account for the service pods
+	// ServiceAccountName overrides the service account for the service pods.
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
-	// Compute Resources required by the service.
+	// Resources are Compute resources required by the service.
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-	// A selector which must be true for the pod to fit on a node.
+	// NodeSelector is a selector which must be true for the pod to fit on a node.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// A list of environment variables for the master service container
+	// Env is a list of environment variables for the master service container.
 	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
-// CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance
+// CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance.
 type CDAPScalableServiceSpec struct {
 	CDAPServiceSpec `json:",inline"`
-	// Number of replicas for the service.
+	// Replicas is number of replicas for the service.
 	Replicas *int32 `json:"replicas,omitempty"`
 }
 
-// CDAPExternalServiceSpec defines the base specification for master services that expose to outside of the cluster
+// CDAPExternalServiceSpec defines the base specification for master services that expose to outside of the cluster.
 type CDAPExternalServiceSpec struct {
 	CDAPScalableServiceSpec `json:",inline"`
-	// The port number for the service.
+	// ServicePort is the port number for the service.
 	ServicePort *int32 `json:"servicePort,omitempty"`
 }
 
-// CDAPStatefulServiceSpec defines the base specification for stateful master services
+// CDAPStatefulServiceSpec defines the base specification for stateful master services.
 type CDAPStatefulServiceSpec struct {
 	CDAPServiceSpec `json:",inline"`
-	// Specification for the persistent volume size used by the service.
+	// StorageSize is specification for the persistent volume size used by the service.
 	StorageSize string `json:"storageSize,omitempty"`
-	// Name of the StorageClass for the persistent volume used by the service.
+	// StorageClassName is the name of the StorageClass for the persistent volume used by the service.
 	StorageClassName *string `json:"storageClassName,omitempty"`
 }
 
-// AppFabricSpec defines the specification for the AppFabric service
+// AppFabricSpec defines the specification for the AppFabric service.
 type AppFabricSpec struct {
 	CDAPServiceSpec `json:",inline"`
 }
 
-// LogsSpec defines the specification for the Logs service
+// LogsSpec defines the specification for the Logs service.
 type LogsSpec struct {
 	CDAPStatefulServiceSpec `json:",inline"`
 }
 
-// MessagingSpec defines the specification for the TMS service
+// MessagingSpec defines the specification for the TMS service.
 type MessagingSpec struct {
 	CDAPStatefulServiceSpec `json:",inline"`
 }
@@ -115,27 +115,27 @@ type MetadataSpec struct {
 	CDAPServiceSpec `json:",inline"`
 }
 
-// MetricsSpec defines the specification for the Metrics service
+// MetricsSpec defines the specification for the Metrics service.
 type MetricsSpec struct {
 	CDAPStatefulServiceSpec `json:",inline"`
 }
 
-// PreviewSpec defines the specification for the Preview service
+// PreviewSpec defines the specification for the Preview service.
 type PreviewSpec struct {
 	CDAPStatefulServiceSpec `json:",inline"`
 }
 
-// RouterSpec defines the specification for the Router service
+// RouterSpec defines the specification for the Router service.
 type RouterSpec struct {
 	CDAPExternalServiceSpec `json:",inline"`
 }
 
-// UserInterfaceSpec defines the specification for the UI service
+// UserInterfaceSpec defines the specification for the UI service.
 type UserInterfaceSpec struct {
 	CDAPExternalServiceSpec `json:",inline"`
 }
 
-// CDAPMasterStatus defines the observed state of CDAPMaster
+// CDAPMasterStatus defines the observed state of CDAPMaster.
 type CDAPMasterStatus struct {
 	status.Meta          `json:",inline"`
 	status.ComponentMeta `json:",inline"`
@@ -150,7 +150,7 @@ type CDAPMasterStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// CDAPMaster is the Schema for the cdapmasters API
+// CDAPMaster is the Schema for the cdapmasters API.
 // +k8s:openapi-gen=true
 type CDAPMaster struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -162,7 +162,7 @@ type CDAPMaster struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// CDAPMasterList contains a list of CDAPMaster
+// CDAPMasterList contains a list of CDAPMaster.
 type CDAPMasterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
