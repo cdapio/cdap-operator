@@ -32,16 +32,21 @@ spec:
   template:
     metadata:
     {{if .Labels}}
-    labels:
+      labels:
         {{range $k,$v := .Labels}}
           {{$k}}: '{{$v}}'
           {{end}}
     {{end}}
     spec:
       containers:
+        {{if .Job.StartTimeMillis}}
+        - name: post-upgrade
+          args: ["io.cdap.cdap.master.upgrade.PostUpgradeJobMain", "{{.Job.HostName}}", "11015", "{{.Job.StartTimeMillis}}"]
+        {{else}}
         - name: pre-upgrade
-          image: {{.Job.Image}}
           args: ["io.cdap.cdap.master.upgrade.UpgradeJobMain", "{{.Job.HostName}}", "11015"]
+        {{end}}
+          image: {{.Job.Image}}
           volumeMounts:
             - name: cdap-conf
               mountPath: /etc/cdap/conf

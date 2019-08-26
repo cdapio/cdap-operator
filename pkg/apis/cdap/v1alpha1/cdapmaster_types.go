@@ -143,8 +143,8 @@ type CDAPMasterStatus struct {
 	ImageToUse string `json:"imageToUse,omitempty"`
 	// UserInterfaceImageToUse is the Docker image of CDAP UI the operator uses to deploy.
 	UserInterfaceImageToUse string `json:"userInterfaceImageToUse,omitempty"`
-	// UpgradeJobVersion is a unique identifier of the upgrade job.
-	UpgradeJobVersion string `json:"upgradeJobVersion,omitempty"`
+	// UpgradeStartTimeMillis is the start time in millis of the upgrade process
+	UpgradeStartTimeMillis int64 `json:"upgradeStartTimeMillis,omitempty"`
 }
 
 // +genclient
