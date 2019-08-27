@@ -274,6 +274,7 @@ type upgradeJobSpec struct {
 	ReferentUID        types.UID `json:"referentUID,omitempty"`
 	SecuritySecret     string `json:"securitySecret,omitempty"`
 	StartTimeMillis    int64 `json:"startTimeMillis,omitempty"`
+	Namespace          string `json:"namespace,omitempty"`
 }
 
 // Returns the resource name for the given resource
@@ -472,21 +473,17 @@ func getPostUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string
 	return getUpgradeJobResources(master, rsrclabels, master.Status.UpgradeStartTimeMillis, getPostUpgradeJobName(master))
 }
 
-func compareVersion(a, b string) int {
-	av:= strings.Split(a, ":")
-	bv := strings.Split(b, ":")
-
-	var versiona, versionb string
+func getVersion(a string) string {
+	av := strings.Split(a, ":")
 	if len(av) == 1 {
-		versiona = latestVersion
-	} else {
-		versiona = av[1]
+		 return latestVersion
 	}
-	if len(bv) == 1 {
-		versionb = latestVersion
-	} else {
-		versionb = bv[1]
-	}
+	return av[1]
+}
+
+func compareVersion(a, b string) int {
+	versiona := getVersion(a)
+	versionb := getVersion(b)
 
 	if latestVersion == versiona && latestVersion == versionb {
 		return 0
@@ -533,6 +530,7 @@ func getUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string]str
 		ReferentApiVersion: master.APIVersion,
 		ReferentUID:        master.UID,
 		SecuritySecret:     master.Spec.SecuritySecret,
+		Namespace:          master.Namespace,
 	}
 	if startTimeMillis != 0 {
 		spec.StartTimeMillis = startTimeMillis

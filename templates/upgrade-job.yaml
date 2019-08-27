@@ -15,7 +15,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{.Job.JobName}}
-  namespace: default
+  namespace: {{.Job.Namespace}}
 {{if .Labels}}
   labels:
     {{range $k,$v := .Labels}}
