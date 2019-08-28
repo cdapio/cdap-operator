@@ -49,6 +49,9 @@ spec:
         {{$k}}: '{{$v}}'
         {{end}}
     {{end}}
+    {{if .Service.RuntimeClassName}}
+      runtimeClassName: {{.Service.RuntimeClassName}}
+    {{end}}
       terminationGracePeriodSeconds: 120
       containers:
         - image: {{.Master.Status.ImageToUse}}

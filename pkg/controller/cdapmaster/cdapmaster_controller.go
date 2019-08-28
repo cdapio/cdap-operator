@@ -266,7 +266,7 @@ type upgradeJobSpec struct {
 	ReferentKind       string    `json:"referentKind,omitempty"`
 	ReferentApiVersion string    `json:"referentApiVersion,omitempty"`
 	ReferentUID        types.UID `json:"referentUID,omitempty"`
-	SecuritySecret     string `json:"securitySecret,omitempty"`
+	SecuritySecret     string    `json:"securitySecret,omitempty"`
 }
 
 // Returns the resource name for the given resource
@@ -280,7 +280,7 @@ func getPreUpgradeResources(s *upgradeJobSpec, rsrclabels map[string]string, r *
 	ngdata.Labels = rsrclabels
 	ngdata.CConfName = getResourceName(r, "cconf")
 	ngdata.HConfName = getResourceName(r, "hconf")
-	item, err := k8s.ObjectFromFile(templateDir + upgradeJobTemplate, ngdata, &batchv1.JobList{})
+	item, err := k8s.ObjectFromFile(templateDir+upgradeJobTemplate, ngdata, &batchv1.JobList{})
 	if err != nil {
 		return nil, err
 	}
