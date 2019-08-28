@@ -473,39 +473,42 @@ func getPostUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string
 	return getUpgradeJobResources(master, rsrclabels, master.Status.UpgradeStartTimeMillis, getPostUpgradeJobName(master))
 }
 
-func getVersion(a string) string {
+func getVersion(a string) *version {
 	av := strings.Split(a, ":")
-	if len(av) == 1 {
-		 return latestVersion
+	if len(av) == 1 || av[1] == latestVersion {
+		 return &version{isLatest: true}
 	}
-	return av[1]
+	return &version{isLatest:false, versionList: strings.Split(av[1], ".")}
 }
 
-func compareVersion(a, b string) int {
-	versiona := getVersion(a)
-	versionb := getVersion(b)
+// Represents an image version
+type version struct {
+	// Boolean if the version is "latest"
+	isLatest bool
+	// List of version integers, starting from major
+	versionList []string
+}
 
-	if latestVersion == versiona && latestVersion == versionb {
+func compareVersion(versiona, versionb *version) int {
+	if versiona.isLatest && versionb.isLatest {
 		return 0
-	} else if latestVersion == versiona {
+	} else if versiona.isLatest{
 		return -1
-	} else if latestVersion == versionb {
+	} else if versionb.isLatest {
 		return 1
 	}
 
-	as := strings.Split(versiona, ".")
-	bs := strings.Split(versionb, ".")
-	loopMax := len(bs)
-	if len(as) > len(bs) {
-		loopMax = len(as)
+	loopMax := len(versionb.versionList)
+	if len(versiona.versionList) > len(versionb.versionList) {
+		loopMax = len(versiona.versionList)
 	}
 	for i := 0; i < loopMax; i++ {
 		var x, y string
-		if len(as) > i {
-			x = as[i]
+		if len(versiona.versionList) > i {
+			x = versiona.versionList[i]
 		}
-		if len(bs) > i {
-			y = bs[i]
+		if len(versionb.versionList) > i {
+			y = versionb.versionList[i]
 		}
 		xi,_ := strconv.Atoi(x)
 		yi,_ := strconv.Atoi(y)
@@ -588,7 +591,7 @@ func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 	}
 
 	// Downgrade case, we want to set the imageToUse to spec while not performing pre or post upgrade jobs
-	if compareVersion(master.Status.ImageToUse, master.Spec.Image) == -1 {
+	if compareVersion(getVersion(master.Status.ImageToUse), getVersion(master.Spec.Image)) == -1 {
 		master.Status.ImageToUse = master.Spec.Image
 		master.Status.UserInterfaceImageToUse = master.Spec.UserInterfaceImage
 		master.Status.SetCondition(postUpgradeFinished, upgradeJobSkippedMessage, upgradeJobSkippedMessage)
