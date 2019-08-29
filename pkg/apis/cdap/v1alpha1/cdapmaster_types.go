@@ -68,6 +68,9 @@ type CDAPServiceSpec struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used
+	// to run pods for this service. If no RuntimeClass resource matches the named class, pods will not be running.
+	RuntimeClassName *string `json:"runtimeClassName,omitempty"`
 	// Env is a list of environment variables for the master service container.
 	Env []corev1.EnvVar `json:"env,omitempty"`
 }

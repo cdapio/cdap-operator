@@ -49,6 +49,9 @@ spec:
         {{$k}}: '{{$v}}'
         {{end}}
     {{end}}
+    {{if .Service.RuntimeClassName}}
+      runtimeClassName: {{.Service.RuntimeClassName}}
+    {{end}}
       containers:
         - image: {{.Master.Status.UserInterfaceImageToUse}}
           workingDir: "/opt/cdap/ui"
