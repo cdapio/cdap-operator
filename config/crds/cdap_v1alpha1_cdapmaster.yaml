@@ -47,6 +47,12 @@ spec:
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
+                runtimeClassName:
+                  description: RuntimeClassName refers to a RuntimeClass object in
+                    the node.k8s.io group, which should be used to run pods for this
+                    service. If no RuntimeClass resource matches the named class,
+                    pods will not be running.
+                  type: string
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -88,6 +94,12 @@ spec:
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
+                runtimeClassName:
+                  description: RuntimeClassName refers to a RuntimeClass object in
+                    the node.k8s.io group, which should be used to run pods for this
+                    service. If no RuntimeClass resource matches the named class,
+                    pods will not be running.
+                  type: string
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -120,6 +132,12 @@ spec:
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
+                runtimeClassName:
+                  description: RuntimeClassName refers to a RuntimeClass object in
+                    the node.k8s.io group, which should be used to run pods for this
+                    service. If no RuntimeClass resource matches the named class,
+                    pods will not be running.
+                  type: string
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -152,6 +170,12 @@ spec:
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
+                runtimeClassName:
+                  description: RuntimeClassName refers to a RuntimeClass object in
+                    the node.k8s.io group, which should be used to run pods for this
+                    service. If no RuntimeClass resource matches the named class,
+                    pods will not be running.
+                  type: string
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -176,6 +200,12 @@ spec:
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
+                runtimeClassName:
+                  description: RuntimeClassName refers to a RuntimeClass object in
+                    the node.k8s.io group, which should be used to run pods for this
+                    service. If no RuntimeClass resource matches the named class,
+                    pods will not be running.
+                  type: string
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -208,6 +238,12 @@ spec:
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
+                runtimeClassName:
+                  description: RuntimeClassName refers to a RuntimeClass object in
+                    the node.k8s.io group, which should be used to run pods for this
+                    service. If no RuntimeClass resource matches the named class,
+                    pods will not be running.
+                  type: string
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -244,6 +280,12 @@ spec:
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
+                runtimeClassName:
+                  description: RuntimeClassName refers to a RuntimeClass object in
+                    the node.k8s.io group, which should be used to run pods for this
+                    service. If no RuntimeClass resource matches the named class,
+                    pods will not be running.
+                  type: string
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -284,6 +326,12 @@ spec:
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
+                runtimeClassName:
+                  description: RuntimeClassName refers to a RuntimeClass object in
+                    the node.k8s.io group, which should be used to run pods for this
+                    service. If no RuntimeClass resource matches the named class,
+                    pods will not be running.
+                  type: string
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
