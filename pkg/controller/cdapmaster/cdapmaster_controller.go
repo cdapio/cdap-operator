@@ -601,7 +601,7 @@ func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 	// Post upgrade case, in which the image has updated successfully and all pods are back up
 	if master.Status.UpgradeStartTimeMillis != 0 && master.Status.IsReady() {
 		var postUpgradeJob *batchv1.Job
-		item := k8s.GetItem(observed, &batchv1.Job{}, getPostUpgradeJobName(master), "default")
+		item := k8s.GetItem(observed, &batchv1.Job{}, getPostUpgradeJobName(master), master.Namespace)
 		if item != nil {
 			postUpgradeJob = item.(*batchv1.Job)
 		}
@@ -640,7 +640,7 @@ func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 	var upgradeResources []reconciler.Object
 	var upgradeJob *batchv1.Job
 	if master.Status.UpgradeStartTimeMillis != 0 {
-		item := k8s.GetItem(observed, &batchv1.Job{}, getUpgradeJobName(master), "default")
+		item := k8s.GetItem(observed, &batchv1.Job{}, getUpgradeJobName(master), master.Namespace)
 		if item != nil {
 			upgradeJob = item.(*batchv1.Job)
 		}
