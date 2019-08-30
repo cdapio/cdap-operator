@@ -19,7 +19,6 @@ package cdapmaster
 import (
 	alpha1 "cdap.io/cdap-operator/pkg/apis/cdap/v1alpha1"
 	"fmt"
-	"github.com/google/uuid"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
 	"sigs.k8s.io/controller-reconciler/pkg/status"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -48,12 +48,18 @@ const (
 	serviceTemplate      = "cdap-service.yaml"
 	upgradeJobTemplate   = "upgrade-job.yaml"
 
-	upgradeFailed            = "upgrade-failed"
-	upgradeStartMessage      = "Upgrade started, received updated CR."
-	upgradeFailedInitMessage = "Failed to create job, upgrade failed."
-	upgradeJobFailedMessage  = "Upgrade job failed."
-	upgradeResetMessage      = "Upgrade spec reset."
-	upgradeFailureLimit      = 4
+	upgradeFailed             = "upgrade-failed"
+	postUpgradeFailed         = "post-upgrade-failed"
+	postUpgradeFinished       = "post-upgrade-finished"
+	upgradeStartMessage       = "Upgrade started, received updated CR."
+	upgradeFailedInitMessage  = "Failed to create job, upgrade failed."
+	upgradeJobFailedMessage   = "Upgrade job failed."
+	upgradeJobFinishedMessage = "Upgrade job finished."
+	upgradeJobSkippedMessage  = "Upgrade job skipped."
+	upgradeResetMessage       = "Upgrade spec reset."
+	upgradeFailureLimit       = 4
+
+	latestVersion = "latest"
 )
 
 // Add the manager to the controller.
@@ -267,6 +273,8 @@ type upgradeJobSpec struct {
 	ReferentApiVersion string    `json:"referentApiVersion,omitempty"`
 	ReferentUID        types.UID `json:"referentUID,omitempty"`
 	SecuritySecret     string    `json:"securitySecret,omitempty"`
+	StartTimeMillis    int64     `json:"startTimeMillis,omitempty"`
+	Namespace          string    `json:"namespace,omitempty"`
 }
 
 // Returns the resource name for the given resource
@@ -274,22 +282,15 @@ func getResourceName(r *alpha1.CDAPMaster, resource string) string {
 	return fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(resource))
 }
 
-// Gets the set of resources for the pre-upgrade job.
-func getPreUpgradeResources(s *upgradeJobSpec, rsrclabels map[string]string, r *alpha1.CDAPMaster) ([]reconciler.Object, error) {
-	ngdata := &upgradeValue{Job: s}
-	ngdata.Labels = rsrclabels
-	ngdata.CConfName = getResourceName(r, "cconf")
-	ngdata.HConfName = getResourceName(r, "hconf")
-	item, err := k8s.ObjectFromFile(templateDir+upgradeJobTemplate, ngdata, &batchv1.JobList{})
-	if err != nil {
-		return nil, err
-	}
-	return append([]reconciler.Object{}, *item), nil
+
+// Gets the name of the upgrade job based on resource version. Name can be no more than 63 chars.
+func getUpgradeJobName(r *alpha1.CDAPMaster) string {
+	return fmt.Sprintf("cdap-%s-uj-%d", r.Name, r.Status.UpgradeStartTimeMillis)
 }
 
-// Gets the name of the upgrade job based on resource version.
-func getUpgradeJobName(r *alpha1.CDAPMaster) string {
-	return fmt.Sprintf("cdap-%s-upgrade-job-%s", r.Name, r.Status.UpgradeJobVersion)
+// Gets the name of the post upgrade job based on resource version. Name can be no more than 63 chars.
+func getPostUpgradeJobName(r *alpha1.CDAPMaster) string {
+	return fmt.Sprintf("cdap-%s-puj-%d", r.Name, r.Status.UpgradeStartTimeMillis)
 }
 
 // Gets the set of resources for the given service represented by the CDAPServiceSpec.
@@ -437,6 +438,12 @@ func logbackFromFile(t string, data interface{}) (string, error) {
 	return output.String(), nil
 }
 
+func resetUpgradeConditions(master *alpha1.CDAPMaster, message string) {
+	master.Status.ClearCondition(upgradeFailed, message, message)
+	master.Status.ClearCondition(postUpgradeFailed, message, message)
+	master.Status.ClearCondition(postUpgradeFinished, message, message)
+}
+
 // Adds a component list object in state in progress. This will cause UpdateStatus to update the
 // ready type to state "false".
 func addUpgradeComponentNotReady(master *alpha1.CDAPMaster) {
@@ -447,8 +454,7 @@ func addUpgradeComponentNotReady(master *alpha1.CDAPMaster) {
 }
 
 func prepareNewPreUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string]string) ([]reconciler.Object, error) {
-	master.Status.UpgradeJobVersion = uuid.New().String()
-	master.Status.Meta.ClearCondition(upgradeFailed, upgradeStartMessage, upgradeStartMessage)
+	resetUpgradeConditions(master, upgradeStartMessage)
 
 	upgradeResources, err := getPreUpgradeJobResources(master, rsrclabels)
 	if err != nil {
@@ -458,25 +464,90 @@ func prepareNewPreUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[
 	return upgradeResources, nil
 }
 
-// Gets the job resources and sets status to not ready, since any time when we wish to add the job
-// to expected, the status is not ready.
+// Gets pre upgrade job resources
 func getPreUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string]string) ([]reconciler.Object, error) {
-	upgradeResources, err := getPreUpgradeResources(
-		&upgradeJobSpec{
-			Image:              master.Spec.Image,
-			JobName:            getUpgradeJobName(master),
-			HostName:           getResourceName(master, string(alpha1.ServiceRouter)),
-			BackoffLimit:       upgradeFailureLimit,
-			ReferentName:       master.Name,
-			ReferentKind:       master.Kind,
-			ReferentApiVersion: master.APIVersion,
-			ReferentUID:        master.UID,
-			SecuritySecret:     master.Spec.SecuritySecret,
-		}, rsrclabels, master)
+	return getUpgradeJobResources(master, rsrclabels, 0, getUpgradeJobName(master))
+}
+
+// Gets post upgrade job resources
+func getPostUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string]string) ([]reconciler.Object, error) {
+	return getUpgradeJobResources(master, rsrclabels, master.Status.UpgradeStartTimeMillis, getPostUpgradeJobName(master))
+}
+
+func getVersion(a string) *version {
+	av := strings.Split(a, ":")
+	if len(av) == 1 || av[1] == latestVersion {
+		 return &version{isLatest: true}
+	}
+	return &version{isLatest:false, versionList: strings.Split(av[1], ".")}
+}
+
+// Represents an image version
+type version struct {
+	// Boolean if the version is "latest"
+	isLatest bool
+	// List of version integers, starting from major
+	versionList []string
+}
+
+func compareVersion(versiona, versionb *version) int {
+	if versiona.isLatest && versionb.isLatest {
+		return 0
+	} else if versiona.isLatest{
+		return -1
+	} else if versionb.isLatest {
+		return 1
+	}
+
+	loopMax := len(versionb.versionList)
+	if len(versiona.versionList) > len(versionb.versionList) {
+		loopMax = len(versiona.versionList)
+	}
+	for i := 0; i < loopMax; i++ {
+		var x, y string
+		if len(versiona.versionList) > i {
+			x = versiona.versionList[i]
+		}
+		if len(versionb.versionList) > i {
+			y = versionb.versionList[i]
+		}
+		xi,_ := strconv.Atoi(x)
+		yi,_ := strconv.Atoi(y)
+		if xi > yi {
+			return -1
+		} else if xi < yi {
+			return 1
+		}
+	}
+	return 0
+}
+
+// Gets upgrade job resources
+func getUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string]string, startTimeMillis int64, name string) ([]reconciler.Object, error) {
+	var spec = &upgradeJobSpec{
+		Image:              master.Spec.Image,
+		JobName:            name,
+		HostName:           getResourceName(master, string(alpha1.ServiceRouter)),
+		BackoffLimit:       upgradeFailureLimit,
+		ReferentName:       master.Name,
+		ReferentKind:       master.Kind,
+		ReferentApiVersion: master.APIVersion,
+		ReferentUID:        master.UID,
+		SecuritySecret:     master.Spec.SecuritySecret,
+		Namespace:          master.Namespace,
+	}
+	if startTimeMillis != 0 {
+		spec.StartTimeMillis = startTimeMillis
+	}
+	ngdata := &upgradeValue{Job: spec}
+	ngdata.Labels = rsrclabels
+	ngdata.CConfName = getResourceName(master, "cconf")
+	ngdata.HConfName = getResourceName(master, "hconf")
+	item, err := k8s.ObjectFromFile(templateDir + upgradeJobTemplate, ngdata, &batchv1.JobList{})
 	if err != nil {
 		return nil, err
 	}
-	return upgradeResources, nil
+	return append([]reconciler.Object{}, *item), nil
 }
 
 // Updates the component status
@@ -515,7 +586,45 @@ func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 	if master.Status.Meta.IsConditionTrue(upgradeFailed) {
 		// User has reset the CR after failure. Remove upgrade failed status.
 		if master.Spec.Image == master.Status.ImageToUse {
-			master.Status.ClearCondition(upgradeFailed, upgradeResetMessage, upgradeResetMessage)
+			resetUpgradeConditions(master, upgradeResetMessage)
+		}
+		return resources, nil
+	}
+
+	// Downgrade case, we want to set the imageToUse to spec while not performing pre or post upgrade jobs
+	if compareVersion(getVersion(master.Status.ImageToUse), getVersion(master.Spec.Image)) == -1 {
+		master.Status.ImageToUse = master.Spec.Image
+		master.Status.UserInterfaceImageToUse = master.Spec.UserInterfaceImage
+		master.Status.SetCondition(postUpgradeFinished, upgradeJobSkippedMessage, upgradeJobSkippedMessage)
+		return resources, nil
+	}
+
+	// Post upgrade case, in which the image has updated successfully and all pods are back up
+	if master.Status.UpgradeStartTimeMillis != 0 && master.Status.IsReady() {
+		var postUpgradeJob *batchv1.Job
+		item := k8s.GetItem(observed, &batchv1.Job{}, getPostUpgradeJobName(master), master.Namespace)
+		if item != nil {
+			postUpgradeJob = item.(*batchv1.Job)
+		}
+
+		postUpgradeResources, err := getPostUpgradeJobResources(master, rsrclabels)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, postUpgradeResources...)
+
+		if postUpgradeJob == nil {
+			return resources, nil
+		}
+
+		if postUpgradeJob.Status.Succeeded > 0 {
+			// Post upgrade job has succeeded.
+			master.Status.UpgradeStartTimeMillis = 0
+			master.Status.Meta.SetCondition(postUpgradeFinished, upgradeJobFinishedMessage, upgradeJobFinishedMessage)
+		} else if postUpgradeJob.Status.Failed >= upgradeFailureLimit {
+			// Post upgrade job has failed
+			master.Status.UpgradeStartTimeMillis = 0
+			master.Status.Meta.SetCondition(postUpgradeFailed, upgradeJobFailedMessage, upgradeJobFailedMessage)
 		}
 		return resources, nil
 	}
@@ -531,8 +640,8 @@ func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 
 	var upgradeResources []reconciler.Object
 	var upgradeJob *batchv1.Job
-	if master.Status.UpgradeJobVersion != "" {
-		item := k8s.GetItem(observed, &batchv1.Job{}, getUpgradeJobName(master), "default")
+	if master.Status.UpgradeStartTimeMillis != 0 {
+		item := k8s.GetItem(observed, &batchv1.Job{}, getUpgradeJobName(master), master.Namespace)
 		if item != nil {
 			upgradeJob = item.(*batchv1.Job)
 		}
@@ -540,6 +649,8 @@ func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 
 	if upgradeJob == nil {
 		// Add a new job and set ready status to false
+		master.Status.UpgradeStartTimeMillis =
+				time.Now().UnixNano() / (int64(time.Millisecond)/int64(time.Nanosecond))
 		var err error
 		upgradeResources, err = prepareNewPreUpgradeJobResources(master, rsrclabels)
 		if err != nil {
@@ -553,11 +664,10 @@ func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 		// Pre upgrade job has succeeded.
 		master.Status.ImageToUse = master.Spec.Image
 		master.Status.UserInterfaceImageToUse = master.Spec.UserInterfaceImage
-		master.Status.UpgradeJobVersion = ""
 		addUpgradeComponentNotReady(master)
 	} else if upgradeJob.Status.Failed >= upgradeFailureLimit {
 		// Pre upgrade job has failed
-		master.Status.UpgradeJobVersion = ""
+		master.Status.UpgradeStartTimeMillis = 0
 		master.Status.Meta.SetCondition(upgradeFailed, upgradeJobFailedMessage, upgradeJobFailedMessage)
 	} else {
 		// Pre upgrade job has already been initialized, but has not finished

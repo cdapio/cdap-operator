@@ -456,10 +456,11 @@ spec:
                 by the API Server.
               format: int64
               type: integer
-            upgradeJobVersion:
-              description: UpgradeJobVersion is a unique identifier of the upgrade
-                job.
-              type: string
+            upgradeStartTimeMillis:
+              description: UpgradeStartTimeMillis is the start time in millis of the
+                upgrade process
+              format: int64
+              type: integer
             userInterfaceImageToUse:
               description: UserInterfaceImageToUse is the Docker image of CDAP UI
                 the operator uses to deploy.
