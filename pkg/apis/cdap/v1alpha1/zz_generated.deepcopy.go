@@ -218,6 +218,11 @@ func (in *CDAPServiceSpec) DeepCopyInto(out *CDAPServiceSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.RuntimeClassName != nil {
+		in, out := &in.RuntimeClassName, &out.RuntimeClassName
+		*out = new(string)
+		**out = **in
+	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
 		*out = make([]v1.EnvVar, len(*in))

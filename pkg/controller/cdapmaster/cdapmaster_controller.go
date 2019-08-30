@@ -272,15 +272,16 @@ type upgradeJobSpec struct {
 	ReferentKind       string    `json:"referentKind,omitempty"`
 	ReferentApiVersion string    `json:"referentApiVersion,omitempty"`
 	ReferentUID        types.UID `json:"referentUID,omitempty"`
-	SecuritySecret     string `json:"securitySecret,omitempty"`
-	StartTimeMillis    int64 `json:"startTimeMillis,omitempty"`
-	Namespace          string `json:"namespace,omitempty"`
+	SecuritySecret     string    `json:"securitySecret,omitempty"`
+	StartTimeMillis    int64     `json:"startTimeMillis,omitempty"`
+	Namespace          string    `json:"namespace,omitempty"`
 }
 
 // Returns the resource name for the given resource
 func getResourceName(r *alpha1.CDAPMaster, resource string) string {
 	return fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(resource))
 }
+
 
 // Gets the name of the upgrade job based on resource version. Name can be no more than 63 chars.
 func getUpgradeJobName(r *alpha1.CDAPMaster) string {
