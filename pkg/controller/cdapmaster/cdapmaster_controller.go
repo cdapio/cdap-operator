@@ -17,23 +17,24 @@ limitations under the License.
 package cdapmaster
 
 import (
-	alpha1 "cdap.io/cdap-operator/pkg/apis/cdap/v1alpha1"
 	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
+	"text/template"
+	"time"
+
+	alpha1 "cdap.io/cdap-operator/pkg/apis/cdap/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
 	gr "sigs.k8s.io/controller-reconciler/pkg/genericreconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
 	"sigs.k8s.io/controller-reconciler/pkg/status"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"strconv"
-	"strings"
-	"text/template"
-	"time"
 )
 
 const (
@@ -77,6 +78,7 @@ func Add(mgr manager.Manager) error {
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) *gr.Reconciler {
 	return gr.
@@ -282,7 +284,6 @@ func getResourceName(r *alpha1.CDAPMaster, resource string) string {
 	return fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(resource))
 }
 
-
 // Gets the name of the upgrade job based on resource version. Name can be no more than 63 chars.
 func getUpgradeJobName(r *alpha1.CDAPMaster) string {
 	return fmt.Sprintf("cdap-%s-uj-%d", r.Name, r.Status.UpgradeStartTimeMillis)
@@ -477,9 +478,9 @@ func getPostUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string
 func getVersion(a string) *version {
 	av := strings.Split(a, ":")
 	if len(av) == 1 || av[1] == latestVersion {
-		 return &version{isLatest: true}
+		return &version{isLatest: true}
 	}
-	return &version{isLatest:false, versionList: strings.Split(av[1], ".")}
+	return &version{isLatest: false, versionList: strings.Split(av[1], ".")}
 }
 
 // Represents an image version
@@ -493,7 +494,7 @@ type version struct {
 func compareVersion(versiona, versionb *version) int {
 	if versiona.isLatest && versionb.isLatest {
 		return 0
-	} else if versiona.isLatest{
+	} else if versiona.isLatest {
 		return -1
 	} else if versionb.isLatest {
 		return 1
@@ -511,8 +512,8 @@ func compareVersion(versiona, versionb *version) int {
 		if len(versionb.versionList) > i {
 			y = versionb.versionList[i]
 		}
-		xi,_ := strconv.Atoi(x)
-		yi,_ := strconv.Atoi(y)
+		xi, _ := strconv.Atoi(x)
+		yi, _ := strconv.Atoi(y)
 		if xi > yi {
 			return -1
 		} else if xi < yi {
@@ -543,7 +544,7 @@ func getUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string]str
 	ngdata.Labels = rsrclabels
 	ngdata.CConfName = getResourceName(master, "cconf")
 	ngdata.HConfName = getResourceName(master, "hconf")
-	item, err := k8s.ObjectFromFile(templateDir + upgradeJobTemplate, ngdata, &batchv1.JobList{})
+	item, err := k8s.ObjectFromFile(templateDir+upgradeJobTemplate, ngdata, &batchv1.JobList{})
 	if err != nil {
 		return nil, err
 	}
@@ -650,7 +651,7 @@ func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 	if upgradeJob == nil {
 		// Add a new job and set ready status to false
 		master.Status.UpgradeStartTimeMillis =
-				time.Now().UnixNano() / (int64(time.Millisecond)/int64(time.Nanosecond))
+			time.Now().UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 		var err error
 		upgradeResources, err = prepareNewPreUpgradeJobResources(master, rsrclabels)
 		if err != nil {
