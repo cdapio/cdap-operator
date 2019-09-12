@@ -223,6 +223,11 @@ func (in *CDAPServiceSpec) DeepCopyInto(out *CDAPServiceSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.PriorityClassName != nil {
+		in, out := &in.PriorityClassName, &out.PriorityClassName
+		*out = new(string)
+		**out = **in
+	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
 		*out = make([]v1.EnvVar, len(*in))

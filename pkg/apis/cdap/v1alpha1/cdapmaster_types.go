@@ -71,6 +71,8 @@ type CDAPServiceSpec struct {
 	// RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used
 	// to run pods for this service. If no RuntimeClass resource matches the named class, pods will not be running.
 	RuntimeClassName *string `json:"runtimeClassName,omitempty"`
+	// PriorityClassName is to specify the priority of the pods for this service.
+	PriorityClassName *string `json:"priorityClassName,omitempty"`
 	// Env is a list of environment variables for the master service container.
 	Env []corev1.EnvVar `json:"env,omitempty"`
 }
