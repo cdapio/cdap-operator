@@ -52,6 +52,9 @@ spec:
     {{if .Service.RuntimeClassName}}
       runtimeClassName: {{.Service.RuntimeClassName}}
     {{end}}
+    {{if .Service.RuntimeClassName}}
+      priorityClassName: {{.Service.PriorityClassName}}
+    {{end}}
       containers:
         - image: {{.Master.Status.UserInterfaceImageToUse}}
           workingDir: "/opt/cdap/ui"

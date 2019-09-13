@@ -52,6 +52,9 @@ spec:
     {{if .Service.RuntimeClassName}}
       runtimeClassName: {{.Service.RuntimeClassName}}
     {{end}}
+    {{if .Service.RuntimeClassName}}
+      priorityClassName: {{.Service.PriorityClassName}}
+    {{end}}
       terminationGracePeriodSeconds: 120
       containers:
         - image: {{.Master.Status.ImageToUse}}
