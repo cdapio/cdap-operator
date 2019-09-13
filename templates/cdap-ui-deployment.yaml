@@ -52,7 +52,7 @@ spec:
     {{if .Service.RuntimeClassName}}
       runtimeClassName: {{.Service.RuntimeClassName}}
     {{end}}
-    {{if .Service.RuntimeClassName}}
+    {{if .Service.PriorityClassName}}
       priorityClassName: {{.Service.PriorityClassName}}
     {{end}}
       containers:
