@@ -17,23 +17,24 @@ limitations under the License.
 package cdapmaster
 
 import (
-	alpha1 "cdap.io/cdap-operator/pkg/apis/cdap/v1alpha1"
 	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
+	"text/template"
+	"time"
+
+	alpha1 "cdap.io/cdap-operator/pkg/apis/cdap/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
 	gr "sigs.k8s.io/controller-reconciler/pkg/genericreconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
 	"sigs.k8s.io/controller-reconciler/pkg/status"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"strconv"
-	"strings"
-	"text/template"
-	"time"
 )
 
 const (
@@ -77,6 +78,7 @@ func Add(mgr manager.Manager) error {
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) *gr.Reconciler {
 	return gr.
