@@ -44,6 +44,10 @@ spec:
                   description: NodeSelector is a selector which must be true for the
                     pod to fit on a node.
                   type: object
+                priorityClassName:
+                  description: PriorityClassName is to specify the priority of the
+                    pods for this service.
+                  type: string
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
@@ -91,6 +95,10 @@ spec:
                   description: NodeSelector is a selector which must be true for the
                     pod to fit on a node.
                   type: object
+                priorityClassName:
+                  description: PriorityClassName is to specify the priority of the
+                    pods for this service.
+                  type: string
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
@@ -129,6 +137,10 @@ spec:
                   description: NodeSelector is a selector which must be true for the
                     pod to fit on a node.
                   type: object
+                priorityClassName:
+                  description: PriorityClassName is to specify the priority of the
+                    pods for this service.
+                  type: string
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
@@ -167,6 +179,10 @@ spec:
                   description: NodeSelector is a selector which must be true for the
                     pod to fit on a node.
                   type: object
+                priorityClassName:
+                  description: PriorityClassName is to specify the priority of the
+                    pods for this service.
+                  type: string
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
@@ -197,6 +213,10 @@ spec:
                   description: NodeSelector is a selector which must be true for the
                     pod to fit on a node.
                   type: object
+                priorityClassName:
+                  description: PriorityClassName is to specify the priority of the
+                    pods for this service.
+                  type: string
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
@@ -235,6 +255,10 @@ spec:
                   description: NodeSelector is a selector which must be true for the
                     pod to fit on a node.
                   type: object
+                priorityClassName:
+                  description: PriorityClassName is to specify the priority of the
+                    pods for this service.
+                  type: string
                 resources:
                   description: Resources are Compute resources required by the service.
                   type: object
@@ -273,6 +297,10 @@ spec:
                   description: NodeSelector is a selector which must be true for the
                     pod to fit on a node.
                   type: object
+                priorityClassName:
+                  description: PriorityClassName is to specify the priority of the
+                    pods for this service.
+                  type: string
                 replicas:
                   description: Replicas is number of replicas for the service.
                   format: int32
@@ -319,6 +347,10 @@ spec:
                   description: NodeSelector is a selector which must be true for the
                     pod to fit on a node.
                   type: object
+                priorityClassName:
+                  description: PriorityClassName is to specify the priority of the
+                    pods for this service.
+                  type: string
                 replicas:
                   description: Replicas is number of replicas for the service.
                   format: int32
