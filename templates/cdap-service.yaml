@@ -28,7 +28,11 @@ metadata:
     {{end}}
 {{end}}
 spec:
+{{if .Service.ServiceType}}
+  type: {{.Service.ServiceType}}
+{{else}}
   type: NodePort
+{{end}}
   selector:
     {{range $k,$v := .Labels}}
     {{$k}}: '{{$v}}'

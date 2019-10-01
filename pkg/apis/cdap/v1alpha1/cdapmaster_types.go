@@ -87,6 +87,8 @@ type CDAPScalableServiceSpec struct {
 // CDAPExternalServiceSpec defines the base specification for master services that expose to outside of the cluster.
 type CDAPExternalServiceSpec struct {
 	CDAPScalableServiceSpec `json:",inline"`
+	// ServiceType is the service type in kubernetes, default is NodePort.
+	ServiceType *string `json:"serviceType,omitempty"`
 	// ServicePort is the port number for the service.
 	ServicePort *int32 `json:"servicePort,omitempty"`
 }

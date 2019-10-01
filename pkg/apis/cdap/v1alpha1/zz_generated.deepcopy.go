@@ -45,6 +45,11 @@ func (in *AppFabricSpec) DeepCopy() *AppFabricSpec {
 func (in *CDAPExternalServiceSpec) DeepCopyInto(out *CDAPExternalServiceSpec) {
 	*out = *in
 	in.CDAPScalableServiceSpec.DeepCopyInto(&out.CDAPScalableServiceSpec)
+	if in.ServiceType != nil {
+		in, out := &in.ServiceType, &out.ServiceType
+		*out = new(string)
+		**out = **in
+	}
 	if in.ServicePort != nil {
 		in, out := &in.ServicePort, &out.ServicePort
 		*out = new(int32)
