@@ -322,6 +322,10 @@ spec:
                   description: ServicePort is the port number for the service.
                   format: int32
                   type: integer
+                serviceType:
+                  description: ServiceType is the service type in kubernetes, default
+                    is NodePort.
+                  type: string
               type: object
             securitySecret:
               description: SecuritySecret is secret that contains security related
@@ -372,6 +376,10 @@ spec:
                   description: ServicePort is the port number for the service.
                   format: int32
                   type: integer
+                serviceType:
+                  description: ServiceType is the service type in kubernetes, default
+                    is NodePort.
+                  type: string
               type: object
             userInterfaceImage:
               description: UserInterfaceImage is the docker image name for the CDAP
