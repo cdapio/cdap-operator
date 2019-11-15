@@ -495,9 +495,9 @@ func compareVersion(versiona, versionb *version) int {
 	if versiona.isLatest && versionb.isLatest {
 		return 0
 	} else if versiona.isLatest {
-		return -1
-	} else if versionb.isLatest {
 		return 1
+	} else if versionb.isLatest {
+		return -1
 	}
 
 	loopMax := len(versionb.versionList)
