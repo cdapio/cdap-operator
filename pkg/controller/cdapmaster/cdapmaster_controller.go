@@ -396,10 +396,6 @@ func setResources(obj interface{}, resources *corev1.ResourceRequirements) {
 // Set the environment for the first container object. It uses reflection to find and set the field
 // `Spec.Template.Spec.Containers[0].Env`
 func setEnv(obj interface{}, data interface{}, env []corev1.EnvVar) {
-	if len(env) == 0 {
-		return
-	}
-
 	value := reflect.ValueOf(obj).Elem()
 
 	for _, fieldName := range []string{"Spec", "Template", "Spec", "Containers"} {
@@ -412,13 +408,23 @@ func setEnv(obj interface{}, data interface{}, env []corev1.EnvVar) {
 	// Add all environment variables
 	envSlice := reflect.AppendSlice(envValue, reflect.ValueOf(env))
 
-	// Add the JAVA_HEAPMAX env
-	maxHeapValue := reflect.ValueOf(data).Elem().FieldByName("JavaMaxHeap")
-	if maxHeapValue.IsValid() && !maxHeapValue.IsNil() {
-		envSlice = reflect.Append(envSlice, reflect.ValueOf(corev1.EnvVar{
-			Name:  "JAVA_HEAPMAX",
-			Value: fmt.Sprintf("-Xmx%v", maxHeapValue.Elem().Int()),
-		}))
+	hasMaxHeap := false
+	for _, envVar := range env {
+		if envVar.Name == "JAVA_HEAPMAX" {
+			hasMaxHeap = true
+			break
+		}
+	}
+
+	// Add the JAVA_HEAPMAX env if not set in the Spec Env
+	if !hasMaxHeap {
+		maxHeapValue := reflect.ValueOf(data).Elem().FieldByName("JavaMaxHeap")
+		if maxHeapValue.IsValid() && !maxHeapValue.IsNil() {
+			envSlice = reflect.Append(envSlice, reflect.ValueOf(corev1.EnvVar{
+				Name:  "JAVA_HEAPMAX",
+				Value: fmt.Sprintf("-Xmx%v", maxHeapValue.Elem().Int()),
+			}))
+		}
 	}
 
 	envValue.Set(envSlice)
