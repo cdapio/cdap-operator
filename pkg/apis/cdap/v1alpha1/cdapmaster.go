@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"sigs.k8s.io/controller-reconciler/pkg/finalizer"
 	"strconv"
 	"strings"
 )
@@ -29,9 +30,6 @@ func int32Ptr(value int32) *int32 {
 
 // ApplyDefaults will default missing values from the CDAPMaster
 func (r *CDAPMaster) ApplyDefaults() {
-	r.Status.EnsureStandardConditions()
-	r.Status.ResetComponentList()
-
 	if r.Labels == nil {
 		r.Labels = make(map[string]string)
 	}
@@ -65,4 +63,8 @@ func (r *CDAPMaster) ApplyDefaults() {
 
 	// Disable explore
 	spec.Config[confExploreEnabled] = "false"
+
+	r.Status.ResetComponentList()
+	r.Status.EnsureStandardConditions()
+	finalizer.EnsureStandard(r)
 }

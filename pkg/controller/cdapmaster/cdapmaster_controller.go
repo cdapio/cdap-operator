@@ -691,7 +691,7 @@ func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 }
 
 // Observables for base
-func (b *Base) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
+func (b *Base) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
 	return k8s.NewObservables().
 		WithLabels(labels).
 		For(&corev1.ConfigMapList{}).
@@ -706,7 +706,7 @@ func (s *Messaging) Objects(rsrc interface{}, rsrclabels map[string]string, obse
 }
 
 // Observables for messaging
-func (s *Messaging) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
+func (s *Messaging) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
 	return k8s.NewObservables().
 		WithLabels(labels).
 		For(&appsv1.StatefulSetList{}).
@@ -720,7 +720,7 @@ func (s *AppFabric) Objects(rsrc interface{}, rsrclabels map[string]string, obse
 }
 
 // Observables for appfabric
-func (s *AppFabric) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
+func (s *AppFabric) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
 	return k8s.NewObservables().
 		WithLabels(labels).
 		For(&appsv1.DeploymentList{}).
@@ -734,7 +734,7 @@ func (s *Logs) Objects(rsrc interface{}, rsrclabels map[string]string, observed,
 }
 
 // Observables for logs
-func (s *Logs) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
+func (s *Logs) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
 	return k8s.NewObservables().
 		WithLabels(labels).
 		For(&appsv1.StatefulSetList{}).
@@ -748,7 +748,7 @@ func (s *Metadata) Objects(rsrc interface{}, rsrclabels map[string]string, obser
 }
 
 // Observables for metadata
-func (s *Metadata) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
+func (s *Metadata) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
 	return k8s.NewObservables().
 		WithLabels(labels).
 		For(&appsv1.DeploymentList{}).
@@ -762,7 +762,7 @@ func (s *Metrics) Objects(rsrc interface{}, rsrclabels map[string]string, observ
 }
 
 // Observables for metrics
-func (s *Metrics) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
+func (s *Metrics) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
 	return k8s.NewObservables().
 		WithLabels(labels).
 		For(&appsv1.StatefulSetList{}).
@@ -776,7 +776,7 @@ func (s *Preview) Objects(rsrc interface{}, rsrclabels map[string]string, observ
 }
 
 // Observables for preview
-func (s *Preview) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
+func (s *Preview) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
 	return k8s.NewObservables().
 		WithLabels(labels).
 		For(&appsv1.StatefulSetList{}).
@@ -792,7 +792,7 @@ func (s *Router) Objects(rsrc interface{}, rsrclabels map[string]string, observe
 }
 
 // Observables for router
-func (s *Router) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
+func (s *Router) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
 	return k8s.NewObservables().
 		WithLabels(labels).
 		For(&appsv1.DeploymentList{}).
@@ -809,7 +809,7 @@ func (s *UserInterface) Objects(rsrc interface{}, rsrclabels map[string]string, 
 }
 
 // Observables for UserInterface
-func (s *UserInterface) Observables(rsrc interface{}, labels map[string]string) []reconciler.Observable {
+func (s *UserInterface) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
 	return k8s.NewObservables().
 		WithLabels(labels).
 		For(&appsv1.DeploymentList{}).
