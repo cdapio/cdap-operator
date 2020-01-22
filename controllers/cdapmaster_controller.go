@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"text//template"
+	"text/template"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -89,6 +89,7 @@ func (r *CdapMasterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cdap.cdap.io,resources=cdapmasters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cdap.cdap.io,resources=cdapmasters/status,verbs=get;update;patch
+
 func newReconciler(mgr manager.Manager) *gr.Reconciler {
 	return gr.
 		WithManager(mgr).
