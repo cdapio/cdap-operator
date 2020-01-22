@@ -1,0 +1,145 @@
+# Copyright 2019 The CDAP Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations under
+# the License.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{.Name}}
+  namespace: {{.Master.Namespace}}
+{{if .Labels}}
+  labels:
+    {{range $k,$v := .Labels}}
+    {{$k}}: {{$v}}
+    {{end}}
+{{end}}
+spec:
+  selector:
+    matchLabels:
+      {{range $k,$v := .Labels}}
+      {{$k}}: {{$v}}
+      {{end}}
+  serviceName: {{.Name}}
+{{if .Replicas}}
+  replicas: {{.Replicas}}
+{{else}}
+  replicas: 1
+{{end}}
+  template:
+    metadata:
+      labels:
+        {{range $k,$v := .Labels }}
+        {{$k}}: {{$v}}
+        {{end}}
+    spec:
+    {{if .ServiceAccountName}}
+      serviceAccountName: {{.ServiceAccountName}}
+    {{end}}
+    {{if .Service.NodeSelector}}
+      nodeSelector:
+        {{range $k,$v := .Service.NodeSelector}}
+        {{$k}}: {{$v}}
+        {{end}}
+    {{end}}
+    {{if .Service.RuntimeClassName}}
+      runtimeClassName: {{.Service.RuntimeClassName}}
+    {{end}}
+    {{if .Service.PriorityClassName}}
+      priorityClassName: {{.Service.PriorityClassName}}
+    {{end}}
+      terminationGracePeriodSeconds: 120
+      initContainers:
+        - image: {{.Master.Status.ImageToUse}}
+          name: create-storage
+          args: ["io.cdap.cdap.master.environment.k8s.StorageMain"]
+        {{if .Master.Spec.ImagePullPolicy}}
+          imagePullPolicy: {{.Master.Spec.ImagePullPolicy}}
+        {{end}}
+          volumeMounts:
+            - name: podinfo
+              mountPath: /etc/podinfo
+              readOnly: true
+            - name: cdap-conf
+              mountPath: /etc/cdap/conf
+              readOnly: true
+            - name: hadoop-conf
+              mountPath: /etc/hadoop/conf
+              readOnly: true
+            - name: {{.Name}}-data
+              mountPath: {{.DataDir}}
+          {{if .Master.Spec.SecuritySecret}}
+            - name: cdap-security
+              mountPath: /etc/cdap/security
+              readOnly: true
+          {{end}}
+      containers:
+        - image: {{.Master.Status.ImageToUse}}
+          args: ["io.cdap.cdap.master.environment.k8s.{{.ServiceType}}ServiceMain", "--env=k8s"]
+          name: {{.Name}}
+        {{if .Master.Spec.ImagePullPolicy}}
+          imagePullPolicy: {{.Master.Spec.ImagePullPolicy}}
+        {{end}}
+          env: []
+          resources: {}
+          volumeMounts:
+            - name: podinfo
+              mountPath: /etc/podinfo
+              readOnly: true
+            - name: cdap-conf
+              mountPath: /etc/cdap/conf
+              readOnly: true
+            - name: hadoop-conf
+              mountPath: /etc/hadoop/conf
+              readOnly: true
+            - name: {{.Name}}-data
+              mountPath: {{.DataDir}}
+          {{if .Master.Spec.SecuritySecret}}
+            - name: cdap-security
+              mountPath: /etc/cdap/security
+              readOnly: true
+          {{end}}
+      volumes:
+        - name: podinfo
+          downwardAPI:
+            items:
+              - path: "pod.labels.properties"
+                fieldRef:
+                  fieldPath: metadata.labels
+              - path: "pod.name"
+                fieldRef:
+                  fieldPath: metadata.name
+        - name: cdap-conf
+          configMap:
+            name: {{.CConfName}}
+        - name: hadoop-conf
+          configMap:
+            name: {{.HConfName}}
+      {{if .Master.Spec.SecuritySecret}}
+        - name: cdap-security
+          secret:
+            secretName: {{.Master.Spec.SecuritySecret}}
+      {{end}}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{.Name}}-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+    {{if .Service.StorageClassName}}
+      storageClassName: {{.Service.StorageClassName}}
+    {{end}}
+      resources:
+        requests:
+        {{if .Service.StorageSize}}
+          storage: {{.Service.StorageSize}}
+        {{else}}
+          storage: "200Gi"
+        {{end}}

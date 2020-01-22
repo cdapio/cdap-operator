@@ -1,7 +1,16 @@
 apiVersion: cdap.cdap.io/v1alpha1
 kind: CdapMaster
 metadata:
-  name: cdapmaster-sample
+  name: test
 spec:
-  # Add fields here
-  foo: bar
+  locationURI: hdfs://hadoop:9000
+  serviceAccountName: cdap
+  securitySecret: cdap-secret
+  config:
+    enable.preview: "true"
+    data.storage.implementation: postgresql
+    data.storage.sql.jdbc.connection.url: jdbc:postgresql://postgres-postgresql:5432/cdap
+    data.storage.sql.jdbc.driver.name: org.postgresql.Driver
+    metadata.storage.implementation: elastic
+    metadata.elasticsearch.cluster.hosts: elasticsearch-master
+    hdfs.user: root
