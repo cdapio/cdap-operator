@@ -24,8 +24,8 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// CdapMasterSpec defines the desired state of CdapMaster
-type CdapMasterSpec struct {
+// CDAPMasterSpec defines the desired state of CDAPMaster
+type CDAPMasterSpec struct {
 	// Image is the docker image name for the CDAP backend.
 	Image string `json:"image,omitempty"`
 	// UserInterfaceImage is the docker image name for the CDAP UI.
@@ -144,8 +144,8 @@ type UserInterfaceSpec struct {
 	CDAPExternalServiceSpec `json:",inline"`
 }
 
-// CdapMasterStatus defines the observed state of CdapMaster
-type CdapMasterStatus struct {
+// CDAPMasterStatus defines the observed state of CDAPMaster
+type CDAPMasterStatus struct {
 	status.Meta          `json:",inline"`
 	status.ComponentMeta `json:",inline"`
 	// ImageToUse is the Docker image of CDAP backend the operator uses to deploy.
@@ -158,24 +158,24 @@ type CdapMasterStatus struct {
 
 // +kubebuilder:object:root=true
 
-// CdapMaster is the Schema for the cdapmasters API
-type CdapMaster struct {
+// CDAPMaster is the Schema for the cdapmasters API
+type CDAPMaster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CdapMasterSpec   `json:"spec,omitempty"`
-	Status CdapMasterStatus `json:"status,omitempty"`
+	Spec   CDAPMasterSpec   `json:"spec,omitempty"`
+	Status CDAPMasterStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// CdapMasterList contains a list of CdapMaster
-type CdapMasterList struct {
+// CDAPMasterList contains a list of CDAPMaster
+type CDAPMasterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []CdapMaster `json:"items"`
+	Items           []CDAPMaster `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&CdapMaster{}, &CdapMasterList{})
+	SchemeBuilder.Register(&CDAPMaster{}, &CDAPMasterList{})
 }

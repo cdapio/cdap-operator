@@ -67,22 +67,22 @@ const (
 	latestVersion = "latest"
 )
 
-// CdapMasterReconciler reconciles a CdapMaster object
-type CdapMasterReconciler struct {
+// CDAPMasterReconciler reconciles a CDAPMaster object
+type CDAPMasterReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
-func (r *CdapMasterReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *CDAPMasterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&alpha1.CdapMaster{}).
+		For(&alpha1.CDAPMaster{}).
 		Complete(newReconciler(mgr))
 }
 
 // TBD kubebuilder:rbac:groups=app.k8s.io,resources=applications,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
@@ -93,7 +93,7 @@ func (r *CdapMasterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func newReconciler(mgr manager.Manager) *gr.Reconciler {
 	return gr.
 		WithManager(mgr).
-		For(&alpha1.CdapMaster{}, alpha1.GroupVersion).
+		For(&alpha1.CDAPMaster{}, alpha1.GroupVersion).
 		Using(&Base{}).
 		Using(&Messaging{}).
 		Using(&AppFabric{}).
@@ -109,7 +109,7 @@ func newReconciler(mgr manager.Manager) *gr.Reconciler {
 }
 
 func handleError(resource interface{}, err error, kind string) {
-	cm := resource.(*alpha1.CdapMaster)
+	cm := resource.(*alpha1.CDAPMaster)
 	if err != nil {
 		cm.Status.SetError("ErrorSeen", err.Error())
 	} else {
@@ -118,7 +118,7 @@ func handleError(resource interface{}, err error, kind string) {
 }
 
 func applyDefaults(resource interface{}) {
-	cm := resource.(*alpha1.CdapMaster)
+	cm := resource.(*alpha1.CDAPMaster)
 	cm.ApplyDefaults()
 }
 
@@ -186,7 +186,7 @@ func setNodePort(expected, observed []reconciler.Object) {
 type templateBaseValue struct {
 	Name               string
 	Labels             map[string]string
-	Master             *alpha1.CdapMaster
+	Master             *alpha1.CDAPMaster
 	Replicas           *int32
 	ServiceAccountName string
 	ServiceType        alpha1.ServiceType
@@ -198,7 +198,7 @@ type templateBaseValue struct {
 
 // Sets values to the given templateBaseValue based on the resources provided
 func (v *templateBaseValue) setTemplateValue(rsrc interface{}, rsrclabels map[string]string, serviceType alpha1.ServiceType, serviceLabels map[string]string, serviceAccount string, resources *corev1.ResourceRequirements) {
-	master := rsrc.(*alpha1.CdapMaster)
+	master := rsrc.(*alpha1.CDAPMaster)
 	labels := make(reconciler.KVMap)
 	labels.Merge(master.Labels, serviceLabels, rsrclabels)
 
@@ -290,17 +290,17 @@ type upgradeJobSpec struct {
 }
 
 // Returns the resource name for the given resource
-func getResourceName(r *alpha1.CdapMaster, resource string) string {
+func getResourceName(r *alpha1.CDAPMaster, resource string) string {
 	return fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(resource))
 }
 
 // Gets the name of the upgrade job based on resource version. Name can be no more than 63 chars.
-func getUpgradeJobName(r *alpha1.CdapMaster) string {
+func getUpgradeJobName(r *alpha1.CDAPMaster) string {
 	return fmt.Sprintf("cdap-%s-uj-%d", r.Name, r.Status.UpgradeStartTimeMillis)
 }
 
 // Gets the name of the post upgrade job based on resource version. Name can be no more than 63 chars.
-func getPostUpgradeJobName(r *alpha1.CdapMaster) string {
+func getPostUpgradeJobName(r *alpha1.CDAPMaster) string {
 	return fmt.Sprintf("cdap-%s-puj-%d", r.Name, r.Status.UpgradeStartTimeMillis)
 }
 
@@ -349,7 +349,7 @@ func addResourceItem(s *alpha1.CDAPServiceSpec, template string, data interface{
 }
 
 // Adds a resource.Item of ConfigMap type to the given resource.Bag
-func addConfigMapItem(r *alpha1.CdapMaster, name string, labels map[string]string, templates []string, resources []reconciler.Object) ([]reconciler.Object, error) {
+func addConfigMapItem(r *alpha1.CDAPMaster, name string, labels map[string]string, templates []string, resources []reconciler.Object) ([]reconciler.Object, error) {
 	// Creates the configMap object
 	configMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -455,7 +455,7 @@ func logbackFromFile(t string, data interface{}) (string, error) {
 	return output.String(), nil
 }
 
-func resetUpgradeConditions(master *alpha1.CdapMaster, message string) {
+func resetUpgradeConditions(master *alpha1.CDAPMaster, message string) {
 	master.Status.ClearCondition(upgradeFailed, message, message)
 	master.Status.ClearCondition(postUpgradeFailed, message, message)
 	master.Status.ClearCondition(postUpgradeFinished, message, message)
@@ -463,14 +463,14 @@ func resetUpgradeConditions(master *alpha1.CdapMaster, message string) {
 
 // Adds a component list object in state in progress. This will cause UpdateStatus to update the
 // ready type to state "false".
-func addUpgradeComponentNotReady(master *alpha1.CdapMaster) {
+func addUpgradeComponentNotReady(master *alpha1.CDAPMaster) {
 	os := status.ObjectStatus{}
 	os.Name = "upgrade"
 	os.Status = status.StatusInProgress
 	master.Status.ComponentMeta.ComponentList.Objects = append(master.Status.ComponentMeta.ComponentList.Objects, os)
 }
 
-func prepareNewPreUpgradeJobResources(master *alpha1.CdapMaster, rsrclabels map[string]string) ([]reconciler.Object, error) {
+func prepareNewPreUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string]string) ([]reconciler.Object, error) {
 	resetUpgradeConditions(master, upgradeStartMessage)
 
 	upgradeResources, err := getPreUpgradeJobResources(master, rsrclabels)
@@ -482,12 +482,12 @@ func prepareNewPreUpgradeJobResources(master *alpha1.CdapMaster, rsrclabels map[
 }
 
 // Gets pre upgrade job resources
-func getPreUpgradeJobResources(master *alpha1.CdapMaster, rsrclabels map[string]string) ([]reconciler.Object, error) {
+func getPreUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string]string) ([]reconciler.Object, error) {
 	return getUpgradeJobResources(master, rsrclabels, 0, getUpgradeJobName(master))
 }
 
 // Gets post upgrade job resources
-func getPostUpgradeJobResources(master *alpha1.CdapMaster, rsrclabels map[string]string) ([]reconciler.Object, error) {
+func getPostUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string]string) ([]reconciler.Object, error) {
 	return getUpgradeJobResources(master, rsrclabels, master.Status.UpgradeStartTimeMillis, getPostUpgradeJobName(master))
 }
 
@@ -540,7 +540,7 @@ func compareVersion(versiona, versionb *version) int {
 }
 
 // Gets upgrade job resources
-func getUpgradeJobResources(master *alpha1.CdapMaster, rsrclabels map[string]string, startTimeMillis int64, name string) ([]reconciler.Object, error) {
+func getUpgradeJobResources(master *alpha1.CDAPMaster, rsrclabels map[string]string, startTimeMillis int64, name string) ([]reconciler.Object, error) {
 	var spec = &upgradeJobSpec{
 		Image:              master.Spec.Image,
 		JobName:            name,
@@ -570,7 +570,7 @@ func getUpgradeJobResources(master *alpha1.CdapMaster, rsrclabels map[string]str
 // Updates the component status
 func updateStatus(rsrc interface{}, reconciled []reconciler.Object, err error) time.Duration {
 	var period time.Duration
-	stts := &rsrc.(*alpha1.CdapMaster).Status
+	stts := &rsrc.(*alpha1.CDAPMaster).Status
 	ready := stts.ComponentMeta.UpdateStatus(reconciler.ObjectsByType(reconciled, k8s.Type))
 	stts.Meta.UpdateStatus(&ready, err)
 	return period
@@ -581,7 +581,7 @@ func updateStatus(rsrc interface{}, reconciled []reconciler.Object, err error) t
 // Objects - handler Objects
 func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	var resources []reconciler.Object
-	master := rsrc.(*alpha1.CdapMaster)
+	master := rsrc.(*alpha1.CDAPMaster)
 
 	labels := make(reconciler.KVMap)
 	labels.Merge(master.Labels, rsrclabels)
@@ -711,7 +711,7 @@ func (b *Base) Observables(rsrc interface{}, labels map[string]string, dependent
 
 // Objects for Messaging service
 func (s *Messaging) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CdapMaster)
+	r := rsrc.(*alpha1.CDAPMaster)
 	return getStatefulServiceResources(&r.Spec.Messaging.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServiceMessaging)
 }
 
@@ -725,7 +725,7 @@ func (s *Messaging) Observables(rsrc interface{}, labels map[string]string, depe
 
 // Objects for AppFabric service
 func (s *AppFabric) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CdapMaster)
+	r := rsrc.(*alpha1.CDAPMaster)
 	return getServiceResources(&r.Spec.AppFabric.CDAPServiceSpec, rsrc, rsrclabels, alpha1.ServiceAppFabric)
 }
 
@@ -739,7 +739,7 @@ func (s *AppFabric) Observables(rsrc interface{}, labels map[string]string, depe
 
 // Objects for Logs service
 func (s *Logs) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CdapMaster)
+	r := rsrc.(*alpha1.CDAPMaster)
 	return getStatefulServiceResources(&r.Spec.Logs.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServiceLogs)
 }
 
@@ -753,7 +753,7 @@ func (s *Logs) Observables(rsrc interface{}, labels map[string]string, dependent
 
 // Objects for Metadata service
 func (s *Metadata) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CdapMaster)
+	r := rsrc.(*alpha1.CDAPMaster)
 	return getServiceResources(&r.Spec.Metadata.CDAPServiceSpec, rsrc, rsrclabels, alpha1.ServiceMetadata)
 }
 
@@ -767,7 +767,7 @@ func (s *Metadata) Observables(rsrc interface{}, labels map[string]string, depen
 
 // Objects for Metrics service
 func (s *Metrics) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CdapMaster)
+	r := rsrc.(*alpha1.CDAPMaster)
 	return getStatefulServiceResources(&r.Spec.Metrics.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServiceMetrics)
 }
 
@@ -781,7 +781,7 @@ func (s *Metrics) Observables(rsrc interface{}, labels map[string]string, depend
 
 // Objects for Preview service
 func (s *Preview) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CdapMaster)
+	r := rsrc.(*alpha1.CDAPMaster)
 	return getStatefulServiceResources(&r.Spec.Preview.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServicePreview)
 }
 
@@ -795,7 +795,7 @@ func (s *Preview) Observables(rsrc interface{}, labels map[string]string, depend
 
 // Objects for Router service
 func (s *Router) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CdapMaster)
+	r := rsrc.(*alpha1.CDAPMaster)
 	expected, err := getExternalServiceResources(&r.Spec.Router.CDAPExternalServiceSpec, rsrc, rsrclabels, alpha1.ServiceRouter, deploymentTemplate)
 	setNodePort(expected, observed)
 	return expected, err
@@ -812,7 +812,7 @@ func (s *Router) Observables(rsrc interface{}, labels map[string]string, depende
 
 // Objects for UserInterface service
 func (s *UserInterface) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CdapMaster)
+	r := rsrc.(*alpha1.CDAPMaster)
 	expected, err := getExternalServiceResources(&r.Spec.UserInterface.CDAPExternalServiceSpec, rsrc, rsrclabels, alpha1.ServiceUserInterface, uiDeploymentTemplate)
 	setNodePort(expected, observed)
 	return expected, err

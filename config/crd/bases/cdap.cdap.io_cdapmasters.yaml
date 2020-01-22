@@ -10,14 +10,14 @@ metadata:
 spec:
   group: cdap.cdap.io
   names:
-    kind: CdapMaster
-    listKind: CdapMasterList
+    kind: CDAPMaster
+    listKind: CDAPMasterList
     plural: cdapmasters
     singular: cdapmaster
   scope: Namespaced
   validation:
     openAPIV3Schema:
-      description: CdapMaster is the Schema for the cdapmasters API
+      description: CDAPMaster is the Schema for the cdapmasters API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -32,7 +32,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: CdapMasterSpec defines the desired state of CdapMaster
+          description: CDAPMasterSpec defines the desired state of CDAPMaster
           properties:
             appFabric:
               description: AppFabric is specification for the CDAP app-fabric service.
@@ -1311,7 +1311,7 @@ spec:
           - locationURI
           type: object
         status:
-          description: CdapMasterStatus defines the observed state of CdapMaster
+          description: CDAPMasterStatus defines the observed state of CDAPMaster
           properties:
             components:
               description: Object status array for all matching objects

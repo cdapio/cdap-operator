@@ -1,5 +1,5 @@
 apiVersion: cdap.cdap.io/v1alpha1
-kind: CdapMaster
+kind: CDAPMaster
 metadata:
   name: test
 spec:

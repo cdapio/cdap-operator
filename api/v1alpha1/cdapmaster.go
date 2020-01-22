@@ -13,8 +13,8 @@ func int32Ptr(value int32) *int32 {
 	return &value
 }
 
-// ApplyDefaults will default missing values from the CdapMaster
-func (r *CdapMaster) ApplyDefaults() {
+// ApplyDefaults will default missing values from the CDAPMaster
+func (r *CDAPMaster) ApplyDefaults() {
 	if r.Labels == nil {
 		r.Labels = make(map[string]string)
 	}

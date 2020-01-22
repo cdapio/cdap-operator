@@ -64,12 +64,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.CdapMasterReconciler{
+	if err = (&controllers.CDAPMasterReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("CdapMaster"),
+		Log:    ctrl.Log.WithName("controllers").WithName("CDAPMaster"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "CdapMaster")
+		setupLog.Error(err, "unable to create controller", "controller", "CDAPMaster")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
