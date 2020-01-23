@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	rmanager "sigs.k8s.io/controller-reconciler/pkg/reconciler/manager"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
-	build "sigs.k8s.io/controller-runtime/pkg/builder"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/scheme"
@@ -416,11 +416,9 @@ func (gr *Reconciler) Controller(r reconcile.Reconciler) error {
 	if r == nil {
 		r = gr
 	}
-	_, err := build.SimpleController().
-		WithManager(gr.manager).
-		ForType(gr.resource).
-		Build(r)
-	return err
+	return ctrl.NewControllerManagedBy(gr.manager).
+		For(gr.resource).
+		Complete(r)
 }
 
 // WithErrorHandler - callback for error handling

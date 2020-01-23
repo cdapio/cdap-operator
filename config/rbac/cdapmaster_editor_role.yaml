@@ -1,0 +1,26 @@
+# permissions to do edit cdapmasters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cdapmaster-editor-role
+rules:
+- apiGroups:
+  - cdap.cdap.io
+  resources:
+  - cdapmasters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cdap.cdap.io
+  resources:
+  - cdapmasters/status
+  verbs:
+  - get
+  - patch
+  - update

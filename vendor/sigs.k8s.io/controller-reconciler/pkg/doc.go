@@ -1,4 +1,5 @@
 /*
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,3 +13,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+/*
+Package pkg provides libraries for building Controller reconciler.
+
+Reconciler
+
+Reconciler provides a library to implement reconciler for a controller built using controller-runtime
+
+Usage
+
+The following example shows creating a new Controller program which Reconciles a FooBar CRD
+
+*/
+//go:generate go run ../vendor/k8s.io/code-generator/cmd/deepcopy-gen/main.go -O zz_generated.deepcopy -i ./... -h boilerplate.go.txt
+package pkg

@@ -1,6 +1,0 @@
-apiVersion: cdap.cdap.io/v1alpha1
-kind: CDAPMaster
-metadata:
-  name: cdap-master-instance-2
-spec:
-  locationURI: gs://somebucket

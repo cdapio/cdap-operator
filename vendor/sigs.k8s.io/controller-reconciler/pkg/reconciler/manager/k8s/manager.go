@@ -465,9 +465,9 @@ func (rm *RsrcManager) Observe(observables ...reconciler.Observable) ([]reconcil
 		}
 		if obs.Labels != nil {
 			//log.Printf("   >>>list: %s labels:[%v]", reflect.TypeOf(obs.ObjList).String(), obs.Labels)
-			opts := client.MatchingLabels(obs.Labels)
-			opts.Raw = &metav1.ListOptions{TypeMeta: obs.Type}
-			err = rm.client.List(context.TODO(), opts, obs.ObjList.(runtime.Object))
+			opts := client.ListOptions{Raw: &metav1.ListOptions{TypeMeta: obs.Type}}
+			err = rm.client.List(context.TODO(), obs.ObjList.(runtime.Object), client.MatchingLabels(obs.Labels), &opts)
+
 			if err == nil {
 				items, err := meta.ExtractList(obs.ObjList.(runtime.Object))
 				if err == nil {

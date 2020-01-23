@@ -1,3 +1,7 @@
-version: "1"
 domain: cdap.io
 repo: cdap.io/cdap-operator
+resources:
+- group: cdap
+  kind: CDAPMaster
+  version: v1alpha1
+version: "2"
