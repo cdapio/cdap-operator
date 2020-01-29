@@ -121,15 +121,6 @@ type Base struct{}
 // Handle for SErviceSet component which manages all CDAP services
 type ServiceSet struct{}
 
-type Messaging struct{}
-type AppFabric struct{}
-type Metrics struct{}
-type Logs struct{}
-type Metadata struct{}
-type Preview struct{}
-type Router struct{}
-type UserInterface struct{}
-
 // ------------------------------ Common -------------------------------------
 
 // Set the nodePort in the expected service based on the observed service
@@ -148,16 +139,18 @@ func setNodePort(expected, observed []reconciler.Object) {
 	// Find the service being observed. Extract nodePort from the service spec and set it to expected
 	for _, item := range reconciler.ObjectsByType(observed, k8s.Type) {
 		if observedService, ok := item.Obj.(*k8s.Object).Obj.(*corev1.Service); ok {
-			var nodePorts = make(map[string]int32)
-			for _, p := range observedService.Spec.Ports {
-				nodePorts[p.Name] = p.NodePort
-			}
+			if expectedService.GetNamespace() == observedService.GetNamespace() && expectedService.GetName() == observedService.GetName() {
+				var nodePorts = make(map[string]int32)
+				for _, p := range observedService.Spec.Ports {
+					nodePorts[p.Name] = p.NodePort
+				}
 
-			// Assigning existing node ports to the expected service
-			for i := range expectedService.Spec.Ports {
-				p := &expectedService.Spec.Ports[i]
-				if nodePort, ok := nodePorts[p.Name]; ok {
-					p.NodePort = nodePort
+				// Assigning existing node ports to the expected service
+				for i := range expectedService.Spec.Ports {
+					p := &expectedService.Spec.Ports[i]
+					if nodePort, ok := nodePorts[p.Name]; ok {
+						p.NodePort = nodePort
+					}
 				}
 			}
 		}
@@ -690,184 +683,70 @@ func (b *Base) Observables(rsrc interface{}, labels map[string]string, dependent
 		Get()
 }
 
-// Objects for Messaging service
-func (s *Messaging) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CDAPMaster)
-	return getStatefulServiceResources(&r.Spec.Messaging.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServiceMessaging)
-}
-
-// Observables for messaging
-func (s *Messaging) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
-	return k8s.NewObservables().
-		WithLabels(labels).
-		For(&appsv1.StatefulSetList{}).
-		Get()
-}
-
-// Objects for AppFabric service
-func (s *AppFabric) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CDAPMaster)
-	return getServiceResources(&r.Spec.AppFabric.CDAPServiceSpec, rsrc, rsrclabels, alpha1.ServiceAppFabric)
-}
-
-// Observables for appfabric
-func (s *AppFabric) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
-	return k8s.NewObservables().
-		WithLabels(labels).
-		For(&appsv1.DeploymentList{}).
-		Get()
-}
-
-// Objects for Logs service
-func (s *Logs) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CDAPMaster)
-	return getStatefulServiceResources(&r.Spec.Logs.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServiceLogs)
-}
-
-// Observables for logs
-func (s *Logs) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
-	return k8s.NewObservables().
-		WithLabels(labels).
-		For(&appsv1.StatefulSetList{}).
-		Get()
-}
-
-// Objects for Metadata service
-func (s *Metadata) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CDAPMaster)
-	return getServiceResources(&r.Spec.Metadata.CDAPServiceSpec, rsrc, rsrclabels, alpha1.ServiceMetadata)
-}
-
-// Observables for metadata
-func (s *Metadata) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
-	return k8s.NewObservables().
-		WithLabels(labels).
-		For(&appsv1.DeploymentList{}).
-		Get()
-}
-
-// Objects for Metrics service
-func (s *Metrics) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CDAPMaster)
-	return getStatefulServiceResources(&r.Spec.Metrics.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServiceMetrics)
-}
-
-// Observables for metrics
-func (s *Metrics) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
-	return k8s.NewObservables().
-		WithLabels(labels).
-		For(&appsv1.StatefulSetList{}).
-		Get()
-}
-
-// Objects for Preview service
-func (s *Preview) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CDAPMaster)
-	return getStatefulServiceResources(&r.Spec.Preview.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServicePreview)
-}
-
-// Observables for preview
-func (s *Preview) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
-	return k8s.NewObservables().
-		WithLabels(labels).
-		For(&appsv1.StatefulSetList{}).
-		Get()
-}
-
-// Objects for Router service
-func (s *Router) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CDAPMaster)
-	expected, err := getExternalServiceResources(&r.Spec.Router.CDAPExternalServiceSpec, rsrc, rsrclabels, alpha1.ServiceRouter, deploymentTemplate)
-	setNodePort(expected, observed)
-	return expected, err
-}
-
-// Observables for router
-func (s *Router) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
-	return k8s.NewObservables().
-		WithLabels(labels).
-		For(&appsv1.DeploymentList{}).
-		For(&corev1.ServiceList{}).
-		Get()
-}
-
-// Objects for UserInterface service
-func (s *UserInterface) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	r := rsrc.(*alpha1.CDAPMaster)
-	expected, err := getExternalServiceResources(&r.Spec.UserInterface.CDAPExternalServiceSpec, rsrc, rsrclabels, alpha1.ServiceUserInterface, uiDeploymentTemplate)
-	setNodePort(expected, observed)
-	return expected, err
-}
-
-// Observables for UserInterface
-func (s *UserInterface) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
-	return k8s.NewObservables().
-		WithLabels(labels).
-		For(&appsv1.DeploymentList{}).
-		For(&corev1.ServiceList{}).
-		Get()
-}
-
 // Objects for all services
 func (s *ServiceSet) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
+	r := rsrc.(*alpha1.CDAPMaster)
+
 	var expected []reconciler.Object
 	var objs []reconciler.Object
 	var err error
 
 	// Messaging service
-	objs, err = (*Messaging)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	objs, err = getStatefulServiceResources(&r.Spec.Messaging.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServiceMessaging)
 	if err != nil {
 		return []reconciler.Object{}, err
 	}
 	expected = append(expected, objs...)
 
 	// AppFabric service
-	objs, err = (*AppFabric)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	objs, err = getServiceResources(&r.Spec.AppFabric.CDAPServiceSpec, rsrc, rsrclabels, alpha1.ServiceAppFabric)
 	if err != nil {
 		return []reconciler.Object{}, err
 	}
 	expected = append(expected, objs...)
 
 	// Metrics service
-	objs, err = (*Metrics)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	objs, err = getStatefulServiceResources(&r.Spec.Metrics.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServiceMetrics)
 	if err != nil {
 		return []reconciler.Object{}, err
 	}
 	expected = append(expected, objs...)
 
 	// Logs service
-	objs, err = (*Logs)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	objs, err = getStatefulServiceResources(&r.Spec.Logs.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServiceLogs)
 	if err != nil {
 		return []reconciler.Object{}, err
 	}
 	expected = append(expected, objs...)
 
 	// Metadata service
-	objs, err = (*Metadata)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	objs, err = getServiceResources(&r.Spec.Metadata.CDAPServiceSpec, rsrc, rsrclabels, alpha1.ServiceMetadata)
 	if err != nil {
 		return []reconciler.Object{}, err
 	}
 	expected = append(expected, objs...)
 
 	// Preview service
-	objs, err = (*Preview)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	objs, err = getStatefulServiceResources(&r.Spec.Preview.CDAPStatefulServiceSpec, rsrc, rsrclabels, alpha1.ServicePreview)
 	if err != nil {
 		return []reconciler.Object{}, err
 	}
 	expected = append(expected, objs...)
 
 	// Router service
-	objs, err = (*Router)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	objs, err = getExternalServiceResources(&r.Spec.Router.CDAPExternalServiceSpec, rsrc, rsrclabels, alpha1.ServiceRouter, deploymentTemplate)
 	if err != nil {
 		return []reconciler.Object{}, err
 	}
+	setNodePort(objs, observed)
 	expected = append(expected, objs...)
 
 	// UserInterface service
-	objs, err = (*UserInterface)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	objs, err = getExternalServiceResources(&r.Spec.UserInterface.CDAPExternalServiceSpec, rsrc, rsrclabels, alpha1.ServiceUserInterface, uiDeploymentTemplate)
 	if err != nil {
 		return []reconciler.Object{}, err
 	}
+	setNodePort(objs, observed)
 	expected = append(expected, objs...)
 
 	return expected, err
