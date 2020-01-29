@@ -95,14 +95,7 @@ func newReconciler(mgr manager.Manager) *gr.Reconciler {
 		WithManager(mgr).
 		For(&alpha1.CDAPMaster{}, alpha1.GroupVersion).
 		Using(&Base{}).
-		Using(&Messaging{}).
-		Using(&AppFabric{}).
-		Using(&Metrics{}).
-		Using(&Logs{}).
-		Using(&Metadata{}).
-		Using(&Preview{}).
-		Using(&Router{}).
-		Using(&UserInterface{}).
+		Using(&ServiceSet{}).
 		WithErrorHandler(handleError).
 		WithDefaulter(applyDefaults).
 		Build()
@@ -122,31 +115,19 @@ func applyDefaults(resource interface{}) {
 	cm.ApplyDefaults()
 }
 
-// Base - interface to handle cdapmaster
+// Handler for Base component
 type Base struct{}
 
-// Messaging - interface to handle cdapmaster
+// Handle for SErviceSet component which manages all CDAP services
+type ServiceSet struct{}
+
 type Messaging struct{}
-
-// AppFabric - interface to handle cdapmaster
 type AppFabric struct{}
-
-// Metrics - interface to handle cdapmaster
 type Metrics struct{}
-
-// Logs - interface to handle cdapmaster
 type Logs struct{}
-
-// Metadata - interface to handle cdapmaster
 type Metadata struct{}
-
-// Preview - interface to handle cdapmaster
 type Preview struct{}
-
-// Router - interface to handle cdapmaster
 type Router struct{}
-
-// UserInterface - interface to handle cdapmaster
 type UserInterface struct{}
 
 // ------------------------------ Common -------------------------------------
@@ -824,5 +805,80 @@ func (s *UserInterface) Observables(rsrc interface{}, labels map[string]string, 
 		WithLabels(labels).
 		For(&appsv1.DeploymentList{}).
 		For(&corev1.ServiceList{}).
+		Get()
+}
+
+// Objects for all services
+func (s *ServiceSet) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
+	var expected []reconciler.Object
+	var objs []reconciler.Object
+	var err error
+
+	// Messaging service
+	objs, err = (*Messaging)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	if err != nil {
+		return []reconciler.Object{}, err
+	}
+	expected = append(expected, objs...)
+
+	// AppFabric service
+	objs, err = (*AppFabric)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	if err != nil {
+		return []reconciler.Object{}, err
+	}
+	expected = append(expected, objs...)
+
+	// Metrics service
+	objs, err = (*Metrics)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	if err != nil {
+		return []reconciler.Object{}, err
+	}
+	expected = append(expected, objs...)
+
+	// Logs service
+	objs, err = (*Logs)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	if err != nil {
+		return []reconciler.Object{}, err
+	}
+	expected = append(expected, objs...)
+
+	// Metadata service
+	objs, err = (*Metadata)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	if err != nil {
+		return []reconciler.Object{}, err
+	}
+	expected = append(expected, objs...)
+
+	// Preview service
+	objs, err = (*Preview)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	if err != nil {
+		return []reconciler.Object{}, err
+	}
+	expected = append(expected, objs...)
+
+	// Router service
+	objs, err = (*Router)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	if err != nil {
+		return []reconciler.Object{}, err
+	}
+	expected = append(expected, objs...)
+
+	// UserInterface service
+	objs, err = (*UserInterface)(nil).Objects(rsrc, rsrclabels, observed, dependent, aggregated)
+	if err != nil {
+		return []reconciler.Object{}, err
+	}
+	expected = append(expected, objs...)
+
+	return expected, err
+}
+
+// Observables for all services
+func (s *ServiceSet) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
+	return k8s.NewObservables().
+		WithLabels(labels).
+		For(&appsv1.DeploymentList{}).
+		For(&corev1.ServiceList{}).
+		For(&appsv1.StatefulSetList{}).
 		Get()
 }
