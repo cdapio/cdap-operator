@@ -30,13 +30,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	alpha1 "cdap.io/cdap-operator/api/v1alpha1"
-
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	objectNamePrefix = "cdap-"
+	cconf            = "cconf"
+	hconf            = "hconf"
 	containerLabel   = "cdap.container"
 	// Heap memory related constants
 	javaMinHeapRatio     = float64(0.6)
@@ -90,6 +92,7 @@ func newReconciler(mgr manager.Manager) *gr.Reconciler {
 		WithManager(mgr).
 		For(&alpha1.CDAPMaster{}, alpha1.GroupVersion).
 		Using(&ConfigMap{}).
+		Using(&ServiceSet{}).
 		WithErrorHandler(handleError).
 		WithDefaulter(applyDefaults).
 		Build()
@@ -124,8 +127,8 @@ func (b *ConfigMap) Objects(rsrc interface{}, rsrclabels map[string]string, obse
 	master := rsrc.(*alpha1.CDAPMaster)
 
 	configs := map[string][]string{
-		"cconf": {"cdap-site.xml", "logback.xml", "logback-container.xml"},
-		"hconf": {"core-site.xml"},
+		cconf: {"cdap-site.xml", "logback.xml", "logback-container.xml"},
+		hconf: {"core-site.xml"},
 	}
 
 	type templateBaseValue struct {
@@ -184,8 +187,117 @@ func buildConfigMapObject(spec *ConfigMapSpec) reconciler.Object {
 	return obj
 }
 
+// Handling reconciling deployment of all services
+type ServiceSet struct{}
+
+func (s *ServiceSet) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
+	return k8s.NewObservables().
+		WithLabels(labels).
+		For(&appsv1.DeploymentList{}).
+		For(&corev1.ServiceList{}).
+		For(&appsv1.StatefulSetList{}).
+		Get()
+}
+
+func (s *ServiceSet) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
+	var expected, objs []reconciler.Object
+	var err error
+
+	m := rsrc.(*alpha1.CDAPMaster)
+
+	cconf := getObjectName(m.Name, cconf)
+	hconf := getObjectName(m.Name, hconf)
+	labels := mergeLabels(m.Labels, rsrclabels)
+	dataDir := alpha1.LocalDataDir
+
+	buildStatefulSpec := func(name string, serviceName alpha1.ServiceName, serviceSpec *alpha1.CDAPStatefulServiceSpec) *StatefulSpec {
+		spec := NewStateful(name, 1, labels, &serviceSpec.CDAPServiceSpec, m, cconf, hconf).
+			WithInitContainer(NewContainerSpec("create-storage", "StorageMain", m, nil, dataDir)).
+			WithContainer(NewContainerSpec(strings.ToLower(string(serviceName)), getServiceMain(serviceName), m, serviceSpec.Resources, dataDir)).
+			WithStorage(serviceSpec.StorageClassName, serviceSpec.StorageSize)
+		return spec
+	}
+
+	buildStatelessSpec := func(name string, serviceName alpha1.ServiceName, serviceSpec *alpha1.CDAPServiceSpec) *StatelessSpec {
+		spec := NewStatelessSpec(name, 1, labels, serviceSpec, m, cconf, hconf).
+			WithContainer(NewContainerSpec(strings.ToLower(string(serviceName)), getServiceMain(serviceName), m, serviceSpec.Resources, dataDir))
+		return spec
+	}
+
+	spec := NewDeploymentSpec().
+		WithStateful(buildStatefulSpec(getObjectName(m.Name, "logs"), alpha1.ServiceLogs, &m.Spec.Logs.CDAPStatefulServiceSpec)).
+		WithStateful(buildStatefulSpec(getObjectName(m.Name, "messaging"), alpha1.ServiceMessaging, &m.Spec.Messaging.CDAPStatefulServiceSpec)).
+		WithStateful(buildStatefulSpec(getObjectName(m.Name, "metrics"), alpha1.ServiceMetrics, &m.Spec.Preview.CDAPStatefulServiceSpec)).
+		WithStateful(buildStatefulSpec(getObjectName(m.Name, "preview"), alpha1.ServicePreview, &m.Spec.Preview.CDAPStatefulServiceSpec)).
+		WithStateless(buildStatelessSpec(getObjectName(m.Name, "appfab"), alpha1.ServiceAppFabric, &m.Spec.AppFabric.CDAPServiceSpec)).
+		WithStateless(buildStatelessSpec(getObjectName(m.Name, "metadata"), alpha1.ServiceMetadata, &m.Spec.Metadata.CDAPServiceSpec))
+
+	objs, err = buildObjects(spec)
+	if err != nil {
+		return []reconciler.Object{}, err
+	}
+	expected = append(expected, objs...)
+
+	return expected, err
+}
+
+func buildObjects(spec *DeploymentSpec) ([]reconciler.Object, error) {
+	var objs []reconciler.Object
+	for _, s := range spec.Stateful {
+		obj, err := buildStatefulObject(s)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, *obj)
+	}
+	for _, s := range spec.Stateless {
+		obj, err := buildStatelessObject(s)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, *obj)
+	}
+	for _, s := range spec.ExternalService {
+		obj, err := buildServiceObject(s)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, *obj)
+
+	}
+	return objs, nil
+}
+
+func buildStatefulObject(spec *StatefulSpec) (*reconciler.Object, error) {
+	obj, err := k8s.ObjectFromFile(templateDir+statefulSetTemplate, spec, &appsv1.StatefulSetList{})
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+func buildStatelessObject(spec *StatelessSpec) (*reconciler.Object, error) {
+	obj, err := k8s.ObjectFromFile(templateDir+deploymentTemplate, spec, &appsv1.DeploymentList{})
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+func buildServiceObject(spec *ExternalServiceSpec) (*reconciler.Object, error) {
+	obj, err := k8s.ObjectFromFile(templateDir+serviceTemplate, spec, &corev1.ServiceList{})
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
 func getObjectName(masterName, name string) string {
 	return fmt.Sprintf("%s%s-%s", objectNamePrefix, masterName, strings.ToLower(name))
+}
+
+func getServiceMain(name alpha1.ServiceName) string {
+	return fmt.Sprintf("%sServiceMain", name)
 }
 
 func mergeLabels(current, added map[string]string) map[string]string {
