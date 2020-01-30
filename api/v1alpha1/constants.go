@@ -1,32 +1,32 @@
 package v1alpha1
 
-// ServiceType is the name identifying various CDAP master services
-type ServiceType string
+// ServiceName is the name identifying various CDAP master services
+type ServiceName string
 
 const (
 	// ServiceAppFabric defines the service type for app-fabric
-	ServiceAppFabric ServiceType = "AppFabric"
+	ServiceAppFabric ServiceName = "AppFabric"
 
 	// ServiceLogs defines the service type for log processing and serving service
-	ServiceLogs ServiceType = "Logs"
+	ServiceLogs ServiceName = "Logs"
 
 	// ServiceMessaging defines the service type for TMS
-	ServiceMessaging ServiceType = "Messaging"
+	ServiceMessaging ServiceName = "Messaging"
 
 	// ServiceMetadata defines the service type for metadata service
-	ServiceMetadata ServiceType = "Metadata"
+	ServiceMetadata ServiceName = "Metadata"
 
 	// ServiceMetrics defines the service type for metrics process and serving
-	ServiceMetrics ServiceType = "Metrics"
+	ServiceMetrics ServiceName = "Metrics"
 
 	// ServicePreview defines the service type for preview service
-	ServicePreview ServiceType = "Preview"
+	ServicePreview ServiceName = "Preview"
 
 	// ServiceRouter defines the service type for the router
-	ServiceRouter ServiceType = "Router"
+	ServiceRouter ServiceName = "Router"
 
 	// ServiceUserInterface defines the service type for user interface
-	ServiceUserInterface ServiceType = "UserInterface"
+	ServiceUserInterface ServiceName = "UserInterface"
 )
 
 const (

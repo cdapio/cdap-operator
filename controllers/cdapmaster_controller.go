@@ -16,18 +16,28 @@ limitations under the License.
 package controllers
 
 import (
+	"fmt"
+	"strings"
+	"text/template"
+
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	gr "sigs.k8s.io/controller-reconciler/pkg/genericreconciler"
+	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
+	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	alpha1 "cdap.io/cdap-operator/api/v1alpha1"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	containerLabel = "cdap.container"
+	objectNamePrefix = "cdap-"
+	containerLabel   = "cdap.container"
 	// Heap memory related constants
 	javaMinHeapRatio     = float64(0.6)
 	javaReservedNonHeap  = int64(768 * 1024 * 1024)
@@ -79,6 +89,7 @@ func newReconciler(mgr manager.Manager) *gr.Reconciler {
 	return gr.
 		WithManager(mgr).
 		For(&alpha1.CDAPMaster{}, alpha1.GroupVersion).
+		Using(&ConfigMap{}).
 		WithErrorHandler(handleError).
 		WithDefaulter(applyDefaults).
 		Build()
@@ -96,4 +107,89 @@ func handleError(resource interface{}, err error, kind string) {
 func applyDefaults(resource interface{}) {
 	cm := resource.(*alpha1.CDAPMaster)
 	cm.ApplyDefaults()
+}
+
+// Handling reconciling ConfigMap objects
+type ConfigMap struct{}
+
+func (b *ConfigMap) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
+	return k8s.NewObservables().
+		WithLabels(labels).
+		For(&corev1.ConfigMapList{}).
+		Get()
+}
+
+func (b *ConfigMap) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
+	var expected []reconciler.Object
+	master := rsrc.(*alpha1.CDAPMaster)
+
+	configs := map[string][]string{
+		"cconf": {"cdap-site.xml", "logback.xml", "logback-container.xml"},
+		"hconf": {"core-site.xml"},
+	}
+
+	type templateBaseValue struct {
+		Master *alpha1.CDAPMaster
+	}
+	ngdata := &templateBaseValue{
+		Master: master,
+	}
+
+	fillTemplate := func(templateFile string, ngdata *templateBaseValue) (string, error) {
+		template, err := template.New(templateFile).ParseFiles(templateDir + templateFile)
+		if err != nil {
+			return "", nil
+		}
+		var output strings.Builder
+		if err := template.Execute(&output, ngdata); err != nil {
+			return "", nil
+		}
+		return output.String(), nil
+	}
+
+	for key, templateFiles := range configs {
+		spec := NewConfigMapSpec(getObjectName(master.Name, key), master.Namespace, mergeLabels(master.Labels, rsrclabels))
+		for _, file := range templateFiles {
+			data, err := fillTemplate(file, ngdata)
+			if err != nil {
+				return nil, err
+			}
+			spec = spec.WithData(file, data)
+		}
+		obj := buildConfigMapObject(spec)
+		expected = append(expected, obj)
+	}
+	return expected, nil
+}
+
+func buildConfigMapObject(spec *ConfigMapSpec) reconciler.Object {
+	// Creates the configMap object
+	configMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      spec.Name,
+			Namespace: spec.Namespace,
+			Labels:    spec.Labels,
+		},
+		Data: spec.Data,
+	}
+
+	obj := reconciler.Object{
+		Type:      k8s.Type,
+		Lifecycle: reconciler.LifecycleManaged,
+		Obj: &k8s.Object{
+			Obj:     configMap.DeepCopyObject().(metav1.Object),
+			ObjList: &corev1.ConfigMapList{},
+		},
+	}
+	return obj
+}
+
+func getObjectName(masterName, name string) string {
+	return fmt.Sprintf("%s%s-%s", objectNamePrefix, masterName, strings.ToLower(name))
+}
+
+func mergeLabels(current, added map[string]string) map[string]string {
+	labels := make(reconciler.KVMap)
+	labels.Merge(current, added)
+	return labels
 }

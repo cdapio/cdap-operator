@@ -8,14 +8,14 @@ import (
 type ContainerSpec struct {
 	Name            string                       `json:"name,omitempty"`
 	Image           string                       `json:"image,omitempty"`
-	ServiceName     v1alpha1.ServiceType         `json:"servcieName,omitempty"`
+	ServiceName     v1alpha1.ServiceName         `json:"servcieName,omitempty"`
 	Env             []corev1.EnvVar              `json:"env,omitempty"`
 	ImagePullPolicy corev1.PullPolicy            `json:"imagePullPolicy,omitempty"`
 	Resources       *corev1.ResourceRequirements `json:"resources,omitempty"`
 	SecuritySecret  string                       `json:"securitySecret,omitempty"`
 }
 
-func NewContainerSpec(serviceName v1alpha1.ServiceType, master *v1alpha1.CDAPMaster, serviceSpec *v1alpha1.CDAPServiceSpec) *ContainerSpec {
+func NewContainerSpec(serviceName v1alpha1.ServiceName, master *v1alpha1.CDAPMaster, serviceSpec *v1alpha1.CDAPServiceSpec) *ContainerSpec {
 	c := new(ContainerSpec)
 	c.Name = string(serviceName)
 	c.Image = master.Spec.Image
@@ -121,5 +121,25 @@ func NewExternalService(name string, annotation, labels map[string]string, servi
 	s.Labels = labels
 	s.ServiceType = serviceType
 	s.ServicePort = port
+	return s
+}
+
+type ConfigMapSpec struct {
+	Name      string            `json:"name,omitempty"`
+	Namespace string            `json:"namespace,omitempty"`
+	Labels    map[string]string `json:"labels,omitempty"`
+	Data      map[string]string `json:"configMap,omitempty"`
+}
+
+func NewConfigMapSpec(name, namespace string, labels map[string]string) *ConfigMapSpec {
+	s := new(ConfigMapSpec)
+	s.Name = name
+	s.Namespace = namespace
+	s.Labels = labels
+	s.Data = make(map[string]string)
+	return s
+}
+func (s *ConfigMapSpec) WithData(key, val string) *ConfigMapSpec {
+	s.Data[key] = val
 	return s
 }
