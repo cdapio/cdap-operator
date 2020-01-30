@@ -224,19 +224,28 @@ func (s *ServiceSet) Objects(rsrc interface{}, rsrclabels map[string]string, obs
 		return spec
 	}
 
+	buildNetworkServiceSpec := func(name string, serviceSpec *alpha1.CDAPExternalServiceSpec) *NetworkServiceSpec {
+		spec := NewNetworkServiceo_(name, labels, serviceSpec.ServiceType, serviceSpec.ServicePort, m)
+		return spec
+	}
+
 	spec := NewDeploymentSpec().
 		WithStateful(buildStatefulSpec(getObjectName(m.Name, "logs"), alpha1.ServiceLogs, &m.Spec.Logs.CDAPStatefulServiceSpec)).
 		WithStateful(buildStatefulSpec(getObjectName(m.Name, "messaging"), alpha1.ServiceMessaging, &m.Spec.Messaging.CDAPStatefulServiceSpec)).
 		WithStateful(buildStatefulSpec(getObjectName(m.Name, "metrics"), alpha1.ServiceMetrics, &m.Spec.Preview.CDAPStatefulServiceSpec)).
 		WithStateful(buildStatefulSpec(getObjectName(m.Name, "preview"), alpha1.ServicePreview, &m.Spec.Preview.CDAPStatefulServiceSpec)).
 		WithStateless(buildStatelessSpec(getObjectName(m.Name, "appfab"), alpha1.ServiceAppFabric, &m.Spec.AppFabric.CDAPServiceSpec)).
-		WithStateless(buildStatelessSpec(getObjectName(m.Name, "metadata"), alpha1.ServiceMetadata, &m.Spec.Metadata.CDAPServiceSpec))
+		WithStateless(buildStatelessSpec(getObjectName(m.Name, "metadata"), alpha1.ServiceMetadata, &m.Spec.Metadata.CDAPServiceSpec)).
+		WithStateless(buildStatelessSpec(getObjectName(m.Name, "router"), alpha1.ServiceRouter, &m.Spec.Metadata.CDAPServiceSpec)).
+		WithNetworkService(buildNetworkServiceSpec(getObjectName(m.Name, "router"), &m.Spec.Router.CDAPExternalServiceSpec))
 
 	objs, err = buildObjects(spec)
 	if err != nil {
 		return []reconciler.Object{}, err
 	}
 	expected = append(expected, objs...)
+
+	copyNodePort(expected, observed)
 
 	return expected, err
 }
@@ -257,8 +266,8 @@ func buildObjects(spec *DeploymentSpec) ([]reconciler.Object, error) {
 		}
 		objs = append(objs, *obj)
 	}
-	for _, s := range spec.ExternalService {
-		obj, err := buildServiceObject(s)
+	for _, s := range spec.NetworkServices {
+		obj, err := buildNetworkServiceObject(s)
 		if err != nil {
 			return nil, err
 		}
@@ -284,12 +293,46 @@ func buildStatelessObject(spec *StatelessSpec) (*reconciler.Object, error) {
 	return obj, nil
 }
 
-func buildServiceObject(spec *ExternalServiceSpec) (*reconciler.Object, error) {
+func buildNetworkServiceObject(spec *NetworkServiceSpec) (*reconciler.Object, error) {
 	obj, err := k8s.ObjectFromFile(templateDir+serviceTemplate, spec, &corev1.ServiceList{})
 	if err != nil {
 		return nil, err
 	}
 	return obj, nil
+}
+
+// Set the nodePort in the expected service based on the observed service
+func copyNodePort(expected, observed []reconciler.Object) {
+	// Get the service from the expected list.
+	var expectedService *corev1.Service
+	for _, item := range reconciler.ObjectsByType(expected, k8s.Type) {
+		if service, ok := item.Obj.(*k8s.Object).Obj.(*corev1.Service); ok {
+			expectedService = service
+			break
+		}
+	}
+	if expectedService == nil {
+		return
+	}
+	// Find the service being observed. Extract nodePort from the service spec and set it to expected
+	for _, item := range reconciler.ObjectsByType(observed, k8s.Type) {
+		if observedService, ok := item.Obj.(*k8s.Object).Obj.(*corev1.Service); ok {
+			if observedService.Namespace == expectedService.Namespace && observedService.Name == expectedService.Name {
+				var nodePorts = make(map[string]int32)
+				for _, p := range observedService.Spec.Ports {
+					nodePorts[p.Name] = p.NodePort
+				}
+
+				// Assigning existing node ports to the expected service
+				for i := range expectedService.Spec.Ports {
+					p := &expectedService.Spec.Ports[i]
+					if nodePort, ok := nodePorts[p.Name]; ok {
+						p.NodePort = nodePort
+					}
+				}
+			}
+		}
+	}
 }
 
 func getObjectName(masterName, name string) string {

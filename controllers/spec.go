@@ -109,18 +109,21 @@ func (s *StatefulSpec) WithStorage(storageClassName *string, storageSize string)
 	return s
 }
 
-type ExternalServiceSpec struct {
-	Name        string            `json:"name,omitempty"`
-	Annotations map[string]string `json:"annotations,omitempty"`
-	Labels      map[string]string `json:"labels,omitempty"`
-	ServiceType *string           `json:"serviceType,omitempty"`
-	ServicePort int32             `json:"servicePort,omitempty"`
+type NetworkServiceSpec struct {
+	Name        string             `json:"name,omitempty"`
+	Namespace   string             `json:"namespace,omitempty"`
+	Annotations *map[string]string `json:"annotations,omitempty"`
+	Labels      map[string]string  `json:"labels,omitempty"`
+	ServiceType *string            `json:"serviceType,omitempty"`
+	ServicePort *int32             `json:"servicePort,omitempty"`
 }
 
-func NewExternalService(name string, annotation, labels map[string]string, serviceType *string, port int32) *ExternalServiceSpec {
-	s := new(ExternalServiceSpec)
+func NewNetworkServiceo_(name string, labels map[string]string, serviceType *string, port *int32, master *v1alpha1.CDAPMaster) *NetworkServiceSpec {
+	s := new(NetworkServiceSpec)
 	s.Name = name
-	s.Annotations = annotation
+	s.Namespace = master.Namespace
+	// TODO: are annotations needed?
+	s.Annotations = nil
 	s.Labels = labels
 	s.ServiceType = serviceType
 	s.ServicePort = port
@@ -128,9 +131,9 @@ func NewExternalService(name string, annotation, labels map[string]string, servi
 }
 
 type DeploymentSpec struct {
-	Stateful        []*StatefulSpec        `json:"stateful,omitempty"`
-	Stateless       []*StatelessSpec       `json:"stateless,omitempty"`
-	ExternalService []*ExternalServiceSpec `json:"externalService,omitempty"`
+	Stateful        []*StatefulSpec       `json:"stateful,omitempty"`
+	Stateless       []*StatelessSpec      `json:"stateless,omitempty"`
+	NetworkServices []*NetworkServiceSpec `json:"externalService,omitempty"`
 }
 
 func NewDeploymentSpec() *DeploymentSpec {
@@ -145,8 +148,8 @@ func (s *DeploymentSpec) WithStateless(stateless *StatelessSpec) *DeploymentSpec
 	s.Stateless = append(s.Stateless, stateless)
 	return s
 }
-func (s *DeploymentSpec) WithExternalService(externalService *ExternalServiceSpec) *DeploymentSpec {
-	s.ExternalService = append(s.ExternalService, externalService)
+func (s *DeploymentSpec) WithNetworkService(networkService *NetworkServiceSpec) *DeploymentSpec {
+	s.NetworkServices = append(s.NetworkServices, networkService)
 	return s
 }
 
