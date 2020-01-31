@@ -211,7 +211,7 @@ func (s *ServiceSet) Objects(rsrc interface{}, rsrclabels map[string]string, obs
 	dataDir := alpha1.LocalDataDir
 
 	buildStatefulSpec := func(name string, serviceName alpha1.ServiceName, serviceSpec *alpha1.CDAPStatefulServiceSpec) *StatefulSpec {
-		spec := NewStateful(name, 1, labels, &serviceSpec.CDAPServiceSpec, m, cconf, hconf).
+		spec := NewStateful(name, 1, labels, &serviceSpec.CDAPServiceSpec, m, cconf, hconf).AddLabel(containerLabel, name).
 			WithInitContainer(NewContainerSpec("create-storage", "StorageMain", m, nil, dataDir)).
 			WithContainer(NewContainerSpec(strings.ToLower(string(serviceName)), getServiceMain(serviceName), m, serviceSpec.Resources, dataDir)).
 			WithStorage(serviceSpec.StorageClassName, serviceSpec.StorageSize)
@@ -219,13 +219,19 @@ func (s *ServiceSet) Objects(rsrc interface{}, rsrclabels map[string]string, obs
 	}
 
 	buildStatelessSpec := func(name string, serviceName alpha1.ServiceName, serviceSpec *alpha1.CDAPServiceSpec) *StatelessSpec {
-		spec := NewStatelessSpec(name, 1, labels, serviceSpec, m, cconf, hconf).
+		spec := NewStatelessSpec(name, 1, labels, serviceSpec, m, cconf, hconf).AddLabel(containerLabel, name).
 			WithContainer(NewContainerSpec(strings.ToLower(string(serviceName)), getServiceMain(serviceName), m, serviceSpec.Resources, dataDir))
 		return spec
 	}
 
+	buildUISpec := func(name string, serviceName alpha1.ServiceName, serviceSpec *alpha1.CDAPScalableServiceSpec) *UISpec {
+		spec := NewUISpec(name, getReplicas(serviceSpec.Replicas), labels, &serviceSpec.CDAPServiceSpec, m, cconf, hconf).AddLabel(containerLabel, name).
+			WithContainer(NewContainerSpec(strings.ToLower(string(serviceName)), "", m, serviceSpec.Resources, dataDir).SetImage(m.Spec.UserInterfaceImage))
+		return spec
+	}
+
 	buildNetworkServiceSpec := func(name string, serviceSpec *alpha1.CDAPExternalServiceSpec) *NetworkServiceSpec {
-		spec := NewNetworkServiceo_(name, labels, serviceSpec.ServiceType, serviceSpec.ServicePort, m)
+		spec := NewNetworkService(name, labels, serviceSpec.ServiceType, serviceSpec.ServicePort, m).AddLabel(containerLabel, name)
 		return spec
 	}
 
@@ -236,8 +242,12 @@ func (s *ServiceSet) Objects(rsrc interface{}, rsrclabels map[string]string, obs
 		WithStateful(buildStatefulSpec(getObjectName(m.Name, "preview"), alpha1.ServicePreview, &m.Spec.Preview.CDAPStatefulServiceSpec)).
 		WithStateless(buildStatelessSpec(getObjectName(m.Name, "appfab"), alpha1.ServiceAppFabric, &m.Spec.AppFabric.CDAPServiceSpec)).
 		WithStateless(buildStatelessSpec(getObjectName(m.Name, "metadata"), alpha1.ServiceMetadata, &m.Spec.Metadata.CDAPServiceSpec)).
-		WithStateless(buildStatelessSpec(getObjectName(m.Name, "router"), alpha1.ServiceRouter, &m.Spec.Metadata.CDAPServiceSpec)).
-		WithNetworkService(buildNetworkServiceSpec(getObjectName(m.Name, "router"), &m.Spec.Router.CDAPExternalServiceSpec))
+		WithStateless(buildStatelessSpec(getObjectName(m.Name, "router"), alpha1.ServiceRouter, &m.Spec.Router.CDAPServiceSpec)).
+		WithUISpec(buildUISpec(getObjectName(m.Name, "userinterface"), alpha1.ServiceUserInterface, &m.Spec.UserInterface.CDAPExternalServiceSpec.CDAPScalableServiceSpec))
+
+	spec = spec.
+		WithNetworkService(buildNetworkServiceSpec(getObjectName(m.Name, "router"), &m.Spec.Router.CDAPExternalServiceSpec)).
+		WithNetworkService(buildNetworkServiceSpec(getObjectName(m.Name, "userinterface"), &m.Spec.UserInterface.CDAPExternalServiceSpec))
 
 	objs, err = buildObjects(spec)
 	if err != nil {
@@ -274,6 +284,12 @@ func buildObjects(spec *DeploymentSpec) ([]reconciler.Object, error) {
 		objs = append(objs, *obj)
 
 	}
+	obj, err := buildUIObject(spec.UISpec)
+	if err != nil {
+		return nil, err
+	}
+	objs = append(objs, *obj)
+
 	return objs, nil
 }
 
@@ -295,6 +311,14 @@ func buildStatelessObject(spec *StatelessSpec) (*reconciler.Object, error) {
 
 func buildNetworkServiceObject(spec *NetworkServiceSpec) (*reconciler.Object, error) {
 	obj, err := k8s.ObjectFromFile(templateDir+serviceTemplate, spec, &corev1.ServiceList{})
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+func buildUIObject(spec *UISpec) (*reconciler.Object, error) {
+	obj, err := k8s.ObjectFromFile(templateDir+uiDeploymentTemplate, spec, &appsv1.DeploymentList{})
 	if err != nil {
 		return nil, err
 	}
@@ -341,6 +365,14 @@ func getObjectName(masterName, name string) string {
 
 func getServiceMain(name alpha1.ServiceName) string {
 	return fmt.Sprintf("%sServiceMain", name)
+}
+
+func getReplicas(replicas *int32) int32 {
+	var r int32 = 1
+	if replicas != nil {
+		r = *replicas
+	}
+	return r
 }
 
 func mergeLabels(current, added map[string]string) map[string]string {

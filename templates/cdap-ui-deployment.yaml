@@ -14,55 +14,52 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{.Name}}
-  namespace: {{.Master.Namespace}}
-{{if .Labels}}
+  name: {{.Base.Name}}
+  namespace: {{.Base.Namespace}}
+{{if .Base.Labels}}
   labels:
-    {{range $k,$v := .Labels}}
-    {{$k}}: '{{$v}}'
+    {{range $k,$v := .Base.Labels}}
+    {{$k}}: {{$v}}
     {{end}}
 {{end}}
 spec:
   selector:
     matchLabels:
-      {{range $k,$v := .Labels}}
-      {{$k}}: '{{$v}}'
+      {{range $k,$v := .Base.Labels}}
+      {{$k}}: {{$v}}
       {{end}}
-{{if .Replicas}}
-  replicas: {{.Replicas}}
-{{else}}
-  replicas: 1
-{{end}}
+  replicas: {{.Base.Replicas}}
   template:
     metadata:
       labels:
-        {{range $k,$v := .Labels }}
-        {{$k}}: '{{$v}}'
+        {{range $k,$v := .Base.Labels }}
+        {{$k}}: {{$v}}
         {{end}}
     spec:
-    {{if .ServiceAccountName}}
-      serviceAccountName: {{.ServiceAccountName}}
+    {{if .Base.ServiceAccountName}}
+      serviceAccountName: {{.Base.ServiceAccountName}}
     {{end}}
-    {{if .Service.NodeSelector}}
+    {{if .Base.NodeSelector}}
       nodeSelector:
-        {{range $k,$v := .Service.NodeSelector}}
+        {{range $k,$v := .Base.NodeSelector}}
         {{$k}}: '{{$v}}'
         {{end}}
     {{end}}
-    {{if .Service.RuntimeClassName}}
+    {{if .Base.RuntimeClassName}}
       runtimeClassName: {{.Service.RuntimeClassName}}
     {{end}}
-    {{if .Service.PriorityClassName}}
+    {{if .Base.PriorityClassName}}
       priorityClassName: {{.Service.PriorityClassName}}
     {{end}}
+    {{range $c := .Containers}}
       containers:
-        - image: {{.Master.Status.UserInterfaceImageToUse}}
+        - name: {{$c.Name}}
+          image: {{$c.Image}}
           workingDir: "/opt/cdap/ui"
           command: ["bin/node"]
           args: ["index.js", "start"]
-          name: {{.Name}}
-        {{if .Master.Spec.ImagePullPolicy}}
-          imagePullPolicy: {{.Master.Spec.ImagePullPolicy}}
+        {{if $c.ImagePullPolicy}}
+          imagePullPolicy: {{$c.ImagePullPolicy}}
         {{end}}
           resources: {}
           env:
@@ -75,10 +72,11 @@ spec:
             - name: hadoop-conf
               mountPath: /etc/hadoop/conf
               readOnly: true
+      {{end}}
       volumes:
         - name: cdap-conf
           configMap:
-            name: {{.CConfName}}
+            name: {{.Base.CConf}}
         - name: hadoop-conf
           configMap:
-            name: {{.HConfName}}
+            name: {{.Base.HConf}}

@@ -26,6 +26,10 @@ func NewContainerSpec(name, serviceMain string, master *v1alpha1.CDAPMaster, res
 	c.DataDir = dataDir
 	return c
 }
+func (s *ContainerSpec) SetImage(image string) *ContainerSpec {
+	s.Image = image
+	return s
+}
 
 type BaseSpec struct {
 	Name               string            `json:"name,omitempty"`
@@ -67,6 +71,10 @@ func NewStatelessSpec(name string, replicas int32, labels map[string]string, ser
 	s.Base = NewBaseSpec(name, replicas, labels, serviceSpec, master, cconf, hconf)
 	return s
 }
+func (s *StatelessSpec) AddLabel(key, val string) *StatelessSpec {
+	s.Base.Labels = mergeLabels(s.Base.Labels, map[string]string{key: val})
+	return s
+}
 func (s *StatelessSpec) WithContainer(containerSpec *ContainerSpec) *StatelessSpec {
 	s.Containers = append(s.Containers, containerSpec)
 	return s
@@ -96,6 +104,10 @@ func NewStateful(name string, replicas int32, labels map[string]string, serviceS
 	s.Base = NewBaseSpec(name, replicas, labels, serviceSpec, master, cconf, hconf)
 	return s
 }
+func (s *StatefulSpec) AddLabel(key, val string) *StatefulSpec {
+	s.Base.Labels = mergeLabels(s.Base.Labels, map[string]string{key: val})
+	return s
+}
 func (s *StatefulSpec) WithInitContainer(containerSpec *ContainerSpec) *StatefulSpec {
 	s.InitContainers = append(s.InitContainers, containerSpec)
 	return s
@@ -118,7 +130,7 @@ type NetworkServiceSpec struct {
 	ServicePort *int32             `json:"servicePort,omitempty"`
 }
 
-func NewNetworkServiceo_(name string, labels map[string]string, serviceType *string, port *int32, master *v1alpha1.CDAPMaster) *NetworkServiceSpec {
+func NewNetworkService(name string, labels map[string]string, serviceType *string, port *int32, master *v1alpha1.CDAPMaster) *NetworkServiceSpec {
 	s := new(NetworkServiceSpec)
 	s.Name = name
 	s.Namespace = master.Namespace
@@ -129,11 +141,36 @@ func NewNetworkServiceo_(name string, labels map[string]string, serviceType *str
 	s.ServicePort = port
 	return s
 }
+func (s *NetworkServiceSpec) AddLabel(key, val string) *NetworkServiceSpec {
+	s.Labels = mergeLabels(s.Labels, map[string]string{key: val})
+	return s
+}
+
+type UISpec struct {
+	Base       *BaseSpec        `json:"base,inline"`
+	Containers []*ContainerSpec `json:"containers,omitempty"`
+}
+
+func (s *UISpec) AddLabel(key, val string) *UISpec {
+	s.Base.Labels = mergeLabels(s.Base.Labels, map[string]string{key: val})
+	return s
+}
+func NewUISpec(name string, replicas int32, labels map[string]string, serviceSpec *v1alpha1.CDAPServiceSpec, master *v1alpha1.CDAPMaster, cconf, hconf string) *UISpec {
+	s := new(UISpec)
+	s.Base = NewBaseSpec(name, replicas, labels, serviceSpec, master, cconf, hconf)
+	return s
+}
+
+func (s *UISpec) WithContainer(containerSpec *ContainerSpec) *UISpec {
+	s.Containers = append(s.Containers, containerSpec)
+	return s
+}
 
 type DeploymentSpec struct {
 	Stateful        []*StatefulSpec       `json:"stateful,omitempty"`
 	Stateless       []*StatelessSpec      `json:"stateless,omitempty"`
-	NetworkServices []*NetworkServiceSpec `json:"externalService,omitempty"`
+	NetworkServices []*NetworkServiceSpec `json:"networkService,omitempty"`
+	UISpec          *UISpec               `json:"uispec,omitempty"`
 }
 
 func NewDeploymentSpec() *DeploymentSpec {
@@ -150,6 +187,10 @@ func (s *DeploymentSpec) WithStateless(stateless *StatelessSpec) *DeploymentSpec
 }
 func (s *DeploymentSpec) WithNetworkService(networkService *NetworkServiceSpec) *DeploymentSpec {
 	s.NetworkServices = append(s.NetworkServices, networkService)
+	return s
+}
+func (s *DeploymentSpec) WithUISpec(uiSpec *UISpec) *DeploymentSpec {
+	s.UISpec = uiSpec
 	return s
 }
 

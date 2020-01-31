@@ -38,6 +38,7 @@ spec:
     {{$k}}: '{{$v}}'
     {{end}}
   ports:
+
   - protocol: TCP
     port: {{.ServicePort}}
     targetPort: {{.ServicePort}}
