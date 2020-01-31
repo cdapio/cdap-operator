@@ -5,6 +5,28 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// For ConfigMap
+type ConfigMapSpec struct {
+	Name      string            `json:"name,omitempty"`
+	Namespace string            `json:"namespace,omitempty"`
+	Labels    map[string]string `json:"labels,omitempty"`
+	Data      map[string]string `json:"configMap,omitempty"`
+}
+
+func NewConfigMapSpec(name, namespace string, labels map[string]string) *ConfigMapSpec {
+	s := new(ConfigMapSpec)
+	s.Name = name
+	s.Namespace = namespace
+	s.Labels = labels
+	s.Data = make(map[string]string)
+	return s
+}
+func (s *ConfigMapSpec) WithData(key, val string) *ConfigMapSpec {
+	s.Data[key] = val
+	return s
+}
+
+// For containers in either StatefulSet or Deployment
 type ContainerSpec struct {
 	Name            string                       `json:"name,omitempty"`
 	Image           string                       `json:"image,omitempty"`
@@ -21,7 +43,7 @@ func NewContainerSpec(name, serviceMain string, master *v1alpha1.CDAPMaster, res
 	c.Image = master.Spec.Image
 	c.ImagePullPolicy = master.Spec.ImagePullPolicy
 	c.ServiceMain = serviceMain
-	c.Env = []corev1.EnvVar{} // TODO(wyzhang): to be set in template
+	c.Env = []corev1.EnvVar{} // TODO: to be populated
 	c.Resources = resources
 	c.DataDir = dataDir
 	return c
@@ -31,6 +53,7 @@ func (s *ContainerSpec) SetImage(image string) *ContainerSpec {
 	return s
 }
 
+// BaseSpec is common to both StatefulSet and Deployment
 type BaseSpec struct {
 	Name               string            `json:"name,omitempty"`
 	Namespace          string            `json:"namespace,omitempty"`
@@ -61,25 +84,27 @@ func NewBaseSpec(name string, replicas int32, labels map[string]string, serviceS
 	return s
 }
 
-type StatelessSpec struct {
+// For Deployment
+type DeploymentSpec struct {
 	Base       *BaseSpec        `json:"base,inline"`
 	Containers []*ContainerSpec `json:"containers,omitempty"`
 }
 
-func NewStatelessSpec(name string, replicas int32, labels map[string]string, serviceSpec *v1alpha1.CDAPServiceSpec, master *v1alpha1.CDAPMaster, cconf, hconf string) *StatelessSpec {
-	s := new(StatelessSpec)
+func NewDeploymentSpec(name string, replicas int32, labels map[string]string, serviceSpec *v1alpha1.CDAPServiceSpec, master *v1alpha1.CDAPMaster, cconf, hconf string) *DeploymentSpec {
+	s := new(DeploymentSpec)
 	s.Base = NewBaseSpec(name, replicas, labels, serviceSpec, master, cconf, hconf)
 	return s
 }
-func (s *StatelessSpec) AddLabel(key, val string) *StatelessSpec {
+func (s *DeploymentSpec) AddLabel(key, val string) *DeploymentSpec {
 	s.Base.Labels = mergeLabels(s.Base.Labels, map[string]string{key: val})
 	return s
 }
-func (s *StatelessSpec) WithContainer(containerSpec *ContainerSpec) *StatelessSpec {
+func (s *DeploymentSpec) WithContainer(containerSpec *ContainerSpec) *DeploymentSpec {
 	s.Containers = append(s.Containers, containerSpec)
 	return s
 }
 
+// For VolumnClaimTemplate in Statefulset
 type StorageSpec struct {
 	StorageClassName *string `json:"storageClassName,omitempty"`
 	StorageSize      string  `json:"storageSize,omitempty"`
@@ -92,6 +117,7 @@ func NewStorageSpec(storageClassName *string, storageSize string) *StorageSpec {
 	return s
 }
 
+// For StatefulSet
 type StatefulSpec struct {
 	Base           *BaseSpec        `json:"Base,inline"`
 	InitContainers []*ContainerSpec `json:"initContainer,omitempty"`
@@ -99,28 +125,34 @@ type StatefulSpec struct {
 	Storage        *StorageSpec     `json:"storage,omitempty"`
 }
 
-func NewStateful(name string, replicas int32, labels map[string]string, serviceSpec *v1alpha1.CDAPServiceSpec, master *v1alpha1.CDAPMaster, cconf, hconf string) *StatefulSpec {
+func NewStatefulSpec(name string, replicas int32, labels map[string]string, serviceSpec *v1alpha1.CDAPServiceSpec, master *v1alpha1.CDAPMaster, cconf, hconf string) *StatefulSpec {
 	s := new(StatefulSpec)
 	s.Base = NewBaseSpec(name, replicas, labels, serviceSpec, master, cconf, hconf)
 	return s
 }
+
 func (s *StatefulSpec) AddLabel(key, val string) *StatefulSpec {
 	s.Base.Labels = mergeLabels(s.Base.Labels, map[string]string{key: val})
 	return s
 }
+
 func (s *StatefulSpec) WithInitContainer(containerSpec *ContainerSpec) *StatefulSpec {
 	s.InitContainers = append(s.InitContainers, containerSpec)
 	return s
 }
+
 func (s *StatefulSpec) WithContainer(containerSpec *ContainerSpec) *StatefulSpec {
 	s.Containers = append(s.Containers, containerSpec)
 	return s
 }
+
 func (s *StatefulSpec) WithStorage(storageClassName *string, storageSize string) *StatefulSpec {
 	s.Storage = NewStorageSpec(storageClassName, storageSize)
 	return s
 }
 
+// For k8s Service.
+// Name it "NetworkService" to avoid confusion with CDAP service
 type NetworkServiceSpec struct {
 	Name        string             `json:"name,omitempty"`
 	Namespace   string             `json:"namespace,omitempty"`
@@ -130,7 +162,7 @@ type NetworkServiceSpec struct {
 	ServicePort *int32             `json:"servicePort,omitempty"`
 }
 
-func NewNetworkService(name string, labels map[string]string, serviceType *string, port *int32, master *v1alpha1.CDAPMaster) *NetworkServiceSpec {
+func NewNetworkServiceSpec(name string, labels map[string]string, serviceType *string, port *int32, master *v1alpha1.CDAPMaster) *NetworkServiceSpec {
 	s := new(NetworkServiceSpec)
 	s.Name = name
 	s.Namespace = master.Namespace
@@ -146,70 +178,53 @@ func (s *NetworkServiceSpec) AddLabel(key, val string) *NetworkServiceSpec {
 	return s
 }
 
-type UISpec struct {
+// For CDAP user interface Deployment
+type UserInterfaceSpec struct {
 	Base       *BaseSpec        `json:"base,inline"`
 	Containers []*ContainerSpec `json:"containers,omitempty"`
 }
 
-func (s *UISpec) AddLabel(key, val string) *UISpec {
-	s.Base.Labels = mergeLabels(s.Base.Labels, map[string]string{key: val})
-	return s
-}
-func NewUISpec(name string, replicas int32, labels map[string]string, serviceSpec *v1alpha1.CDAPServiceSpec, master *v1alpha1.CDAPMaster, cconf, hconf string) *UISpec {
-	s := new(UISpec)
+func NewUserInterfaceSpec(name string, replicas int32, labels map[string]string, serviceSpec *v1alpha1.CDAPServiceSpec, master *v1alpha1.CDAPMaster, cconf, hconf string) *UserInterfaceSpec {
+	s := new(UserInterfaceSpec)
 	s.Base = NewBaseSpec(name, replicas, labels, serviceSpec, master, cconf, hconf)
 	return s
 }
 
-func (s *UISpec) WithContainer(containerSpec *ContainerSpec) *UISpec {
+func (s *UserInterfaceSpec) AddLabel(key, val string) *UserInterfaceSpec {
+	s.Base.Labels = mergeLabels(s.Base.Labels, map[string]string{key: val})
+	return s
+}
+
+func (s *UserInterfaceSpec) WithContainer(containerSpec *ContainerSpec) *UserInterfaceSpec {
 	s.Containers = append(s.Containers, containerSpec)
 	return s
 }
 
-type DeploymentSpec struct {
+// Top level CDAP service deployment configuration
+type CDAPDeploymentSpec struct {
 	Stateful        []*StatefulSpec       `json:"stateful,omitempty"`
-	Stateless       []*StatelessSpec      `json:"stateless,omitempty"`
+	Deployment      []*DeploymentSpec     `json:"stateless,omitempty"`
 	NetworkServices []*NetworkServiceSpec `json:"networkService,omitempty"`
-	UISpec          *UISpec               `json:"uispec,omitempty"`
+	UserInterface   *UserInterfaceSpec    `json:"uispec,omitempty"`
 }
 
-func NewDeploymentSpec() *DeploymentSpec {
-	c := new(DeploymentSpec)
+func NewCDAPDeploymentSpec() *CDAPDeploymentSpec {
+	c := new(CDAPDeploymentSpec)
 	return c
 }
-func (s *DeploymentSpec) WithStateful(stateful *StatefulSpec) *DeploymentSpec {
+func (s *CDAPDeploymentSpec) WithStateful(stateful *StatefulSpec) *CDAPDeploymentSpec {
 	s.Stateful = append(s.Stateful, stateful)
 	return s
 }
-func (s *DeploymentSpec) WithStateless(stateless *StatelessSpec) *DeploymentSpec {
-	s.Stateless = append(s.Stateless, stateless)
+func (s *CDAPDeploymentSpec) WithDeployment(stateless *DeploymentSpec) *CDAPDeploymentSpec {
+	s.Deployment = append(s.Deployment, stateless)
 	return s
 }
-func (s *DeploymentSpec) WithNetworkService(networkService *NetworkServiceSpec) *DeploymentSpec {
+func (s *CDAPDeploymentSpec) WithNetworkService(networkService *NetworkServiceSpec) *CDAPDeploymentSpec {
 	s.NetworkServices = append(s.NetworkServices, networkService)
 	return s
 }
-func (s *DeploymentSpec) WithUISpec(uiSpec *UISpec) *DeploymentSpec {
-	s.UISpec = uiSpec
-	return s
-}
-
-type ConfigMapSpec struct {
-	Name      string            `json:"name,omitempty"`
-	Namespace string            `json:"namespace,omitempty"`
-	Labels    map[string]string `json:"labels,omitempty"`
-	Data      map[string]string `json:"configMap,omitempty"`
-}
-
-func NewConfigMapSpec(name, namespace string, labels map[string]string) *ConfigMapSpec {
-	s := new(ConfigMapSpec)
-	s.Name = name
-	s.Namespace = namespace
-	s.Labels = labels
-	s.Data = make(map[string]string)
-	return s
-}
-func (s *ConfigMapSpec) WithData(key, val string) *ConfigMapSpec {
-	s.Data[key] = val
+func (s *CDAPDeploymentSpec) WithUserInterface(uiSpec *UserInterfaceSpec) *CDAPDeploymentSpec {
+	s.UserInterface = uiSpec
 	return s
 }

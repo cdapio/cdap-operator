@@ -74,7 +74,7 @@ type CDAPMasterReconciler struct {
 func (r *CDAPMasterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&alpha1.CDAPMaster{}).
-		Complete(newReconciler(mgr))
+		Complete(NewReconciler(mgr))
 }
 
 // TBD kubebuilder:rbac:groups=app.k8s.io,resources=applications,verbs=get;list;watch;create;update;patch;delete
@@ -86,19 +86,20 @@ func (r *CDAPMasterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cdap.cdap.io,resources=cdapmasters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cdap.cdap.io,resources=cdapmasters/status,verbs=get;update;patch
+// Intentionally leave a blank line, otherwise controller-gen won't generate RBAC
 
-func newReconciler(mgr manager.Manager) *gr.Reconciler {
+func NewReconciler(mgr manager.Manager) *gr.Reconciler {
 	return gr.
 		WithManager(mgr).
 		For(&alpha1.CDAPMaster{}, alpha1.GroupVersion).
-		Using(&ConfigMap{}).
-		Using(&ServiceSet{}).
-		WithErrorHandler(handleError).
-		WithDefaulter(applyDefaults).
+		Using(&ConfigMapHandler{}).
+		Using(&ServiceHandler{}).
+		WithErrorHandler(HandleError).
+		WithDefaulter(ApplyDefaults).
 		Build()
 }
 
-func handleError(resource interface{}, err error, kind string) {
+func HandleError(resource interface{}, err error, kind string) {
 	cm := resource.(*alpha1.CDAPMaster)
 	if err != nil {
 		cm.Status.SetError("ErrorSeen", err.Error())
@@ -107,53 +108,52 @@ func handleError(resource interface{}, err error, kind string) {
 	}
 }
 
-func applyDefaults(resource interface{}) {
+func ApplyDefaults(resource interface{}) {
 	cm := resource.(*alpha1.CDAPMaster)
 	cm.ApplyDefaults()
 }
 
-// Handling reconciling ConfigMap objects
-type ConfigMap struct{}
+// Handling reconciling ConfigMapHandler objects
+type ConfigMapHandler struct{}
 
-func (b *ConfigMap) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
+func (h *ConfigMapHandler) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
 	return k8s.NewObservables().
 		WithLabels(labels).
 		For(&corev1.ConfigMapList{}).
 		Get()
 }
 
-func (b *ConfigMap) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
+func (h *ConfigMapHandler) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	var expected []reconciler.Object
-	master := rsrc.(*alpha1.CDAPMaster)
+	m := rsrc.(*alpha1.CDAPMaster)
 
 	configs := map[string][]string{
 		cconf: {"cdap-site.xml", "logback.xml", "logback-container.xml"},
 		hconf: {"core-site.xml"},
 	}
 
-	type templateBaseValue struct {
+	templateData := struct {
 		Master *alpha1.CDAPMaster
-	}
-	ngdata := &templateBaseValue{
-		Master: master,
+	}{
+		Master: m,
 	}
 
-	fillTemplate := func(templateFile string, ngdata *templateBaseValue) (string, error) {
+	fillTemplate := func(templateFile string) (string, error) {
 		template, err := template.New(templateFile).ParseFiles(templateDir + templateFile)
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 		var output strings.Builder
-		if err := template.Execute(&output, ngdata); err != nil {
-			return "", nil
+		if err := template.Execute(&output, templateData); err != nil {
+			return "", err
 		}
 		return output.String(), nil
 	}
 
 	for key, templateFiles := range configs {
-		spec := NewConfigMapSpec(getObjectName(master.Name, key), master.Namespace, mergeLabels(master.Labels, rsrclabels))
+		spec := NewConfigMapSpec(getObjName(m.Name, key), m.Namespace, mergeLabels(m.Labels, rsrclabels))
 		for _, file := range templateFiles {
-			data, err := fillTemplate(file, ngdata)
+			data, err := fillTemplate(file)
 			if err != nil {
 				return nil, err
 			}
@@ -188,9 +188,9 @@ func buildConfigMapObject(spec *ConfigMapSpec) reconciler.Object {
 }
 
 // Handling reconciling deployment of all services
-type ServiceSet struct{}
+type ServiceHandler struct{}
 
-func (s *ServiceSet) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
+func (h *ServiceHandler) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
 	return k8s.NewObservables().
 		WithLabels(labels).
 		For(&appsv1.DeploymentList{}).
@@ -199,55 +199,63 @@ func (s *ServiceSet) Observables(rsrc interface{}, labels map[string]string, dep
 		Get()
 }
 
-func (s *ServiceSet) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
+func (h *ServiceHandler) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	var expected, objs []reconciler.Object
 	var err error
 
 	m := rsrc.(*alpha1.CDAPMaster)
 
-	cconf := getObjectName(m.Name, cconf)
-	hconf := getObjectName(m.Name, hconf)
+	cconf := getObjName(m.Name, cconf)
+	hconf := getObjName(m.Name, hconf)
 	labels := mergeLabels(m.Labels, rsrclabels)
 	dataDir := alpha1.LocalDataDir
 
-	buildStatefulSpec := func(name string, serviceName alpha1.ServiceName, serviceSpec *alpha1.CDAPStatefulServiceSpec) *StatefulSpec {
-		spec := NewStateful(name, 1, labels, &serviceSpec.CDAPServiceSpec, m, cconf, hconf).AddLabel(containerLabel, name).
-			WithInitContainer(NewContainerSpec("create-storage", "StorageMain", m, nil, dataDir)).
-			WithContainer(NewContainerSpec(strings.ToLower(string(serviceName)), getServiceMain(serviceName), m, serviceSpec.Resources, dataDir)).
+	// Build a single StatefulSet
+	buildStatefulset := func(name string, service alpha1.ServiceName, serviceSpec *alpha1.CDAPStatefulServiceSpec) *StatefulSpec {
+		initContainer := NewContainerSpec("create-storage", "StorageMain", m, nil, dataDir)
+		container := NewContainerSpec(strings.ToLower(string(service)), getServiceMain(service), m, serviceSpec.Resources, dataDir)
+		return NewStatefulSpec(name, 1, labels, &serviceSpec.CDAPServiceSpec, m, cconf, hconf).
+			AddLabel(containerLabel, name).
+			WithInitContainer(initContainer).
+			WithContainer(container).
 			WithStorage(serviceSpec.StorageClassName, serviceSpec.StorageSize)
-		return spec
 	}
 
-	buildStatelessSpec := func(name string, serviceName alpha1.ServiceName, serviceSpec *alpha1.CDAPServiceSpec) *StatelessSpec {
-		spec := NewStatelessSpec(name, 1, labels, serviceSpec, m, cconf, hconf).AddLabel(containerLabel, name).
-			WithContainer(NewContainerSpec(strings.ToLower(string(serviceName)), getServiceMain(serviceName), m, serviceSpec.Resources, dataDir))
-		return spec
+	// Build a single Deployment
+	buildDeployment := func(name string, service alpha1.ServiceName, serviceSpec *alpha1.CDAPServiceSpec) *DeploymentSpec {
+		container := NewContainerSpec(strings.ToLower(string(service)), getServiceMain(service), m, serviceSpec.Resources, dataDir)
+		return NewDeploymentSpec(name, 1, labels, serviceSpec, m, cconf, hconf).
+			AddLabel(containerLabel, name).
+			WithContainer(container)
 	}
 
-	buildUISpec := func(name string, serviceName alpha1.ServiceName, serviceSpec *alpha1.CDAPScalableServiceSpec) *UISpec {
-		spec := NewUISpec(name, getReplicas(serviceSpec.Replicas), labels, &serviceSpec.CDAPServiceSpec, m, cconf, hconf).AddLabel(containerLabel, name).
-			WithContainer(NewContainerSpec(strings.ToLower(string(serviceName)), "", m, serviceSpec.Resources, dataDir).SetImage(m.Spec.UserInterfaceImage))
-		return spec
+	// Build user interface Deployment
+	// TODO: consider making deployemnt shared by both UI and services
+	buildUserInterface := func(name string, serviceName alpha1.ServiceName, serviceSpec *alpha1.CDAPScalableServiceSpec) *UserInterfaceSpec {
+		container := NewContainerSpec(strings.ToLower(string(serviceName)), "", m, serviceSpec.Resources, dataDir).
+			SetImage(m.Spec.UserInterfaceImage)
+		return NewUserInterfaceSpec(name, getReplicas(serviceSpec.Replicas), labels, &serviceSpec.CDAPServiceSpec, m, cconf, hconf).
+			AddLabel(containerLabel, name).
+			WithContainer(container)
 	}
 
-	buildNetworkServiceSpec := func(name string, serviceSpec *alpha1.CDAPExternalServiceSpec) *NetworkServiceSpec {
-		spec := NewNetworkService(name, labels, serviceSpec.ServiceType, serviceSpec.ServicePort, m).AddLabel(containerLabel, name)
-		return spec
+	// Build a single NodePort service
+	buildNetworkService := func(name string, serviceSpec *alpha1.CDAPExternalServiceSpec) *NetworkServiceSpec {
+		return NewNetworkServiceSpec(name, labels, serviceSpec.ServiceType, serviceSpec.ServicePort, m).
+			AddLabel(containerLabel, name)
 	}
 
-	spec := NewDeploymentSpec().
-		WithStateful(buildStatefulSpec(getObjectName(m.Name, "logs"), alpha1.ServiceLogs, &m.Spec.Logs.CDAPStatefulServiceSpec)).
-		WithStateful(buildStatefulSpec(getObjectName(m.Name, "messaging"), alpha1.ServiceMessaging, &m.Spec.Messaging.CDAPStatefulServiceSpec)).
-		WithStateful(buildStatefulSpec(getObjectName(m.Name, "metrics"), alpha1.ServiceMetrics, &m.Spec.Preview.CDAPStatefulServiceSpec)).
-		WithStateful(buildStatefulSpec(getObjectName(m.Name, "preview"), alpha1.ServicePreview, &m.Spec.Preview.CDAPStatefulServiceSpec)).
-		WithStateless(buildStatelessSpec(getObjectName(m.Name, "appfab"), alpha1.ServiceAppFabric, &m.Spec.AppFabric.CDAPServiceSpec)).
-		WithStateless(buildStatelessSpec(getObjectName(m.Name, "metadata"), alpha1.ServiceMetadata, &m.Spec.Metadata.CDAPServiceSpec)).
-		WithStateless(buildStatelessSpec(getObjectName(m.Name, "router"), alpha1.ServiceRouter, &m.Spec.Router.CDAPServiceSpec)).
-		WithUISpec(buildUISpec(getObjectName(m.Name, "userinterface"), alpha1.ServiceUserInterface, &m.Spec.UserInterface.CDAPExternalServiceSpec.CDAPScalableServiceSpec))
-
-	spec = spec.
-		WithNetworkService(buildNetworkServiceSpec(getObjectName(m.Name, "router"), &m.Spec.Router.CDAPExternalServiceSpec)).
-		WithNetworkService(buildNetworkServiceSpec(getObjectName(m.Name, "userinterface"), &m.Spec.UserInterface.CDAPExternalServiceSpec))
+	spec := NewCDAPDeploymentSpec().
+		WithStateful(buildStatefulset(getObjName(m.Name, "logs"), alpha1.ServiceLogs, &m.Spec.Logs.CDAPStatefulServiceSpec)).
+		WithStateful(buildStatefulset(getObjName(m.Name, "messaging"), alpha1.ServiceMessaging, &m.Spec.Messaging.CDAPStatefulServiceSpec)).
+		WithStateful(buildStatefulset(getObjName(m.Name, "metrics"), alpha1.ServiceMetrics, &m.Spec.Preview.CDAPStatefulServiceSpec)).
+		WithStateful(buildStatefulset(getObjName(m.Name, "preview"), alpha1.ServicePreview, &m.Spec.Preview.CDAPStatefulServiceSpec)).
+		WithDeployment(buildDeployment(getObjName(m.Name, "appfab"), alpha1.ServiceAppFabric, &m.Spec.AppFabric.CDAPServiceSpec)).
+		WithDeployment(buildDeployment(getObjName(m.Name, "metadata"), alpha1.ServiceMetadata, &m.Spec.Metadata.CDAPServiceSpec)).
+		WithDeployment(buildDeployment(getObjName(m.Name, "router"), alpha1.ServiceRouter, &m.Spec.Router.CDAPServiceSpec)).
+		WithUserInterface(buildUserInterface(getObjName(m.Name, "userinterface"), alpha1.ServiceUserInterface, &m.Spec.UserInterface.CDAPExternalServiceSpec.CDAPScalableServiceSpec)).
+		WithNetworkService(buildNetworkService(getObjName(m.Name, "router"), &m.Spec.Router.CDAPExternalServiceSpec)).
+		WithNetworkService(buildNetworkService(getObjName(m.Name, "userinterface"), &m.Spec.UserInterface.CDAPExternalServiceSpec))
 
 	objs, err = buildObjects(spec)
 	if err != nil {
@@ -255,12 +263,13 @@ func (s *ServiceSet) Objects(rsrc interface{}, rsrclabels map[string]string, obs
 	}
 	expected = append(expected, objs...)
 
+	// Copy NodePort from obseved to expected
 	copyNodePort(expected, observed)
 
 	return expected, err
 }
 
-func buildObjects(spec *DeploymentSpec) ([]reconciler.Object, error) {
+func buildObjects(spec *CDAPDeploymentSpec) ([]reconciler.Object, error) {
 	var objs []reconciler.Object
 	for _, s := range spec.Stateful {
 		obj, err := buildStatefulObject(s)
@@ -269,8 +278,8 @@ func buildObjects(spec *DeploymentSpec) ([]reconciler.Object, error) {
 		}
 		objs = append(objs, *obj)
 	}
-	for _, s := range spec.Stateless {
-		obj, err := buildStatelessObject(s)
+	for _, s := range spec.Deployment {
+		obj, err := buildDeploymentObject(s)
 		if err != nil {
 			return nil, err
 		}
@@ -284,7 +293,7 @@ func buildObjects(spec *DeploymentSpec) ([]reconciler.Object, error) {
 		objs = append(objs, *obj)
 
 	}
-	obj, err := buildUIObject(spec.UISpec)
+	obj, err := buildUIDeploymentObject(spec.UserInterface)
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +310,7 @@ func buildStatefulObject(spec *StatefulSpec) (*reconciler.Object, error) {
 	return obj, nil
 }
 
-func buildStatelessObject(spec *StatelessSpec) (*reconciler.Object, error) {
+func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 	obj, err := k8s.ObjectFromFile(templateDir+deploymentTemplate, spec, &appsv1.DeploymentList{})
 	if err != nil {
 		return nil, err
@@ -317,7 +326,7 @@ func buildNetworkServiceObject(spec *NetworkServiceSpec) (*reconciler.Object, er
 	return obj, nil
 }
 
-func buildUIObject(spec *UISpec) (*reconciler.Object, error) {
+func buildUIDeploymentObject(spec *UserInterfaceSpec) (*reconciler.Object, error) {
 	obj, err := k8s.ObjectFromFile(templateDir+uiDeploymentTemplate, spec, &appsv1.DeploymentList{})
 	if err != nil {
 		return nil, err
@@ -325,7 +334,7 @@ func buildUIObject(spec *UISpec) (*reconciler.Object, error) {
 	return obj, nil
 }
 
-// Set the nodePort in the expected service based on the observed service
+// Copy the nodePort from observed to the expected to ensure the nodePort is unchanged
 func copyNodePort(expected, observed []reconciler.Object) {
 	// Get the service from the expected list.
 	var expectedService *corev1.Service
@@ -359,7 +368,7 @@ func copyNodePort(expected, observed []reconciler.Object) {
 	}
 }
 
-func getObjectName(masterName, name string) string {
+func getObjName(masterName, name string) string {
 	return fmt.Sprintf("%s%s-%s", objectNamePrefix, masterName, strings.ToLower(name))
 }
 
