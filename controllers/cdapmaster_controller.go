@@ -17,6 +17,8 @@ package controllers
 
 import (
 	"fmt"
+	"sigs.k8s.io/controller-reconciler/pkg/finalizer"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -33,35 +35,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	objectNamePrefix = "cdap-"
-	cconf            = "cconf"
-	hconf            = "hconf"
-	containerLabel   = "cdap.container"
-	// Heap memory related constants
-	javaMinHeapRatio     = float64(0.6)
-	javaReservedNonHeap  = int64(768 * 1024 * 1024)
-	templateDir          = "templates/"
-	deploymentTemplate   = "cdap-deployment.yaml"
-	uiDeploymentTemplate = "cdap-ui-deployment.yaml"
-	statefulSetTemplate  = "cdap-sts.yaml"
-	serviceTemplate      = "cdap-service.yaml"
-	upgradeJobTemplate   = "upgrade-job.yaml"
-
-	upgradeFailed             = "upgrade-failed"
-	postUpgradeFailed         = "post-upgrade-failed"
-	postUpgradeFinished       = "post-upgrade-finished"
-	upgradeStartMessage       = "Upgrade started, received updated CR."
-	upgradeFailedInitMessage  = "Failed to create job, upgrade failed."
-	upgradeJobFailedMessage   = "Upgrade job failed."
-	upgradeJobFinishedMessage = "Upgrade job finished."
-	upgradeJobSkippedMessage  = "Upgrade job skipped."
-	upgradeResetMessage       = "Upgrade spec reset."
-	upgradeFailureLimit       = 4
-
-	latestVersion = "latest"
 )
 
 // CDAPMasterReconciler reconciles a CDAPMaster object
@@ -109,8 +82,44 @@ func HandleError(resource interface{}, err error, kind string) {
 }
 
 func ApplyDefaults(resource interface{}) {
-	cm := resource.(*alpha1.CDAPMaster)
-	cm.ApplyDefaults()
+	r := resource.(*alpha1.CDAPMaster)
+	if r.Labels == nil {
+		r.Labels = make(map[string]string)
+	}
+	r.Labels[InstanceLabel] = r.Name
+
+	spec := &r.Spec
+	if spec.Image == "" {
+		spec.Image = defaultImage
+	}
+	if spec.UserInterfaceImage == "" {
+		spec.UserInterfaceImage = spec.Image
+	}
+
+	if spec.Router.ServicePort == nil {
+		spec.Router.ServicePort = int32Ptr(defaultRouterPort)
+	}
+	if spec.UserInterface.ServicePort == nil {
+		spec.UserInterface.ServicePort = int32Ptr(defaultUserInterfacePort)
+	}
+
+	if spec.Config == nil {
+		spec.Config = make(map[string]string)
+	}
+	// Set the local data directory
+	spec.Config[confLocalDataDirKey] = LocalDataDir
+
+	// Set the cconf entry for the router and UI service and ports
+	spec.Config[confRouterServerAddress] = fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(string(ServiceRouter)))
+	spec.Config[confRouterBindPort] = strconv.Itoa(int(*spec.Router.ServicePort))
+	spec.Config[confUserInterfaceBindPort] = strconv.Itoa(int(*spec.UserInterface.ServicePort))
+
+	// Disable explore
+	spec.Config[confExploreEnabled] = "false"
+
+	r.Status.ResetComponentList()
+	r.Status.EnsureStandardConditions()
+	finalizer.EnsureStandard(r)
 }
 
 // Handling reconciling ConfigMapHandler objects
@@ -208,10 +217,10 @@ func (h *ServiceHandler) Objects(rsrc interface{}, rsrclabels map[string]string,
 	cconf := getObjName(m.Name, cconf)
 	hconf := getObjName(m.Name, hconf)
 	labels := mergeLabels(m.Labels, rsrclabels)
-	dataDir := alpha1.LocalDataDir
+	dataDir := LocalDataDir
 
 	// Build a single StatefulSet
-	buildStatefulset := func(name string, service alpha1.ServiceName, serviceSpec *alpha1.CDAPStatefulServiceSpec) *StatefulSpec {
+	buildStatefulset := func(name string, service ServiceName, serviceSpec *alpha1.CDAPStatefulServiceSpec) *StatefulSpec {
 		initContainer := NewContainerSpec("create-storage", "StorageMain", m, nil, dataDir)
 		container := NewContainerSpec(strings.ToLower(string(service)), getServiceMain(service), m, serviceSpec.Resources, dataDir)
 		return NewStatefulSpec(name, 1, labels, &serviceSpec.CDAPServiceSpec, m, cconf, hconf).
@@ -222,7 +231,7 @@ func (h *ServiceHandler) Objects(rsrc interface{}, rsrclabels map[string]string,
 	}
 
 	// Build a single Deployment
-	buildDeployment := func(name string, service alpha1.ServiceName, serviceSpec *alpha1.CDAPServiceSpec) *DeploymentSpec {
+	buildDeployment := func(name string, service ServiceName, serviceSpec *alpha1.CDAPServiceSpec) *DeploymentSpec {
 		container := NewContainerSpec(strings.ToLower(string(service)), getServiceMain(service), m, serviceSpec.Resources, dataDir)
 		return NewDeploymentSpec(name, 1, labels, serviceSpec, m, cconf, hconf).
 			AddLabel(containerLabel, name).
@@ -231,7 +240,7 @@ func (h *ServiceHandler) Objects(rsrc interface{}, rsrclabels map[string]string,
 
 	// Build user interface Deployment
 	// TODO: consider making deployemnt shared by both UI and services
-	buildUserInterface := func(name string, serviceName alpha1.ServiceName, serviceSpec *alpha1.CDAPScalableServiceSpec) *UserInterfaceSpec {
+	buildUserInterface := func(name string, serviceName ServiceName, serviceSpec *alpha1.CDAPScalableServiceSpec) *UserInterfaceSpec {
 		container := NewContainerSpec(strings.ToLower(string(serviceName)), "", m, serviceSpec.Resources, dataDir).
 			SetImage(m.Spec.UserInterfaceImage)
 		return NewUserInterfaceSpec(name, getReplicas(serviceSpec.Replicas), labels, &serviceSpec.CDAPServiceSpec, m, cconf, hconf).
@@ -246,14 +255,14 @@ func (h *ServiceHandler) Objects(rsrc interface{}, rsrclabels map[string]string,
 	}
 
 	spec := NewCDAPDeploymentSpec().
-		WithStateful(buildStatefulset(getObjName(m.Name, "logs"), alpha1.ServiceLogs, &m.Spec.Logs.CDAPStatefulServiceSpec)).
-		WithStateful(buildStatefulset(getObjName(m.Name, "messaging"), alpha1.ServiceMessaging, &m.Spec.Messaging.CDAPStatefulServiceSpec)).
-		WithStateful(buildStatefulset(getObjName(m.Name, "metrics"), alpha1.ServiceMetrics, &m.Spec.Preview.CDAPStatefulServiceSpec)).
-		WithStateful(buildStatefulset(getObjName(m.Name, "preview"), alpha1.ServicePreview, &m.Spec.Preview.CDAPStatefulServiceSpec)).
-		WithDeployment(buildDeployment(getObjName(m.Name, "appfab"), alpha1.ServiceAppFabric, &m.Spec.AppFabric.CDAPServiceSpec)).
-		WithDeployment(buildDeployment(getObjName(m.Name, "metadata"), alpha1.ServiceMetadata, &m.Spec.Metadata.CDAPServiceSpec)).
-		WithDeployment(buildDeployment(getObjName(m.Name, "router"), alpha1.ServiceRouter, &m.Spec.Router.CDAPServiceSpec)).
-		WithUserInterface(buildUserInterface(getObjName(m.Name, "userinterface"), alpha1.ServiceUserInterface, &m.Spec.UserInterface.CDAPExternalServiceSpec.CDAPScalableServiceSpec)).
+		WithStateful(buildStatefulset(getObjName(m.Name, "logs"), ServiceLogs, &m.Spec.Logs.CDAPStatefulServiceSpec)).
+		WithStateful(buildStatefulset(getObjName(m.Name, "messaging"), ServiceMessaging, &m.Spec.Messaging.CDAPStatefulServiceSpec)).
+		WithStateful(buildStatefulset(getObjName(m.Name, "metrics"), ServiceMetrics, &m.Spec.Preview.CDAPStatefulServiceSpec)).
+		WithStateful(buildStatefulset(getObjName(m.Name, "preview"), ServicePreview, &m.Spec.Preview.CDAPStatefulServiceSpec)).
+		WithDeployment(buildDeployment(getObjName(m.Name, "appfab"), ServiceAppFabric, &m.Spec.AppFabric.CDAPServiceSpec)).
+		WithDeployment(buildDeployment(getObjName(m.Name, "metadata"), ServiceMetadata, &m.Spec.Metadata.CDAPServiceSpec)).
+		WithDeployment(buildDeployment(getObjName(m.Name, "router"), ServiceRouter, &m.Spec.Router.CDAPServiceSpec)).
+		WithUserInterface(buildUserInterface(getObjName(m.Name, "userinterface"), ServiceUserInterface, &m.Spec.UserInterface.CDAPExternalServiceSpec.CDAPScalableServiceSpec)).
 		WithNetworkService(buildNetworkService(getObjName(m.Name, "router"), &m.Spec.Router.CDAPExternalServiceSpec)).
 		WithNetworkService(buildNetworkService(getObjName(m.Name, "userinterface"), &m.Spec.UserInterface.CDAPExternalServiceSpec))
 
@@ -366,26 +375,4 @@ func copyNodePort(expected, observed []reconciler.Object) {
 			}
 		}
 	}
-}
-
-func getObjName(masterName, name string) string {
-	return fmt.Sprintf("%s%s-%s", objectNamePrefix, masterName, strings.ToLower(name))
-}
-
-func getServiceMain(name alpha1.ServiceName) string {
-	return fmt.Sprintf("%sServiceMain", name)
-}
-
-func getReplicas(replicas *int32) int32 {
-	var r int32 = 1
-	if replicas != nil {
-		r = *replicas
-	}
-	return r
-}
-
-func mergeLabels(current, added map[string]string) map[string]string {
-	labels := make(reconciler.KVMap)
-	labels.Merge(current, added)
-	return labels
 }

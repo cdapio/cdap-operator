@@ -1,7 +1,7 @@
-package v1alpha1
+package controllers
 
 // ServiceName is the name identifying various CDAP master services
-type ServiceName string
+type ServiceName = string
 
 const (
 	// ServiceAppFabric defines the service type for app-fabric
@@ -47,4 +47,33 @@ const (
 const (
 	LocalDataDir  = "/data"
 	InstanceLabel = "cdap.instance"
+)
+
+const (
+	objectNamePrefix = "cdap-"
+	cconf            = "cconf"
+	hconf            = "hconf"
+	containerLabel   = "cdap.container"
+	// Heap memory related constants
+	javaMinHeapRatio     = float64(0.6)
+	javaReservedNonHeap  = int64(768 * 1024 * 1024)
+	templateDir          = "templates/"
+	deploymentTemplate   = "cdap-deployment.yaml"
+	uiDeploymentTemplate = "cdap-ui-deployment.yaml"
+	statefulSetTemplate  = "cdap-sts.yaml"
+	serviceTemplate      = "cdap-service.yaml"
+	upgradeJobTemplate   = "upgrade-job.yaml"
+
+	upgradeFailed             = "upgrade-failed"
+	postUpgradeFailed         = "post-upgrade-failed"
+	postUpgradeFinished       = "post-upgrade-finished"
+	upgradeStartMessage       = "Upgrade started, received updated CR."
+	upgradeFailedInitMessage  = "Failed to create job, upgrade failed."
+	upgradeJobFailedMessage   = "Upgrade job failed."
+	upgradeJobFinishedMessage = "Upgrade job finished."
+	upgradeJobSkippedMessage  = "Upgrade job skipped."
+	upgradeResetMessage       = "Upgrade spec reset."
+	upgradeFailureLimit       = 4
+
+	latestVersion = "latest"
 )
