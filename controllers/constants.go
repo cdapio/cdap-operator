@@ -1,69 +1,72 @@
 package controllers
 
-// ServiceName is the name identifying various CDAP master services
+// ServiceName is the name identifying various CDAP services
 type ServiceName = string
 
 const (
-	// ServiceAppFabric defines the service type for app-fabric
-	ServiceAppFabric ServiceName = "AppFabric"
+	// serviceAppFabric defines the service type for app-fabric
+	serviceAppFabric ServiceName = "AppFabric"
 
-	// ServiceLogs defines the service type for log processing and serving service
-	ServiceLogs ServiceName = "Logs"
+	// serviceLogs defines the service type for log processing and serving service
+	serviceLogs ServiceName = "Logs"
 
-	// ServiceMessaging defines the service type for TMS
-	ServiceMessaging ServiceName = "Messaging"
+	// serviceMessaging defines the service type for TMS
+	serviceMessaging ServiceName = "Messaging"
 
-	// ServiceMetadata defines the service type for metadata service
-	ServiceMetadata ServiceName = "Metadata"
+	// serviceMetadata defines the service type for metadata service
+	serviceMetadata ServiceName = "Metadata"
 
-	// ServiceMetrics defines the service type for metrics process and serving
-	ServiceMetrics ServiceName = "Metrics"
+	// serviceMetrics defines the service type for metrics process and serving
+	serviceMetrics ServiceName = "Metrics"
 
-	// ServicePreview defines the service type for preview service
-	ServicePreview ServiceName = "Preview"
+	// servicePreview defines the service type for preview service
+	servicePreview ServiceName = "Preview"
 
-	// ServiceRouter defines the service type for the router
-	ServiceRouter ServiceName = "Router"
+	// serviceRouter defines the service type for the router
+	serviceRouter ServiceName = "Router"
 
-	// ServiceUserInterface defines the service type for user interface
-	ServiceUserInterface ServiceName = "UserInterface"
+	// serviceUserInterface defines the service type for user interface
+	serviceUserInterface ServiceName = "UserInterface"
 )
 
 const (
-	confExploreEnabled = "explore.enabled"
-	// Property key in cdap-site.xml for configuring local data directory
+	confExploreEnabled        = "explore.enabled"
 	confLocalDataDirKey       = "local.data.dir"
+	confLocalDataDirVal       = "/data"
 	confRouterServerAddress   = "router.server.address"
 	confRouterBindPort        = "router.bind.port"
 	confUserInterfaceBindPort = "dashboard.bind.port"
 
-	// Value for the local data directory
 	defaultImage             = "gcr.io/cdapio/cdap:latest"
 	defaultRouterPort        = 11015
 	defaultUserInterfacePort = 11011
-)
 
-// Exported constants
-const (
-	LocalDataDir  = "/data"
-	InstanceLabel = "cdap.instance"
-)
+	// kubernetes labels
+	labelInstanceKey        = "cdap.instance"
+	labelContainerKeyPrefix = "cdap.container."
 
-const (
+	// kubernetes object name related
 	objectNamePrefix = "cdap-"
-	cconf            = "cconf"
-	hconf            = "hconf"
-	containerLabel   = "cdap.container"
-	// Heap memory related constants
-	javaMinHeapRatio     = float64(0.6)
-	javaReservedNonHeap  = int64(768 * 1024 * 1024)
-	templateDir          = "templates/"
-	deploymentTemplate   = "cdap-deployment.yaml"
-	uiDeploymentTemplate = "cdap-ui-deployment.yaml"
-	statefulSetTemplate  = "cdap-sts.yaml"
-	serviceTemplate      = "cdap-service.yaml"
-	upgradeJobTemplate   = "upgrade-job.yaml"
+	configMapCConf   = "cconf"
+	configMapHConf   = "hconf"
 
+	// yaml template
+	templateDir         = "templates/"
+	templateStatefulSet = "cdap-sts.yaml"
+	templateDeployment  = "cdap-deployment.yaml"
+	templateService     = "cdap-service.yaml"
+
+	// CDAP services
+	containerStorageMain = "io.cdap.cdap.master.environment.k8s.StorageMain"
+)
+
+const (
+	containerLabel = "cdap.container"
+	// Heap memory related constants
+	javaMinHeapRatio          = float64(0.6)
+	javaReservedNonHeap       = int64(768 * 1024 * 1024)
+	uiDeploymentTemplate      = "cdap-ui-deployment.yaml"
+	upgradeJobTemplate        = "upgrade-job.yaml"
 	upgradeFailed             = "upgrade-failed"
 	postUpgradeFailed         = "post-upgrade-failed"
 	postUpgradeFinished       = "post-upgrade-finished"
@@ -74,6 +77,5 @@ const (
 	upgradeJobSkippedMessage  = "Upgrade job skipped."
 	upgradeResetMessage       = "Upgrade spec reset."
 	upgradeFailureLimit       = 4
-
-	latestVersion = "latest"
+	latestVersion             = "latest"
 )

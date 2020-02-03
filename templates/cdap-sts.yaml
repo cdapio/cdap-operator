@@ -16,12 +16,12 @@ kind: StatefulSet
 metadata:
   name: {{.Base.Name}}
   namespace: {{.Base.Namespace}}
-{{if .Base.Labels}}
+  {{if .Base.Labels}}
   labels:
     {{range $k,$v := .Base.Labels}}
     {{$k}}: {{$v}}
     {{end}}
-{{end}}
+  {{end}}
 spec:
   selector:
     matchLabels:
@@ -37,28 +37,36 @@ spec:
         {{$k}}: {{$v}}
         {{end}}
     spec:
-    {{if .Base.ServiceAccountName}}
+      {{if .Base.ServiceAccountName}}
       serviceAccountName: {{.Base.ServiceAccountName}}
-    {{end}}
+      {{end}}
       nodeSelector:
         {{range $k,$v := .Base.NodeSelector}}
         {{$k}}: {{$v}}
         {{end}}
-    {{if .Base.RuntimeClassName}}
+      {{if .Base.RuntimeClassName}}
       runtimeClassName: {{.BaseRuntimeClassName}}
-    {{end}}
-    {{if .Base.PriorityClassName}}
+      {{end}}
+      {{if .Base.PriorityClassName}}
       priorityClassName: {{.Base.PriorityClassName}}
-    {{end}}
+      {{end}}
       terminationGracePeriodSeconds: 120
-    {{range $c := .InitContainers}}
+      {{range $c := .InitContainers}}
       initContainers:
         - name: {{$c.Name}}
           image: {{$c.Image}}
-        {{if $c.ImagePullPolicy}}
+          workingDir: {{$c.WorkingDir}}
+          command:
+          {{range $v := $c.Command }}
+            - {{$v}}
+          {{end}}
+          args:
+          {{range $v := $c.Args }}
+            - {{$v}}
+          {{end}}
+          {{if $c.ImagePullPolicy}}
           imagePullPolicy: {{$c.ImagePullPolicy}}
-        {{end}}
-          args: ["io.cdap.cdap.master.environment.k8s.{{$c.ServiceMain}}"]
+          {{end}}
           volumeMounts:
             - name: podinfo
               mountPath: /etc/podinfo
@@ -71,24 +79,42 @@ spec:
               readOnly: true
             - name: {{$.Base.Name}}-data
               mountPath: {{.DataDir}}
-          {{if $.Base.SecuritySecret}}
+            {{if $.Base.SecuritySecret}}
             - name: cdap-security
               mountPath: /etc/cdap/security
               readOnly: true
-          {{end}}
-    {{end}}
-    {{range $c := .Containers}}
+            {{end}}
+      {{end}}
       containers:
+      {{range $c := .Containers}}
         - name: {{$c.Name}}
           image: {{$c.Image}}
-          args: ["io.cdap.cdap.master.environment.k8s.{{$c.ServiceMain}}", "--env=k8s"]
-        {{if $c.ImagePullPolicy}}
+          workingDir: {{$c.WorkingDir}}
+          command:
+          {{range $v := $c.Command }}
+            - {{$v}}
+          {{end}}
+          args:
+          {{ range $v := $c.Args }}
+            - {{$v}}
+          {{end}}
+          {{if $c.ImagePullPolicy}}
           imagePullPolicy: {{$c.ImagePullPolicy}}
-        {{end}}
+          {{end}}
           env: []
-        {{if $c.Resources}}
-          resources: {{$c.Resources}}
-        {{end}}
+          resources:
+            {{if $c.ResourceRequests}}
+            requests:
+              {{range $k, $v := $c.ResourceRequests}}
+              {{$k}}: {{$v.String}}
+              {{end}}
+            {{end}}
+            {{if $c.ResourceLimits}}
+			limits:
+              {{range $k, $v := $c.ResourceLimits}}
+              {{$k}}: {{$v.String}}
+              {{end}}
+            {{end}}
           volumeMounts:
             - name: podinfo
               mountPath: /etc/podinfo
@@ -101,12 +127,12 @@ spec:
               readOnly: true
             - name: {{$.Base.Name}}-data
               mountPath: {{.DataDir}}
-          {{if $.Base.SecuritySecret}}
+            {{if $.Base.SecuritySecret}}
             - name: cdap-security
               mountPath: /etc/cdap/security
               readOnly: true
           {{end}}
-    {{end}}
+      {{end}}
       volumes:
         - name: podinfo
           downwardAPI:
@@ -123,23 +149,23 @@ spec:
         - name: hadoop-conf
           configMap:
             name: {{.Base.HConf}}
-      {{if $.Base.SecuritySecret}}
+        {{if $.Base.SecuritySecret}}
         - name: cdap-security
           secret:
             secretName: {{$.Base.SecuritySecret}}
-      {{end}}
+        {{end}}
   volumeClaimTemplates:
   - metadata:
       name: {{.Base.Name}}-data
     spec:
       accessModes: ["ReadWriteOnce"]
-    {{if .Storage.StorageClassName}}
+      {{if .Storage.StorageClassName}}
       storageClassName: {{.Storage.StorageClassName}}
-    {{end}}
+      {{end}}
       resources:
         requests:
-        {{if .Storage.StorageSize}}
+          {{if .Storage.StorageSize}}
           storage: {{.Storage.StorageSize}}
-        {{else}}
+          {{else}}
           storage: "200Gi"
-        {{end}}
+          {{end}}

@@ -86,7 +86,7 @@ func ApplyDefaults(resource interface{}) {
 	if r.Labels == nil {
 		r.Labels = make(map[string]string)
 	}
-	r.Labels[InstanceLabel] = r.Name
+	r.Labels[labelInstanceKey] = r.Name
 
 	spec := &r.Spec
 	if spec.Image == "" {
@@ -107,10 +107,10 @@ func ApplyDefaults(resource interface{}) {
 		spec.Config = make(map[string]string)
 	}
 	// Set the local data directory
-	spec.Config[confLocalDataDirKey] = LocalDataDir
+	spec.Config[confLocalDataDirKey] = confLocalDataDirVal
 
-	// Set the cconf entry for the router and UI service and ports
-	spec.Config[confRouterServerAddress] = fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(string(ServiceRouter)))
+	// Set the configMapCConf entry for the router and UI service and ports
+	spec.Config[confRouterServerAddress] = fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(string(serviceRouter)))
 	spec.Config[confRouterBindPort] = strconv.Itoa(int(*spec.Router.ServicePort))
 	spec.Config[confUserInterfaceBindPort] = strconv.Itoa(int(*spec.UserInterface.ServicePort))
 
@@ -137,8 +137,8 @@ func (h *ConfigMapHandler) Objects(rsrc interface{}, rsrclabels map[string]strin
 	m := rsrc.(*alpha1.CDAPMaster)
 
 	configs := map[string][]string{
-		cconf: {"cdap-site.xml", "logback.xml", "logback-container.xml"},
-		hconf: {"core-site.xml"},
+		configMapCConf: {"cdap-site.xml", "logback.xml", "logback-container.xml"},
+		configMapHConf: {"core-site.xml"},
 	}
 
 	templateData := struct {
@@ -160,13 +160,13 @@ func (h *ConfigMapHandler) Objects(rsrc interface{}, rsrclabels map[string]strin
 	}
 
 	for key, templateFiles := range configs {
-		spec := NewConfigMapSpec(getObjName(m.Name, key), m.Namespace, mergeLabels(m.Labels, rsrclabels))
+		spec := newConfigMapSpec(getObjectName(m.Name, key), mergeMaps(m.Labels, rsrclabels), m)
 		for _, file := range templateFiles {
 			data, err := fillTemplate(file)
 			if err != nil {
 				return nil, err
 			}
-			spec = spec.WithData(file, data)
+			spec = spec.AddData(file, data)
 		}
 		obj := buildConfigMapObject(spec)
 		expected = append(expected, obj)
@@ -210,169 +210,66 @@ func (h *ServiceHandler) Observables(rsrc interface{}, labels map[string]string,
 
 func (h *ServiceHandler) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	var expected, objs []reconciler.Object
-	var err error
 
 	m := rsrc.(*alpha1.CDAPMaster)
+	// Merge in labels (e.g. "using: <handler method name>") added by underlying reconciler-controller library
+	labels := mergeMaps(m.Labels, rsrclabels)
 
-	cconf := getObjName(m.Name, cconf)
-	hconf := getObjName(m.Name, hconf)
-	labels := mergeLabels(m.Labels, rsrclabels)
-	dataDir := LocalDataDir
-
-	// Build a single StatefulSet
-	buildStatefulset := func(name string, service ServiceName, serviceSpec *alpha1.CDAPStatefulServiceSpec) *StatefulSpec {
-		initContainer := NewContainerSpec("create-storage", "StorageMain", m, nil, dataDir)
-		container := NewContainerSpec(strings.ToLower(string(service)), getServiceMain(service), m, serviceSpec.Resources, dataDir)
-		return NewStatefulSpec(name, 1, labels, &serviceSpec.CDAPServiceSpec, m, cconf, hconf).
-			AddLabel(containerLabel, name).
-			WithInitContainer(initContainer).
-			WithContainer(container).
-			WithStorage(serviceSpec.StorageClassName, serviceSpec.StorageSize)
+	// Build deployment specification that defines the statefulset, deployment, node port services to be created.
+	spec, err := buildCDAPDeploymentSpec(m, labels)
+	if err != nil {
+		return []reconciler.Object{}, err
 	}
-
-	// Build a single Deployment
-	buildDeployment := func(name string, service ServiceName, serviceSpec *alpha1.CDAPServiceSpec) *DeploymentSpec {
-		container := NewContainerSpec(strings.ToLower(string(service)), getServiceMain(service), m, serviceSpec.Resources, dataDir)
-		return NewDeploymentSpec(name, 1, labels, serviceSpec, m, cconf, hconf).
-			AddLabel(containerLabel, name).
-			WithContainer(container)
-	}
-
-	// Build user interface Deployment
-	// TODO: consider making deployemnt shared by both UI and services
-	buildUserInterface := func(name string, serviceName ServiceName, serviceSpec *alpha1.CDAPScalableServiceSpec) *UserInterfaceSpec {
-		container := NewContainerSpec(strings.ToLower(string(serviceName)), "", m, serviceSpec.Resources, dataDir).
-			SetImage(m.Spec.UserInterfaceImage)
-		return NewUserInterfaceSpec(name, getReplicas(serviceSpec.Replicas), labels, &serviceSpec.CDAPServiceSpec, m, cconf, hconf).
-			AddLabel(containerLabel, name).
-			WithContainer(container)
-	}
-
-	// Build a single NodePort service
-	buildNetworkService := func(name string, serviceSpec *alpha1.CDAPExternalServiceSpec) *NetworkServiceSpec {
-		return NewNetworkServiceSpec(name, labels, serviceSpec.ServiceType, serviceSpec.ServicePort, m).
-			AddLabel(containerLabel, name)
-	}
-
-	spec := NewCDAPDeploymentSpec().
-		WithStateful(buildStatefulset(getObjName(m.Name, "logs"), ServiceLogs, &m.Spec.Logs.CDAPStatefulServiceSpec)).
-		WithStateful(buildStatefulset(getObjName(m.Name, "messaging"), ServiceMessaging, &m.Spec.Messaging.CDAPStatefulServiceSpec)).
-		WithStateful(buildStatefulset(getObjName(m.Name, "metrics"), ServiceMetrics, &m.Spec.Preview.CDAPStatefulServiceSpec)).
-		WithStateful(buildStatefulset(getObjName(m.Name, "preview"), ServicePreview, &m.Spec.Preview.CDAPStatefulServiceSpec)).
-		WithDeployment(buildDeployment(getObjName(m.Name, "appfab"), ServiceAppFabric, &m.Spec.AppFabric.CDAPServiceSpec)).
-		WithDeployment(buildDeployment(getObjName(m.Name, "metadata"), ServiceMetadata, &m.Spec.Metadata.CDAPServiceSpec)).
-		WithDeployment(buildDeployment(getObjName(m.Name, "router"), ServiceRouter, &m.Spec.Router.CDAPServiceSpec)).
-		WithUserInterface(buildUserInterface(getObjName(m.Name, "userinterface"), ServiceUserInterface, &m.Spec.UserInterface.CDAPExternalServiceSpec.CDAPScalableServiceSpec)).
-		WithNetworkService(buildNetworkService(getObjName(m.Name, "router"), &m.Spec.Router.CDAPExternalServiceSpec)).
-		WithNetworkService(buildNetworkService(getObjName(m.Name, "userinterface"), &m.Spec.UserInterface.CDAPExternalServiceSpec))
-
 	objs, err = buildObjects(spec)
 	if err != nil {
 		return []reconciler.Object{}, err
 	}
 	expected = append(expected, objs...)
 
-	// Copy NodePort from obseved to expected
-	copyNodePort(expected, observed)
+	// Copy NodePort from observed to ensure k8s services' nodePorts stay the same across reconciling iterators
+	CopyNodePortIfAny(expected, observed)
 
-	return expected, err
+	return expected, nil
 }
 
-func buildObjects(spec *CDAPDeploymentSpec) ([]reconciler.Object, error) {
-	var objs []reconciler.Object
-	for _, s := range spec.Stateful {
-		obj, err := buildStatefulObject(s)
-		if err != nil {
-			return nil, err
-		}
-		objs = append(objs, *obj)
-	}
-	for _, s := range spec.Deployment {
-		obj, err := buildDeploymentObject(s)
-		if err != nil {
-			return nil, err
-		}
-		objs = append(objs, *obj)
-	}
-	for _, s := range spec.NetworkServices {
-		obj, err := buildNetworkServiceObject(s)
-		if err != nil {
-			return nil, err
-		}
-		objs = append(objs, *obj)
+// Copy the nodePort from observed to the expected to ensure the nodePort remains unchanged
+func CopyNodePortIfAny(expected, observed []reconciler.Object) {
+	// Map from CDAP service's namespaced name to a map from NodePort's name to port
+	serviceToNodePorts := make(map[string]map[string]int32)
 
+	// Return namespaced name
+	getNName := func(s *corev1.Service) string {
+		return s.Namespace + "-" + s.Name
 	}
-	obj, err := buildUIDeploymentObject(spec.UserInterface)
-	if err != nil {
-		return nil, err
-	}
-	objs = append(objs, *obj)
 
-	return objs, nil
-}
-
-func buildStatefulObject(spec *StatefulSpec) (*reconciler.Object, error) {
-	obj, err := k8s.ObjectFromFile(templateDir+statefulSetTemplate, spec, &appsv1.StatefulSetList{})
-	if err != nil {
-		return nil, err
-	}
-	return obj, nil
-}
-
-func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
-	obj, err := k8s.ObjectFromFile(templateDir+deploymentTemplate, spec, &appsv1.DeploymentList{})
-	if err != nil {
-		return nil, err
-	}
-	return obj, nil
-}
-
-func buildNetworkServiceObject(spec *NetworkServiceSpec) (*reconciler.Object, error) {
-	obj, err := k8s.ObjectFromFile(templateDir+serviceTemplate, spec, &corev1.ServiceList{})
-	if err != nil {
-		return nil, err
-	}
-	return obj, nil
-}
-
-func buildUIDeploymentObject(spec *UserInterfaceSpec) (*reconciler.Object, error) {
-	obj, err := k8s.ObjectFromFile(templateDir+uiDeploymentTemplate, spec, &appsv1.DeploymentList{})
-	if err != nil {
-		return nil, err
-	}
-	return obj, nil
-}
-
-// Copy the nodePort from observed to the expected to ensure the nodePort is unchanged
-func copyNodePort(expected, observed []reconciler.Object) {
-	// Get the service from the expected list.
-	var expectedService *corev1.Service
-	for _, item := range reconciler.ObjectsByType(expected, k8s.Type) {
-		if service, ok := item.Obj.(*k8s.Object).Obj.(*corev1.Service); ok {
-			expectedService = service
-			break
-		}
-	}
-	if expectedService == nil {
-		return
-	}
-	// Find the service being observed. Extract nodePort from the service spec and set it to expected
 	for _, item := range reconciler.ObjectsByType(observed, k8s.Type) {
-		if observedService, ok := item.Obj.(*k8s.Object).Obj.(*corev1.Service); ok {
-			if observedService.Namespace == expectedService.Namespace && observedService.Name == expectedService.Name {
-				var nodePorts = make(map[string]int32)
-				for _, p := range observedService.Spec.Ports {
-					nodePorts[p.Name] = p.NodePort
-				}
+		service, ok := item.Obj.(*k8s.Object).Obj.(*corev1.Service)
+		if !ok {
+			continue
+		}
+		nodePorts := make(map[string]int32)
+		for _, port := range service.Spec.Ports {
+			nodePorts[port.Name] = port.NodePort
+		}
+		serviceToNodePorts[getNName(service)] = nodePorts
+	}
 
-				// Assigning existing node ports to the expected service
-				for i := range expectedService.Spec.Ports {
-					p := &expectedService.Spec.Ports[i]
-					if nodePort, ok := nodePorts[p.Name]; ok {
-						p.NodePort = nodePort
-					}
-				}
+	for _, item := range reconciler.ObjectsByType(expected, k8s.Type) {
+		service, ok := item.Obj.(*k8s.Object).Obj.(*corev1.Service)
+		if !ok {
+			continue
+		}
+		oldNodePorts, ok := serviceToNodePorts[getNName(service)]
+		if !ok {
+			continue
+		}
+		for i := range service.Spec.Ports {
+			newNodePort := &service.Spec.Ports[i]
+			oldPort, ok := oldNodePorts[newNodePort.Name]
+			if !ok {
+				continue
 			}
+			newNodePort.NodePort = oldPort
 		}
 	}
 }

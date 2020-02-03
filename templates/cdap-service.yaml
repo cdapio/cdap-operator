@@ -34,7 +34,7 @@ spec:
   type: NodePort
 {{end}}
   selector:
-    {{range $k,$v := .Labels}}
+    {{range $k,$v := .Selectors}}
     {{$k}}: '{{$v}}'
     {{end}}
   ports:
