@@ -83,6 +83,21 @@ func (d *DeploymentStrategy) Init() {
 			"userinterface": serviceUserInterface,
 		},
 	}
+
+	// 3 Pod: UserInterface and router in their own Pod. Rest in "Backend" Pod
+	d.strategyMap[3] = ServiceGroupMap{
+		stateful: map[ServiceGroupName]ServiceGroup{
+			"backend": {serviceLogs, serviceMessaging, serviceMetrics, servicePreview, serviceAppFabric, serviceMetadata},
+		},
+		deployment: map[ServiceGroupName]ServiceGroup{
+			"router":        {serviceRouter},
+			"userinterface": {serviceUserInterface},
+		},
+		networkService: map[NetworkServiceName]ServiceName{
+			"router":        serviceRouter,
+			"userinterface": serviceUserInterface,
+		},
+	}
 }
 
 func (d *DeploymentStrategy) getStrategy(numPods int32) (*ServiceGroupMap, error) {
