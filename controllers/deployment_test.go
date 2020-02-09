@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
 )
 
@@ -44,8 +45,8 @@ var _ = Describe("Controller Suite", func() {
 
 			diffJson := func(expected, actual []byte) {
 				opts := jsondiff.DefaultConsoleOptions()
-				diff, _ := jsondiff.Compare(expected, actual, &opts)
-				Expect(diff.String()).To(Equal(jsondiff.SupersetMatch.String()))
+				diff, text := jsondiff.Compare(expected, actual, &opts)
+				Expect(diff.String()).To(Equal(jsondiff.SupersetMatch.String()), text)
 			}
 
 			var strategyHandler DeploymentStrategy
@@ -84,6 +85,38 @@ var _ = Describe("Controller Suite", func() {
 					}
 				}
 			}
+		})
+	})
+	Describe("Set java max heap size env var", func() {
+		var (
+			envVar    []corev1.EnvVar
+			resources *corev1.ResourceRequirements
+		)
+		BeforeEach(func() {
+			envVar = []corev1.EnvVar{
+				corev1.EnvVar{
+					Name:  "some_env_var_name",
+					Value: "some_env_var_value",
+				},
+			}
+			resources = &corev1.ResourceRequirements{
+				Limits:   make(map[corev1.ResourceName]resource.Quantity),
+				Requests: make(map[corev1.ResourceName]resource.Quantity),
+			}
+			resources.Requests.Memory().Add(*resource.NewQuantity(4*gigaBytes, resource.BinarySI))
+			resources.Limits.Memory().Add(*resource.NewQuantity(8*gigaBytes, resource.BinarySI))
+		})
+		It("java max heap size already set", func() {
+			envOld := append(envVar, corev1.EnvVar{
+				Name:  javaMaxHeapSizeEnvVarName,
+				Value: "-Xmx1024m",
+			})
+			envNew := addJavaMaxHeapEnvIfNotPresent(envOld, resources)
+			Expect(envNew).To(Equal(envOld))
+		})
+		It("java max heap size added", func() {
+			envNew := addJavaMaxHeapEnvIfNotPresent(envVar, resources)
+			Expect(envNew).To(Equal(envVar))
 		})
 	})
 })

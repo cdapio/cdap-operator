@@ -97,3 +97,17 @@ func getCDAPExternalService(serviceName ServiceName, master *v1alpha1.CDAPMaster
 	}
 	return serviceSpecMap[serviceName](master)
 }
+
+func Min(x, y int64) int64 {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func Max(x, y int64) int64 {
+	if x > y {
+		return x
+	}
+	return y
+}

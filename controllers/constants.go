@@ -60,14 +60,19 @@ const (
 	templateUpgradeJob  = "upgrade-job.yaml"
 
 	// Image version upgrade/downgrade
-
 	imageVersionLatest              = "latest"
 	imageVersionUpgradeFailureLimit = 5
 
 	// CDAP services
 	containerStorageMain = "io.cdap.cdap.master.environment.k8s.StorageMain"
 
-	// Heap memory related constants
-	javaMinHeapRatio    = float64(0.6)
-	javaReservedNonHeap = int64(768 * 1024 * 1024)
+	// Java heap size
+	javaMinHeapRatio          = float64(0.6)
+	javaReservedNonHeap       = int64(768 * 1024 * 1024)
+	javaMaxHeapSizeEnvVarName = "JAVA_HEAPMAX"
+
+	Bytes = int64(1)
+	kiloBytes = int64(1024)
+	megaBytes = int64(1024 * 1024)
+	gigaBytes = int64(1024 * 1024 * 1024)
 )

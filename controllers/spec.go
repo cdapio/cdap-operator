@@ -52,7 +52,7 @@ func newContainerSpec(name, dataDir string, master *v1alpha1.CDAPMaster) *Contai
 	c.ImagePullPolicy = master.Spec.ImagePullPolicy
 	c.WorkingDir = ""
 	c.Args = []string{"io.cdap.cdap.master.environment.k8s." + name + "ServiceMain", "--env=k8s"}
-	// c.Env = nil TODO: set env
+	c.Env = []corev1.EnvVar{}
 	c.DataDir = dataDir
 	return c
 }
@@ -89,6 +89,12 @@ func (s *ContainerSpec) addEnv(name, value string) *ContainerSpec {
 	s.Env = append(s.Env, envVar)
 	return s
 }
+
+func (s *ContainerSpec) setEnv(envVar []corev1.EnvVar) *ContainerSpec {
+	s.Env = envVar
+	return s
+}
+
 func (s *ContainerSpec) setResources(resources *corev1.ResourceRequirements) *ContainerSpec {
 	if resources == nil {
 		return s

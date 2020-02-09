@@ -76,6 +76,10 @@
             ],
             "env": [
               {
+                "name": "JAVA_HEAPMAX",
+                "value": "-Xmx62914560"
+              },
+              {
                 "name": "NODE_ENV",
                 "value": "production"
               }

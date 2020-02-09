@@ -155,7 +155,9 @@ func buildCDAPDeploymentSpec(master *alpha1.CDAPMaster, labels map[string]string
 			newContainerSpec("StorageInit", dataDir, master).setArgs(containerStorageMain))
 
 		for _, service := range serviceGroup {
-			c := newContainerSpec(service, dataDir, m).setResources(getCDAPServiceSpec(service, m).Resources)
+			serviceSpec := getCDAPServiceSpec(service, m)
+			env := addJavaMaxHeapEnvIfNotPresent(serviceSpec.Env, serviceSpec.Resources)
+			c := newContainerSpec(service, dataDir, m).setResources(serviceSpec.Resources).setEnv(env)
 			if service == serviceUserInterface {
 				c = updateSpecForUserInterface(c)
 			}
@@ -206,7 +208,9 @@ func buildCDAPDeploymentSpec(master *alpha1.CDAPMaster, labels map[string]string
 			setRuntimeClassName(runtimeClass).
 			setPriorityClassName(priorityClass)
 		for _, service := range serviceGroup {
-			c := newContainerSpec(service, dataDir, m).setResources(getCDAPServiceSpec(service, m).Resources)
+			serviceSpec := getCDAPServiceSpec(service, m)
+			env := addJavaMaxHeapEnvIfNotPresent(serviceSpec.Env, serviceSpec.Resources)
+			c := newContainerSpec(service, dataDir, m).setResources(serviceSpec.Resources).setEnv(env)
 			if service == serviceUserInterface {
 				c = updateSpecForUserInterface(c)
 			}
@@ -293,3 +297,24 @@ func buildNetworkServiceObject(spec *NetworkServiceSpec) (*reconciler.Object, er
 	}
 	return obj, nil
 }
+
+func addJavaMaxHeapEnvIfNotPresent (env []corev1.EnvVar, resources *corev1.ResourceRequirements) []corev1.EnvVar {
+	hasMaxHeap := false
+	for _, e := range env {
+		if e.Name == javaMaxHeapSizeEnvVarName {
+			hasMaxHeap = true
+		}
+	}
+	if !hasMaxHeap {
+		memory := Max(resources.Requests.Memory().Value(), resources.Limits.Memory().Value())
+		if memory > 0 {
+			xmx := Max(memory -javaReservedNonHeap, int64(float64(memory) * javaMinHeapRatio))
+			env = append(env, corev1.EnvVar{
+				Name:  javaMaxHeapSizeEnvVarName,
+				Value: fmt.Sprintf("-Xmx%v", xmx),
+			})
+		}
+	}
+	return env
+}
+

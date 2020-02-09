@@ -62,6 +62,12 @@
               "io.cdap.cdap.master.environment.k8s.PreviewServiceMain",
               "--env=k8s"
             ],
+            "env": [
+              {
+                "name": "JAVA_HEAPMAX",
+                "value": "-Xmx62914560"
+              }
+            ],
             "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
             "imagePullPolicy": "IfNotPresent",
             "name": "preview",
