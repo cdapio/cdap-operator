@@ -380,7 +380,7 @@ func newUpgradeJobSpec(name string, labels map[string]string, startTimeMs int64,
 	s.JobName = name
 	s.Labels = labels
 	s.HostName = getObjectName(master.Name, serviceRouter)
-	s.BackoffLimit = versionUpgradeFailureLimit
+	s.BackoffLimit = imageVersionUpgradeFailureLimit
 	s.ReferentName = master.Name
 	s.ReferentKind = master.Kind
 	s.ReferentApiVersion = master.APIVersion

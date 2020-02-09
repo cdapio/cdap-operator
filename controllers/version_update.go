@@ -16,19 +16,21 @@ import (
 )
 
 var (
-	versionUpdateStatus *VersionUpdateStatus
+	updateStatus *VersionUpdateStatus
 )
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	versionUpdateStatus = new(VersionUpdateStatus)
-	versionUpdateStatus.init()
+	updateStatus = new(VersionUpdateStatus)
+	updateStatus.init()
 }
+/////////////////////////////////////////////////////////////
+///// Main functions for handle image upgarde/downgrade /////
+/////////////////////////////////////////////////////////////
 
-// Main function to handle image version upgrade/downgrade
-func updateVersion(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object) ([]reconciler.Object, error) {
+func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object) ([]reconciler.Object, error) {
 	// Let the current update complete if there is any
-	if isConditionTrue(master, versionUpdateStatus.Inprogress) {
+	if isConditionTrue(master, updateStatus.Inprogress) {
 		log.Printf("Version update ingress. Continue... ")
 		return doUpgrade(master, labels, observed)
 	}
@@ -42,7 +44,7 @@ func updateVersion(master *v1alpha1.CDAPMaster, labels map[string]string, observ
 	if err != nil {
 		return nil, err
 	}
-	if curUIVersion.empty || compareVersion(curUIVersion, newUIVersion) != 0 {
+	if len(curUIVersion.rawString) == 0 || compareVersion(curUIVersion, newUIVersion) != 0 {
 		setUserInterfaceVersionToUse(master)
 		log.Printf("Version update: for UserInterface %s->%s", curUIVersion.rawString, newUIVersion.rawString)
 		return []reconciler.Object{}, nil
@@ -57,23 +59,26 @@ func updateVersion(master *v1alpha1.CDAPMaster, labels map[string]string, observ
 	if err != nil {
 		return nil, err
 	}
-	if curVersion.empty {
+	if len(curVersion.rawString) == 0 {
 		setVersionToUse(master)
 		return []reconciler.Object{}, nil
 	}
 
 	switch compareVersion(curVersion, newVersion) {
 	case -1:
-		versionUpdateStatus.clearAllConditions(master)
-		setCondition(master, versionUpdateStatus.Inprogress)
+		// Upgrade:
+		updateStatus.clearAllConditions(master)
+		setCondition(master, updateStatus.Inprogress)
 		master.Status.UpgradeStartTimeMillis = getCurrentTimeMs()
 		log.Printf("Version update: start upgrading %s -> %s ", curVersion.rawString, newVersion.rawString)
 		return doUpgrade(master, labels, observed)
 	case 0:
+		// nothing to do
 		break
 	case 1:
-		versionUpdateStatus.clearAllConditions(master)
-		setCondition(master, versionUpdateStatus.Inprogress)
+		// Downgrade
+		updateStatus.clearAllConditions(master)
+		setCondition(master, updateStatus.Inprogress)
 		master.Status.DowngradeStartTimeMillis = getCurrentTimeMs()
 		log.Printf("Version update: start downgrading %s -> %s ", curVersion.rawString, newVersion.rawString)
 		return doDowngrade(master)
@@ -83,14 +88,16 @@ func updateVersion(master *v1alpha1.CDAPMaster, labels map[string]string, observ
 }
 
 func doDowngrade(master *v1alpha1.CDAPMaster) ([]reconciler.Object, error) {
+	// Directly set the image to use. No pre- post- downgrade to run at the moment.
 	setVersionToUse(master)
-	setCondition(master, versionUpdateStatus.DowngradeSucceeded)
-	clearCondition(master, versionUpdateStatus.Inprogress)
+	setCondition(master, updateStatus.DowngradeSucceeded)
+	clearCondition(master, updateStatus.Inprogress)
 	log.Printf("Version update: downgrade completed")
 	return []reconciler.Object{}, nil
 }
 
 func doUpgrade(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object) ([]reconciler.Object, error) {
+	// Find either pre- or post- upgrade job
 	findJob := func(jobName string) *batchv1.Job {
 		var job *batchv1.Job = nil
 		objName := getObjectName(master.Name, jobName)
@@ -101,6 +108,7 @@ func doUpgrade(master *v1alpha1.CDAPMaster, labels map[string]string, observed [
 		return job
 	}
 
+	// Create either pre- or post- upgrade job object based on the supplied job spec
 	createJob := func(jobSpec *UpgradeJobSpec) (*reconciler.Object, error) {
 		jobObject, err := buildUpgradeJobObject(jobSpec)
 		if err != nil {
@@ -109,6 +117,7 @@ func doUpgrade(master *v1alpha1.CDAPMaster, labels map[string]string, observed [
 		return jobObject, nil
 	}
 
+	// Build reconciler object based on the given job
 	buildObject := func(job *batchv1.Job) *reconciler.Object {
 		jobObj := &reconciler.Object{
 			Type:      k8s.Type,
@@ -121,10 +130,11 @@ func doUpgrade(master *v1alpha1.CDAPMaster, labels map[string]string, observed [
 		return jobObj
 	}
 
-	if !isConditionTrue(master, versionUpdateStatus.PreUpgradeJobDone) {
+	// First, run pre-upgrade job
+	if !isConditionTrue(master, updateStatus.PreUpgradeJobDone) {
 		log.Printf("Version update: pre-upgrade job not completed")
 		preJobName := getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis)
-		preJobSpec := buildPreUpgradeJobSpec(master, labels)
+		preJobSpec := buildUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), labels)
 		job := findJob(preJobName)
 		if job == nil {
 			obj, err := createJob(preJobSpec)
@@ -134,15 +144,14 @@ func doUpgrade(master *v1alpha1.CDAPMaster, labels map[string]string, observed [
 			log.Printf("Version update: creating pre-upgrade job")
 			return []reconciler.Object{*obj}, nil
 		} else if job.Status.Succeeded > 0 {
+			setCondition(master, updateStatus.PreUpgradeJobDone)
 			log.Printf("Version update: pre-upgrade job succeeded")
-			setCondition(master, versionUpdateStatus.PreUpgradeJobDone)
 			// Return empty to delete preUpgrade jobObj
 			return []reconciler.Object{}, nil
-		} else if job.Status.Failed >= versionUpgradeFailureLimit {
-			// Reach terminal state
+		} else if job.Status.Failed >= imageVersionUpgradeFailureLimit {
+			setCondition(master, updateStatus.UpgradeFailed)
+			clearCondition(master, updateStatus.Inprogress)
 			log.Printf("Version update: pre-upgrade job failed, exceeded max retries.")
-			setCondition(master, versionUpdateStatus.UpgradeFailed)
-			clearCondition(master, versionUpdateStatus.Inprogress)
 			return []reconciler.Object{}, nil
 		} else {
 			log.Printf("Version update: pre-upgrade job inprogress.")
@@ -150,18 +159,19 @@ func doUpgrade(master *v1alpha1.CDAPMaster, labels map[string]string, observed [
 		}
 	}
 
-	// Set the image to use
-	if !isConditionTrue(master, versionUpdateStatus.VersionUpdated) {
+	// Then, actually update the image version
+	if !isConditionTrue(master, updateStatus.VersionUpdated) {
 		setVersionToUse(master)
+		setCondition(master, updateStatus.VersionUpdated)
 		log.Printf("Version update: set new version.")
-		setCondition(master, versionUpdateStatus.VersionUpdated)
 		return []reconciler.Object{}, nil
 	}
 
-	if !isConditionTrue(master, versionUpdateStatus.PostUpgradeJobDone) {
+	// At last, run post-upgrade job
+	if !isConditionTrue(master, updateStatus.PostUpgradeJobDone) {
 		log.Printf("Version update: post-upgrade job not completed")
 		postJobName := getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis)
-		postJobSpec := buildPostUpgradeJobSpec(master, labels)
+		postJobSpec := buildUpgradeJobSpec(getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
 		job := findJob(postJobName)
 		if job == nil {
 			obj, err := createJob(postJobSpec)
@@ -171,44 +181,46 @@ func doUpgrade(master *v1alpha1.CDAPMaster, labels map[string]string, observed [
 			log.Printf("Version update: creating post-upgrade job")
 			return []reconciler.Object{*obj}, nil
 		} else if job.Status.Succeeded > 0 {
+			setCondition(master, updateStatus.PostUpgradeJobDone)
 			log.Printf("Version update: post-upgrade job succeeded")
-			setCondition(master, versionUpdateStatus.PostUpgradeJobDone)
-			// Return empty to delete postUpgrade jobObj
+			// Return empty to delete postUpgrade job
 			return []reconciler.Object{}, nil
-		} else if job.Status.Failed >= versionUpgradeFailureLimit {
-			// Reach terminal state
+		} else if job.Status.Failed >= imageVersionUpgradeFailureLimit {
+			setCondition(master, updateStatus.UpgradeFailed)
+			clearCondition(master, updateStatus.Inprogress)
 			log.Printf("Version update: post-upgrade job failed, exceeded max retries.")
-			setCondition(master, versionUpdateStatus.UpgradeFailed)
-			clearCondition(master, versionUpdateStatus.Inprogress)
 			return []reconciler.Object{*buildObject(job)}, nil
 		} else {
 			log.Printf("Version update: post-upgrade job inprogress.")
 			return []reconciler.Object{*buildObject(job)}, nil
 		}
 	}
+	setCondition(master, updateStatus.UpgradeSucceeded)
+	clearCondition(master, updateStatus.Inprogress)
 	log.Printf("Version update: upgrade succeeded.")
-	setCondition(master, versionUpdateStatus.UpgradeSucceeded)
-	clearCondition(master, versionUpdateStatus.Inprogress)
 	return []reconciler.Object{}, nil
 }
+
+///////////////////////////////////////////////////////////////////////
+////// Struct and util functions to tack version upgrade progress /////
+///////////////////////////////////////////////////////////////////////
 
 type VersionUpdateStatus struct {
 	// common states
 	Inprogress     status.Condition
 	VersionUpdated status.Condition
 
-	// states for upgrade
+	// states specifically upgrade
 	PreUpgradeJobDone  status.Condition
 	PostUpgradeJobDone status.Condition
 	UpgradeSucceeded   status.Condition
 	UpgradeFailed      status.Condition
 
-	// states for downgrade
+	// states specifically downgrade
 	DowngradeSucceeded status.Condition
 }
 
 func (s *VersionUpdateStatus) init() {
-	log.Println("version update status init")
 	// common states
 	s.Inprogress = status.Condition{
 		Type:    "VersionUpdateInprogress",
@@ -223,35 +235,37 @@ func (s *VersionUpdateStatus) init() {
 
 	// States for upgrade
 	s.PreUpgradeJobDone = status.Condition{
-		Type:    "VersionUpdatePreUpgradeJobDone",
+		Type:    "VersionPreUpgradeJobDone",
 		Reason:  "Start",
-		Message: "Version update pre-upgrade job is done",
+		Message: "Version pre-upgrade job is done",
 	}
 	s.PostUpgradeJobDone = status.Condition{
-		Type:    "VersionUpdatePostUpgradeJobDone",
+		Type:    "VersionPostUpgradeJobDone",
 		Reason:  "Start",
-		Message: "Version update post-upgrade job done",
+		Message: "Version post-upgrade job done",
 	}
 	s.UpgradeSucceeded = status.Condition{
-		Type:    "VersionUpdateUpgradeSucceeded",
+		Type:    "VersionUpgradeSucceeded",
 		Reason:  "Start",
 		Message: "Version upgrade has completed successfully",
 	}
 	s.UpgradeFailed = status.Condition{
-		Type:    "VersionUpdateUpgradeFailed",
+		Type:    "VersionUpgradeFailed",
 		Reason:  "Start",
 		Message: "Version upgrade has failed",
 	}
 
 	// States for downgrade
 	s.DowngradeSucceeded = status.Condition{
-		Type:    "VersionUpdateDowngradeSucceeded",
+		Type:    "VersionDowngradeSucceeded",
 		Reason:  "Start",
 		Message: "Version downgrade has succeeded",
 	}
 
 }
 
+// Clear all conditions used for track version update progress.
+// Used at the beginning of version upgrade/downgrade process
 func (s *VersionUpdateStatus) clearAllConditions(master *v1alpha1.CDAPMaster) error {
 	conditions := reflect.ValueOf(*s)
 	for i := 0; i < conditions.NumField(); i++ {
@@ -276,29 +290,30 @@ func clearCondition(master *v1alpha1.CDAPMaster, condition status.Condition) {
 	master.Status.ClearCondition(condition.Type, condition.Reason, condition.Message)
 }
 
-type Version struct {
-	rawString string
+////////////////////////////////////////////////////////////////////////////////
+///// struct and functions for parsing and processing image version string /////
+////////////////////////////////////////////////////////////////////////////////
 
-	empty bool
+type Version struct {
+	// store the raw string that was parsed
+	rawString string
 	// Boolean if the Version is "latest"
 	latest bool
 	// List of Version integers, starting from major
 	components []int
 }
 
-func extractVersion(imageString string) (*Version, error) {
+// Parse image string to extract components of the version.
+func parseImageString(imageString string) (*Version, error) {
 	if len(imageString) == 0 {
-		return &Version{
-			rawString: imageString,
-			empty:     true,
-		}, nil
+		return &Version{}, nil
 	}
 	splits := strings.Split(imageString, ":")
 	if len(splits) != 2 {
 		return nil, fmt.Errorf("failed to parse image string %s, not in expected format of xxx:xxx", imageString)
 	}
 
-	if splits[1] == latestVersion {
+	if splits[1] == imageVersionLatest {
 		return &Version{latest: true}, nil
 	}
 
@@ -320,6 +335,10 @@ func extractVersion(imageString string) (*Version, error) {
 	}, nil
 }
 
+// compare two parsed versions
+// -1: left < right
+//  0: left = right
+//  1: left > right
 func compareVersion(l, r *Version) int {
 	if l.latest && r.latest {
 		return 0
@@ -355,9 +374,14 @@ func compareVersion(l, r *Version) int {
 	return 0
 }
 
+//////////////////////////////////
+///// Various util functions /////
+//////////////////////////////////
+
 func getCurrentVersion(master *v1alpha1.CDAPMaster) (*Version, error) {
+	// current image version in use is stored in Status.ImageToUse
 	curImage := master.Status.ImageToUse
-	curVersion, err := extractVersion(curImage)
+	curVersion, err := parseImageString(curImage)
 	if err != nil {
 		return nil, err
 	}
@@ -365,8 +389,9 @@ func getCurrentVersion(master *v1alpha1.CDAPMaster) (*Version, error) {
 }
 
 func getNewVersion(master *v1alpha1.CDAPMaster) (*Version, error) {
+	// new image version to be deployed is stored in Spec.Image
 	newImage := master.Spec.Image
-	newVersion, err := extractVersion(newImage)
+	newVersion, err := parseImageString(newImage)
 	if err != nil {
 		return nil, err
 	}
@@ -374,12 +399,14 @@ func getNewVersion(master *v1alpha1.CDAPMaster) (*Version, error) {
 }
 
 func setVersionToUse(master *v1alpha1.CDAPMaster) {
+	// This trigger actual image update as reconciler logic uses Status.ImageToUse to build expected state.
 	master.Status.ImageToUse = master.Spec.Image
 }
 
 func getCurrentUserInterfaceVersion(master *v1alpha1.CDAPMaster) (*Version, error) {
+	// current image version in use is stored in Status.UserInterfaceImageToUse
 	curImage := master.Status.UserInterfaceImageToUse
-	curVersion, err := extractVersion(curImage)
+	curVersion, err := parseImageString(curImage)
 	if err != nil {
 		return nil, err
 	}
@@ -387,8 +414,9 @@ func getCurrentUserInterfaceVersion(master *v1alpha1.CDAPMaster) (*Version, erro
 }
 
 func getNewUserInterfaceVersion(master *v1alpha1.CDAPMaster) (*Version, error) {
+	// new image version to be deployed is stored in Spec.UserInterfaceImage
 	newImage := master.Spec.UserInterfaceImage
-	newVersion, err := extractVersion(newImage)
+	newVersion, err := parseImageString(newImage)
 	if err != nil {
 		return nil, err
 	}
@@ -396,6 +424,7 @@ func getNewUserInterfaceVersion(master *v1alpha1.CDAPMaster) (*Version, error) {
 }
 
 func setUserInterfaceVersionToUse(master *v1alpha1.CDAPMaster) {
+	// This trigger actual image update as reconciler logic uses Status.UserInterfaceImageToUse to build expected state.
 	master.Status.UserInterfaceImageToUse = master.Spec.UserInterfaceImage
 }
 
@@ -403,32 +432,28 @@ func getCurrentTimeMs() int64 {
 	return time.Now().UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 }
 
+// The returned name is just the suffix of actual k8s object name, as we prepend it with const string + CR name
 func getPreUpgradeJobName(startTimeMs int64) string {
 	return fmt.Sprintf("pre-upgrade-job-%d", startTimeMs)
 }
 
+// The returned name is just the suffix of actual k8s object name, as we prepend it with const string + CR name
 func getPostUpgradeJobName(startTimeMs int64) string {
 	return fmt.Sprintf("post-upgrade-job-%d", startTimeMs)
 }
 
-func buildPreUpgradeJobSpec(master *v1alpha1.CDAPMaster, labels map[string]string) *UpgradeJobSpec {
+// Return upgrade job spec
+func buildUpgradeJobSpec(jobName string, master *v1alpha1.CDAPMaster, labels map[string]string) *UpgradeJobSpec {
 	startTimeMs := master.Status.UpgradeStartTimeMillis
 	cconf := getObjectName(master.Name, configMapCConf)
 	hconf := getObjectName(master.Name, configMapHConf)
-	name := getObjectName(master.Name, getPreUpgradeJobName(startTimeMs))
+	name := getObjectName(master.Name, jobName)
 	return newUpgradeJobSpec(name, labels, startTimeMs, cconf, hconf, master).SetPreUpgrade(true)
 }
 
-func buildPostUpgradeJobSpec(master *v1alpha1.CDAPMaster, labels map[string]string) *UpgradeJobSpec {
-	startTimeMs := master.Status.UpgradeStartTimeMillis
-	cconf := getObjectName(master.Name, configMapCConf)
-	hconf := getObjectName(master.Name, configMapHConf)
-	name := getObjectName(master.Name, getPostUpgradeJobName(startTimeMs))
-	return newUpgradeJobSpec(name, labels, startTimeMs, cconf, hconf, master).SetPostUpgrade(true)
-}
-
+// Given an upgrade job spec, return a reconciler object as expected state
 func buildUpgradeJobObject(spec *UpgradeJobSpec) (*reconciler.Object, error) {
-	obj, err := k8s.ObjectFromFile(templateDir+upgradeJobTemplate, spec, &batchv1.JobList{})
+	obj, err := k8s.ObjectFromFile(templateDir+templateUpgradeJob, spec, &batchv1.JobList{})
 	if err != nil {
 		return nil, err
 	}

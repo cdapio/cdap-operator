@@ -111,7 +111,7 @@ func (d *DeploymentStrategy) getStrategy(numPods int32) (*ServiceGroupMap, error
 func buildCDAPDeploymentSpec(master *alpha1.CDAPMaster, labels map[string]string) (*CDAPDeploymentSpec, error) {
 	m := master
 
-	// Wait for version_update.go to update the image
+	// Wait for version update handler to set the image version to use in the status field
 	if m.Status.ImageToUse == "" || m.Status.UserInterfaceImageToUse == "" {
 		return &CDAPDeploymentSpec{}, nil
 	}

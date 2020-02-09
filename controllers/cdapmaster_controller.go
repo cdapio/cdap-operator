@@ -276,7 +276,7 @@ func CopyNodePortIfAny(expected, observed []reconciler.Object) {
 	}
 }
 
-// Handler for image version update
+// Handler for image version upgrade/downgrade
 type VersionUpdateHandler struct{}
 
 func (h *VersionUpdateHandler) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
@@ -289,5 +289,5 @@ func (h *VersionUpdateHandler) Observables(rsrc interface{}, labels map[string]s
 func (h *VersionUpdateHandler) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	m := rsrc.(*alpha1.CDAPMaster)
 	labels := mergeMaps(m.Labels, rsrclabels)
-	return updateVersion(m, labels, observed)
+	return handleVersionUpdate(m, labels, observed)
 }

@@ -13,7 +13,6 @@
 # the License.
 apiVersion: batch/v1
 kind: Job
-propagationPolicy: Foreground
 metadata:
   name: {{.JobName}}
   namespace: {{.Namespace}}

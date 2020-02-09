@@ -30,6 +30,7 @@ const (
 )
 
 const (
+	// cconf and hconf
 	confExploreEnabled        = "explore.enabled"
 	confLocalDataDirKey       = "local.data.dir"
 	confLocalDataDirVal       = "/data"
@@ -37,6 +38,7 @@ const (
 	confRouterBindPort        = "router.bind.port"
 	confUserInterfaceBindPort = "dashboard.bind.port"
 
+	// default values
 	defaultImage             = "gcr.io/cdapio/cdap:latest"
 	defaultRouterPort        = 11015
 	defaultUserInterfacePort = 11011
@@ -55,27 +57,17 @@ const (
 	templateStatefulSet = "cdap-sts.yaml"
 	templateDeployment  = "cdap-deployment.yaml"
 	templateService     = "cdap-service.yaml"
+	templateUpgradeJob  = "upgrade-job.yaml"
+
+	// Image version upgrade/downgrade
+
+	imageVersionLatest              = "latest"
+	imageVersionUpgradeFailureLimit = 5
 
 	// CDAP services
 	containerStorageMain = "io.cdap.cdap.master.environment.k8s.StorageMain"
-)
 
-const (
-	containerLabel = "cdap.container"
 	// Heap memory related constants
 	javaMinHeapRatio     = float64(0.6)
 	javaReservedNonHeap  = int64(768 * 1024 * 1024)
-	uiDeploymentTemplate = "cdap-ui-deployment.yaml"
-	upgradeJobTemplate   = "upgrade-job.yaml"
-	//UpgradeFailed             = "upgrade-failed"
-	//postUpgradeFailed         = "post-upgrade-failed"
-	//postUpgradeFinished       = "post-upgrade-finished"
-	//upgradeStartMessage       = "Upgrade started, received updated CR."
-	//upgradeFailedInitMessage  = "Failed to create job, upgrade failed."
-	//upgradeJobFailedMessage   = "Upgrade job failed."
-	//upgradeJobFinishedMessage = "Upgrade job finished."
-	//upgradeJobSkippedMessage  = "Upgrade job skipped."
-	//upgradeResetMessage       = "Upgrade spec reset."
-	versionUpgradeFailureLimit = 4
-	latestVersion              = "latest"
 )
