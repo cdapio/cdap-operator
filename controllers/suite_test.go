@@ -45,6 +45,7 @@ func TestAPIs(t *testing.T) {
 	RunSpecsWithDefaultAndCustomReporters(t,
 		"Controller Suite",
 		[]Reporter{envtest.NewlineReporter{}})
+	RunSpecs(t, "DeploymentTest")
 }
 
 var _ = BeforeSuite(func(done Done) {

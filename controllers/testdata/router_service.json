@@ -1,0 +1,55 @@
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "creationTimestamp": null,
+    "labels": {
+      "cdap.instance": "test",
+      "cdap.service": "cdap-test-router",
+      "custom-resource": "v1alpha1.CDAPMaster",
+      "custom-resource-name": "test",
+      "custom-resource-namespace": "default",
+      "using": "controllers.ServiceHandler"
+    },
+    "name": "cdap-test-router",
+    "namespace": "default",
+    "ownerReferences": [
+      {
+        "apiVersion": "cdap.cdap.io/v1alpha1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "*v1alpha1.CDAPMaster",
+        "name": "test",
+        "uid": "7aeaad53-4afe-11ea-8611-42010a800022"
+      }
+    ],
+    "resourceVersion": "1850605",
+    "selfLink": "/api/v1/namespaces/default/services/cdap-test-router",
+    "uid": "7b8e616f-4afe-11ea-8611-42010a800022"
+  },
+  "spec": {
+    "clusterIP": "10.47.252.214",
+    "externalTrafficPolicy": "Cluster",
+    "ports": [
+      {
+        "nodePort": 32588,
+        "port": 11015,
+        "protocol": "TCP",
+        "targetPort": 11015
+      }
+    ],
+    "selector": {
+      "cdap.container.Router": "test",
+      "cdap.instance": "test",
+      "custom-resource": "v1alpha1.CDAPMaster",
+      "custom-resource-name": "test",
+      "custom-resource-namespace": "default",
+      "using": "controllers.ServiceHandler"
+    },
+    "sessionAffinity": "None",
+    "type": "NodePort"
+  },
+  "status": {
+    "loadBalancer": {}
+  }
+}
