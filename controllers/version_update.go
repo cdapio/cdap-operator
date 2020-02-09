@@ -24,6 +24,7 @@ func init() {
 	updateStatus = new(VersionUpdateStatus)
 	updateStatus.init()
 }
+
 /////////////////////////////////////////////////////////////
 ///// Main functions for handle image upgarde/downgrade /////
 /////////////////////////////////////////////////////////////
@@ -134,7 +135,7 @@ func doUpgrade(master *v1alpha1.CDAPMaster, labels map[string]string, observed [
 	if !isConditionTrue(master, updateStatus.PreUpgradeJobDone) {
 		log.Printf("Version update: pre-upgrade job not completed")
 		preJobName := getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis)
-		preJobSpec := buildUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), labels)
+		preJobSpec := buildUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
 		job := findJob(preJobName)
 		if job == nil {
 			obj, err := createJob(preJobSpec)
@@ -148,7 +149,7 @@ func doUpgrade(master *v1alpha1.CDAPMaster, labels map[string]string, observed [
 			log.Printf("Version update: pre-upgrade job succeeded")
 			// Return empty to delete preUpgrade jobObj
 			return []reconciler.Object{}, nil
-		} else if job.Status.Failed >= imageVersionUpgradeFailureLimit {
+		} else if job.Status.Failed > imageVersionUpgradeFailureLimit {
 			setCondition(master, updateStatus.UpgradeFailed)
 			clearCondition(master, updateStatus.Inprogress)
 			log.Printf("Version update: pre-upgrade job failed, exceeded max retries.")
@@ -185,7 +186,7 @@ func doUpgrade(master *v1alpha1.CDAPMaster, labels map[string]string, observed [
 			log.Printf("Version update: post-upgrade job succeeded")
 			// Return empty to delete postUpgrade job
 			return []reconciler.Object{}, nil
-		} else if job.Status.Failed >= imageVersionUpgradeFailureLimit {
+		} else if job.Status.Failed > imageVersionUpgradeFailureLimit {
 			setCondition(master, updateStatus.UpgradeFailed)
 			clearCondition(master, updateStatus.Inprogress)
 			log.Printf("Version update: post-upgrade job failed, exceeded max retries.")

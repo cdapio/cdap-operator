@@ -68,6 +68,6 @@ const (
 	containerStorageMain = "io.cdap.cdap.master.environment.k8s.StorageMain"
 
 	// Heap memory related constants
-	javaMinHeapRatio     = float64(0.6)
-	javaReservedNonHeap  = int64(768 * 1024 * 1024)
+	javaMinHeapRatio    = float64(0.6)
+	javaReservedNonHeap = int64(768 * 1024 * 1024)
 )
