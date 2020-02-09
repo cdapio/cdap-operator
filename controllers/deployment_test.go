@@ -21,7 +21,7 @@ func fromJson(filename string, obj interface{}) error {
 	return nil
 }
 
-var _ = Describe("DeploymentTest", func() {
+var _ = Describe("Controller Suite", func() {
 	Describe("NumPods == 0", func() {
 		It("k8s objects", func() {
 			emptyLabels := make(map[string]string)
