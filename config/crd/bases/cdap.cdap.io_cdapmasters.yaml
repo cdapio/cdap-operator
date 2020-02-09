@@ -1420,6 +1420,11 @@ spec:
                 - type
                 type: object
               type: array
+            downgradeStartTimeMillis:
+              description: DowngradeStartTimeMillis is the start time in milliseconds
+                of the downgrade process
+              format: int64
+              type: integer
             imageToUse:
               description: ImageToUse is the Docker image of CDAP backend the operator
                 uses to deploy.
@@ -1431,8 +1436,8 @@ spec:
               format: int64
               type: integer
             upgradeStartTimeMillis:
-              description: UpgradeStartTimeMillis is the start time in millis of the
-                upgrade process
+              description: UpgradeStartTimeMillis is the start time in milliseconds
+                of the upgrade process
               format: int64
               type: integer
             userInterfaceImageToUse:

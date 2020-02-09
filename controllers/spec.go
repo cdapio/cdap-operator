@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/types"
 	"strings"
 )
 
@@ -41,19 +42,17 @@ type ContainerSpec struct {
 	Env              []corev1.EnvVar               `json:"env,omitempty"`
 	ResourceRequests map[string]*resource.Quantity `json:"resourceRequests,omitempty"`
 	ResourceLimits   map[string]*resource.Quantity `json:"resourceLimits,omitempty"`
-	Resources        *corev1.ResourceRequirements  `json:"resources,omitempty"`
 	DataDir          string                        `json:"dataDir,omitempty"`
 }
 
 func newContainerSpec(name, dataDir string, master *v1alpha1.CDAPMaster) *ContainerSpec {
 	c := new(ContainerSpec)
 	c.Name = strings.ToLower(name)
-	c.Image = master.Spec.Image
+	c.Image = master.Status.ImageToUse
 	c.ImagePullPolicy = master.Spec.ImagePullPolicy
 	c.WorkingDir = ""
 	c.Args = []string{"io.cdap.cdap.master.environment.k8s." + name + "ServiceMain", "--env=k8s"}
-	c.Env = []corev1.EnvVar{} // TODO: set env
-	c.Resources = nil
+	// c.Env = nil TODO: set env
 	c.DataDir = dataDir
 	return c
 }
@@ -91,20 +90,24 @@ func (s *ContainerSpec) addEnv(name, value string) *ContainerSpec {
 	return s
 }
 func (s *ContainerSpec) setResources(resources *corev1.ResourceRequirements) *ContainerSpec {
-	s.ResourceRequests = make(map[string]*resource.Quantity)
-	s.ResourceLimits = make(map[string]*resource.Quantity)
 	if resources == nil {
 		return s
 	}
-	for name, quantity := range resources.Requests {
-		q := new(resource.Quantity)
-		*q = quantity.DeepCopy()
-		s.ResourceRequests[string(name)] = q
+	if len(resources.Requests) > 0 {
+		s.ResourceRequests = make(map[string]*resource.Quantity)
+		for name, quantity := range resources.Requests {
+			q := new(resource.Quantity)
+			*q = quantity.DeepCopy()
+			s.ResourceRequests[string(name)] = q
+		}
 	}
-	for name, quantity := range resources.Limits {
-		q := new(resource.Quantity)
-		*q = quantity.DeepCopy()
-		s.ResourceLimits[string(name)] = q
+	if len(resources.Limits) > 0 {
+		s.ResourceLimits = make(map[string]*resource.Quantity)
+		for name, quantity := range resources.Limits {
+			q := new(resource.Quantity)
+			*q = quantity.DeepCopy()
+			s.ResourceLimits[string(name)] = q
+		}
 	}
 	return s
 }
@@ -131,7 +134,6 @@ func newBaseSpec(name string, labels map[string]string, cconf, hconf string, mas
 	s.Labels = labels
 	s.ServiceAccountName = ""
 	s.Replicas = 1
-	s.NodeSelector = make(map[string]string)
 	s.RuntimeClassName = ""
 	s.PriorityClassName = ""
 	s.SecuritySecret = master.Spec.SecuritySecret
@@ -151,6 +153,9 @@ func (s *BaseSpec) setReplicas(replicas int32) *BaseSpec {
 }
 
 func (s *BaseSpec) setNodeSelector(nodeSelector map[string]string) *BaseSpec {
+	if len(nodeSelector) == 0 {
+		return s
+	}
 	s.NodeSelector = make(map[string]string)
 	for k, v := range nodeSelector {
 		s.NodeSelector[k] = v
@@ -348,4 +353,52 @@ func (s *CDAPDeploymentSpec) toString() (string, error) {
 		return "", err
 	}
 	return string(data), nil
+}
+
+type UpgradeJobSpec struct {
+	Image              string            `json:"image,omitempty"`
+	JobName            string            `json:"jobName,omitempty"`
+	Labels             map[string]string `json:"labels,omitempty"`
+	HostName           string            `json:"hostName,omitempty"`
+	BackoffLimit       int32             `json:"backoffLimit,omitempty"`
+	ReferentName       string            `json:"referentName,omitempty"`
+	ReferentKind       string            `json:"referentKind,omitempty"`
+	ReferentApiVersion string            `json:"referentApiVersion,omitempty"`
+	ReferentUID        types.UID         `json:"referentUID,omitempty"`
+	SecuritySecret     string            `json:"securitySecret,omitempty"`
+	StartTimeMs        int64             `json:"startTimeMs,omitempty"`
+	Namespace          string            `json:"namespace,omitempty"`
+	CConf              string            `json:"cdapConf,omitempty"`
+	HConf              string            `json:"hadoopConf,omitempty"`
+	PreUpgrade         bool              `json:"preUpgrade,omitempty"`
+	PostUpgrade        bool              `json:"postUpgrade,omitempty"`
+}
+
+func newUpgradeJobSpec(name string, labels map[string]string, startTimeMs int64, cconf, hconf string, master *v1alpha1.CDAPMaster) *UpgradeJobSpec {
+	s := new(UpgradeJobSpec)
+	s.Image = master.Spec.Image
+	s.JobName = name
+	s.Labels = labels
+	s.HostName = getObjectName(master.Name, serviceRouter)
+	s.BackoffLimit = versionUpgradeFailureLimit
+	s.ReferentName = master.Name
+	s.ReferentKind = master.Kind
+	s.ReferentApiVersion = master.APIVersion
+	s.ReferentUID = master.UID
+	s.SecuritySecret = master.Spec.SecuritySecret
+	s.Namespace = master.Namespace
+	s.StartTimeMs = startTimeMs
+	s.CConf = cconf
+	s.HConf = hconf
+	return s
+}
+
+func (s *UpgradeJobSpec) SetPreUpgrade(isPreUpgrade bool) *UpgradeJobSpec {
+	s.PreUpgrade = isPreUpgrade
+	return s
+}
+
+func (s *UpgradeJobSpec) SetPostUpgrade(isPostUpgrade bool) *UpgradeJobSpec {
+	s.PostUpgrade = isPostUpgrade
+	return s
 }

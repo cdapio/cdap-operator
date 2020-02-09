@@ -63,19 +63,19 @@ const (
 const (
 	containerLabel = "cdap.container"
 	// Heap memory related constants
-	javaMinHeapRatio          = float64(0.6)
-	javaReservedNonHeap       = int64(768 * 1024 * 1024)
-	uiDeploymentTemplate      = "cdap-ui-deployment.yaml"
-	upgradeJobTemplate        = "upgrade-job.yaml"
-	upgradeFailed             = "upgrade-failed"
-	postUpgradeFailed         = "post-upgrade-failed"
-	postUpgradeFinished       = "post-upgrade-finished"
-	upgradeStartMessage       = "Upgrade started, received updated CR."
-	upgradeFailedInitMessage  = "Failed to create job, upgrade failed."
-	upgradeJobFailedMessage   = "Upgrade job failed."
-	upgradeJobFinishedMessage = "Upgrade job finished."
-	upgradeJobSkippedMessage  = "Upgrade job skipped."
-	upgradeResetMessage       = "Upgrade spec reset."
-	upgradeFailureLimit       = 4
-	latestVersion             = "latest"
+	javaMinHeapRatio     = float64(0.6)
+	javaReservedNonHeap  = int64(768 * 1024 * 1024)
+	uiDeploymentTemplate = "cdap-ui-deployment.yaml"
+	upgradeJobTemplate   = "upgrade-job.yaml"
+	//UpgradeFailed             = "upgrade-failed"
+	//postUpgradeFailed         = "post-upgrade-failed"
+	//postUpgradeFinished       = "post-upgrade-finished"
+	//upgradeStartMessage       = "Upgrade started, received updated CR."
+	//upgradeFailedInitMessage  = "Failed to create job, upgrade failed."
+	//upgradeJobFailedMessage   = "Upgrade job failed."
+	//upgradeJobFinishedMessage = "Upgrade job finished."
+	//upgradeJobSkippedMessage  = "Upgrade job skipped."
+	//upgradeResetMessage       = "Upgrade spec reset."
+	versionUpgradeFailureLimit = 4
+	latestVersion              = "latest"
 )

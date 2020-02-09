@@ -159,8 +159,10 @@ type CDAPMasterStatus struct {
 	ImageToUse string `json:"imageToUse,omitempty"`
 	// UserInterfaceImageToUse is the Docker image of CDAP UI the operator uses to deploy.
 	UserInterfaceImageToUse string `json:"userInterfaceImageToUse,omitempty"`
-	// UpgradeStartTimeMillis is the start time in millis of the upgrade process
+	// UpgradeStartTimeMillis is the start time in milliseconds of the upgrade process
 	UpgradeStartTimeMillis int64 `json:"upgradeStartTimeMillis,omitempty"`
+	// DowngradeStartTimeMillis is the start time in milliseconds of the downgrade process
+	DowngradeStartTimeMillis int64 `json:"downgradeStartTimeMillis,omitempty"`
 }
 
 // +kubebuilder:object:root=true

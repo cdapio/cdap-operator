@@ -110,7 +110,7 @@ spec:
               {{end}}
             {{end}}
             {{if $c.ResourceLimits}}
-			limits:
+            limits:
               {{range $k, $v := $c.ResourceLimits}}
               {{$k}}: {{$v.String}}
               {{end}}

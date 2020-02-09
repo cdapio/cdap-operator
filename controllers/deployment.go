@@ -110,6 +110,12 @@ func (d *DeploymentStrategy) getStrategy(numPods int32) (*ServiceGroupMap, error
 
 func buildCDAPDeploymentSpec(master *alpha1.CDAPMaster, labels map[string]string) (*CDAPDeploymentSpec, error) {
 	m := master
+
+	// Wait for version_update.go to update the image
+	if m.Status.ImageToUse == "" || m.Status.UserInterfaceImageToUse == "" {
+		return &CDAPDeploymentSpec{}, nil
+	}
+
 	cconf := getObjectName(m.Name, configMapCConf)
 	hconf := getObjectName(m.Name, configMapHConf)
 	dataDir := confLocalDataDirVal
@@ -125,6 +131,7 @@ func buildCDAPDeploymentSpec(master *alpha1.CDAPMaster, labels map[string]string
 
 	updateSpecForUserInterface := func(c *ContainerSpec) *ContainerSpec {
 		return c.
+			setImage(master.Status.UserInterfaceImageToUse).
 			setWorkingDir("/opt/cdap/ui").
 			setCommand("bin/node").
 			setArgs("index.js", "start").

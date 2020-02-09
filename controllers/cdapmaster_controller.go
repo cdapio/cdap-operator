@@ -17,6 +17,7 @@ package controllers
 
 import (
 	"fmt"
+	batchv1 "k8s.io/api/batch/v1"
 	"sigs.k8s.io/controller-reconciler/pkg/finalizer"
 	"strconv"
 	"strings"
@@ -65,6 +66,7 @@ func NewReconciler(mgr manager.Manager) *gr.Reconciler {
 	return gr.
 		WithManager(mgr).
 		For(&alpha1.CDAPMaster{}, alpha1.GroupVersion).
+		Using(&VersionUpdateHandler{}).
 		Using(&ConfigMapHandler{}).
 		Using(&ServiceHandler{}).
 		WithErrorHandler(HandleError).
@@ -272,4 +274,20 @@ func CopyNodePortIfAny(expected, observed []reconciler.Object) {
 			newNodePort.NodePort = oldPort
 		}
 	}
+}
+
+// Handler for image version update
+type VersionUpdateHandler struct{}
+
+func (h *VersionUpdateHandler) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
+	return k8s.NewObservables().
+		WithLabels(labels).
+		For(&batchv1.JobList{}).
+		Get()
+}
+
+func (h *VersionUpdateHandler) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
+	m := rsrc.(*alpha1.CDAPMaster)
+	labels := mergeMaps(m.Labels, rsrclabels)
+	return updateVersion(m, labels, observed)
 }
