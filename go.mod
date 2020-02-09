@@ -4,11 +4,11 @@ go 1.12
 
 require (
 	github.com/go-logr/logr v0.1.0
-	github.com/go-test/deep v1.0.5
+	github.com/nsf/jsondiff v0.0.0-20190712045011-8443391ee9b6
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
+	github.com/stretchr/testify v1.4.0
 	k8s.io/api v0.17.2
-	k8s.io/apiextensions-apiserver v0.17.1
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v0.17.2
 	sigs.k8s.io/controller-reconciler v0.0.0

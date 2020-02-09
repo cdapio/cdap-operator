@@ -15,6 +15,8 @@ import (
 	"time"
 )
 
+type VersionUpdated = bool
+
 var (
 	updateStatus *VersionUpdateStatus
 )
@@ -33,35 +35,26 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 	// Let the current update complete if there is any
 	if isConditionTrue(master, updateStatus.Inprogress) {
 		log.Printf("Version update ingress. Continue... ")
-		return doUpgrade(master, labels, observed)
+		return upgradeForBackend(master, labels, observed)
 	}
 
-	// Update UI image version
-	curUIVersion, err := getCurrentUserInterfaceVersion(master)
-	if err != nil {
+	if objs, versionUpdated, err := updateForUserInterface(master); err != nil {
 		return nil, err
-	}
-	newUIVersion, err := getNewUserInterfaceVersion(master)
-	if err != nil {
-		return nil, err
-	}
-	if len(curUIVersion.rawString) == 0 || compareVersion(curUIVersion, newUIVersion) != 0 {
-		setUserInterfaceVersionToUse(master)
-		log.Printf("Version update: for UserInterface %s->%s", curUIVersion.rawString, newUIVersion.rawString)
-		return []reconciler.Object{}, nil
+	} else if versionUpdated {
+		return objs, nil
 	}
 
 	// Update backend service image version
-	curVersion, err := getCurrentVersion(master)
+	curVersion, err := getCurrentImageVersion(master)
 	if err != nil {
 		return nil, err
 	}
-	newVersion, err := getNewVersion(master)
+	newVersion, err := getNewImageVersion(master)
 	if err != nil {
 		return nil, err
 	}
 	if len(curVersion.rawString) == 0 {
-		setVersionToUse(master)
+		setImageToUse(master)
 		return []reconciler.Object{}, nil
 	}
 
@@ -72,7 +65,7 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		setCondition(master, updateStatus.Inprogress)
 		master.Status.UpgradeStartTimeMillis = getCurrentTimeMs()
 		log.Printf("Version update: start upgrading %s -> %s ", curVersion.rawString, newVersion.rawString)
-		return doUpgrade(master, labels, observed)
+		return upgradeForBackend(master, labels, observed)
 	case 0:
 		// nothing to do
 		break
@@ -82,22 +75,40 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		setCondition(master, updateStatus.Inprogress)
 		master.Status.DowngradeStartTimeMillis = getCurrentTimeMs()
 		log.Printf("Version update: start downgrading %s -> %s ", curVersion.rawString, newVersion.rawString)
-		return doDowngrade(master)
+		return downgradeForBackend(master)
 
 	}
 	return []reconciler.Object{}, nil
 }
 
-func doDowngrade(master *v1alpha1.CDAPMaster) ([]reconciler.Object, error) {
+func updateForUserInterface(master *v1alpha1.CDAPMaster) ([]reconciler.Object, VersionUpdated, error) {
+	// Update UI image version
+	curUIVersion, err := getCurrentUserInterfaceVersion(master)
+	if err != nil {
+		return nil, false, err
+	}
+	newUIVersion, err := getNewUserInterfaceVersion(master)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(curUIVersion.rawString) == 0 || compareVersion(curUIVersion, newUIVersion) != 0 {
+		setUserInterfaceVersionToUse(master)
+		log.Printf("Version update: for UserInterface %s->%s", curUIVersion.rawString, newUIVersion.rawString)
+		return []reconciler.Object{}, true, nil
+	}
+	return []reconciler.Object{}, false, nil
+}
+
+func downgradeForBackend(master *v1alpha1.CDAPMaster) ([]reconciler.Object, error) {
 	// Directly set the image to use. No pre- post- downgrade to run at the moment.
-	setVersionToUse(master)
+	setImageToUse(master)
 	setCondition(master, updateStatus.DowngradeSucceeded)
 	clearCondition(master, updateStatus.Inprogress)
 	log.Printf("Version update: downgrade completed")
 	return []reconciler.Object{}, nil
 }
 
-func doUpgrade(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object) ([]reconciler.Object, error) {
+func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object) ([]reconciler.Object, error) {
 	// Find either pre- or post- upgrade job
 	findJob := func(jobName string) *batchv1.Job {
 		var job *batchv1.Job = nil
@@ -162,7 +173,7 @@ func doUpgrade(master *v1alpha1.CDAPMaster, labels map[string]string, observed [
 
 	// Then, actually update the image version
 	if !isConditionTrue(master, updateStatus.VersionUpdated) {
-		setVersionToUse(master)
+		setImageToUse(master)
 		setCondition(master, updateStatus.VersionUpdated)
 		log.Printf("Version update: set new version.")
 		return []reconciler.Object{}, nil
@@ -315,7 +326,10 @@ func parseImageString(imageString string) (*Version, error) {
 	}
 
 	if splits[1] == imageVersionLatest {
-		return &Version{latest: true}, nil
+		return &Version{
+			rawString: imageString,
+			latest: true,
+		}, nil
 	}
 
 	versionString := splits[1]
@@ -379,7 +393,7 @@ func compareVersion(l, r *Version) int {
 ///// Various util functions /////
 //////////////////////////////////
 
-func getCurrentVersion(master *v1alpha1.CDAPMaster) (*Version, error) {
+func getCurrentImageVersion(master *v1alpha1.CDAPMaster) (*Version, error) {
 	// current image version in use is stored in Status.ImageToUse
 	curImage := master.Status.ImageToUse
 	curVersion, err := parseImageString(curImage)
@@ -389,7 +403,7 @@ func getCurrentVersion(master *v1alpha1.CDAPMaster) (*Version, error) {
 	return curVersion, nil
 }
 
-func getNewVersion(master *v1alpha1.CDAPMaster) (*Version, error) {
+func getNewImageVersion(master *v1alpha1.CDAPMaster) (*Version, error) {
 	// new image version to be deployed is stored in Spec.Image
 	newImage := master.Spec.Image
 	newVersion, err := parseImageString(newImage)
@@ -399,7 +413,7 @@ func getNewVersion(master *v1alpha1.CDAPMaster) (*Version, error) {
 	return newVersion, nil
 }
 
-func setVersionToUse(master *v1alpha1.CDAPMaster) {
+func setImageToUse(master *v1alpha1.CDAPMaster) {
 	// This trigger actual image update as reconciler logic uses Status.ImageToUse to build expected state.
 	master.Status.ImageToUse = master.Spec.Image
 }

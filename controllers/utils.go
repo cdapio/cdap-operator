@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+type Pair struct {
+	first, second interface{}
+}
+
 // Creates a int32 pointer for the given value
 func int32Ptr(value int32) *int32 {
 	return &value

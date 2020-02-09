@@ -1,0 +1,127 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "creationTimestamp": null,
+    "labels": {
+      "cdap.instance": "test",
+      "custom-resource": "v1alpha1.CDAPMaster",
+      "custom-resource-name": "test",
+      "custom-resource-namespace": "default",
+      "using": "controllers.VersionUpdateHandler"
+    },
+    "name": "cdap-test-pre-upgrade-job-1581238669880",
+    "namespace": "default",
+    "ownerReferences": [
+      {
+        "apiVersion": "",
+        "controller": false,
+        "kind": "",
+        "name": "test",
+        "uid": ""
+      },
+      {
+        "apiVersion": "cdap.cdap.io/v1alpha1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "*v1alpha1.CDAPMaster",
+        "name": "test",
+        "uid": "7aeaad53-4afe-11ea-8611-42010a800022"
+      }
+    ],
+    "resourceVersion": "1896807",
+    "selfLink": "/apis/batch/v1/namespaces/default/jobs/cdap-test-pre-upgrade-job-1581238669880",
+    "uid": "401828eb-4b1a-11ea-8611-42010a800022"
+  },
+  "spec": {
+    "activeDeadlineSeconds": 600,
+    "backoffLimit": 5,
+    "completions": 1,
+    "parallelism": 1,
+    "selector": {
+      "matchLabels": {
+        "controller-uid": "401828eb-4b1a-11ea-8611-42010a800022"
+      }
+    },
+    "template": {
+      "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+          "cdap.instance": "test",
+          "controller-uid": "401828eb-4b1a-11ea-8611-42010a800022",
+          "custom-resource": "v1alpha1.CDAPMaster",
+          "custom-resource-name": "test",
+          "custom-resource-namespace": "default",
+          "job-name": "cdap-test-pre-upgrade-job-1581238669880",
+          "using": "controllers.VersionUpdateHandler"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "io.cdap.cdap.master.upgrade.UpgradeJobMain",
+              "cdap-test-router",
+              "11015"
+            ],
+            "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "pre-upgrade",
+            "resources": {},
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/etc/cdap/conf",
+                "name": "cdap-conf",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/hadoop/conf",
+                "name": "hadoop-conf",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/cdap/security",
+                "name": "cdap-security",
+                "readOnly": true
+              }
+            ]
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Never",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "terminationGracePeriodSeconds": 30,
+        "volumes": [
+          {
+            "configMap": {
+              "defaultMode": 420,
+              "name": "cdap-test-cconf"
+            },
+            "name": "cdap-conf"
+          },
+          {
+            "configMap": {
+              "defaultMode": 420,
+              "name": "cdap-test-hconf"
+            },
+            "name": "hadoop-conf"
+          },
+          {
+            "name": "cdap-security",
+            "secret": {
+              "defaultMode": 420,
+              "secretName": "cdap-secret"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "status": {
+    "active": 1,
+    "startTime": "2020-02-09T08:57:50Z"
+  }
+}

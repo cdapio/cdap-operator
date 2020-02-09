@@ -75,4 +75,3 @@ spec:
       restartPolicy: Never
   backoffLimit: {{.BackoffLimit}}
   activeDeadlineSeconds: 600
-  ttlSecondsAfterFinished: 1200
