@@ -163,16 +163,6 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 	return spec, nil
 }
 
-// Update settings in container spec for userinterface service
-func updateSpecForUserInterface(master *v1alpha1.CDAPMaster, spec *ContainerSpec) *ContainerSpec {
-		return spec.
-			setImage(master.Status.UserInterfaceImageToUse).
-			setWorkingDir("/opt/cdap/ui").
-			setCommand("bin/node").
-			setArgs("index.js", "start").
-			addEnv("NODE_ENV", "production")
-}
-
 // Return a single single-/multi- container StatefulSets containing a list of supplied services
 func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services ServiceGroup, labels map[string]string, cconf, hconf, dataDir string) (*StatefulSpec, error) {
 	objName := getObjName(master, name)
@@ -220,6 +210,107 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	if err != nil { return nil, err }
 	spec = spec.withStorage(storageClass, storageSize)
 	return spec, nil
+}
+
+// Return a single single-/multi- container deployment containing a list of supplied services
+func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceGroup, labels map[string]string, cconf, hconf, dataDir string) (*DeploymentSpec, error) {
+	objName := getObjName(master, name)
+	serviceAccount, err := getServiceAccount(master, services)
+	if err != nil {
+		return nil, err
+	}
+	runtimeClass, err := getRuntimeClass(master, services)
+	if err != nil {
+		return nil, err
+	}
+	priorityClass, err := getPriorityClass(master, services)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeSelector := getNodeSelector(master, services)
+	spec := newDeploymentSpec(master, objName, labels, cconf, hconf).
+		setServiceAccountName(serviceAccount).
+		setNodeSelector(nodeSelector).
+		setRuntimeClassName(runtimeClass).
+		setPriorityClassName(priorityClass)
+	// Add each service as a container
+	for _, s := range services {
+		ss := getCDAPServiceSpec(master, s)
+		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
+		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
+		if s == serviceUserInterface {
+			c = updateSpecForUserInterface(master, c)
+		}
+		spec = spec.withContainer(c)
+
+		// Adding a label to allow k8s service selector to easily find the pod
+		spec = spec.addLabel(labelContainerKeyPrefix + s, master.Name)
+	}
+	return spec, nil
+}
+
+// Return a list of reconciler objects (e.g. statefulsets, deployment, NodePort service) for the given deployment plan
+func buildObjectsForDeploymentPlan(spec *DeploymentPlanSpec) ([]reconciler.Object, error) {
+	var objs []reconciler.Object
+	for _, s := range spec.Stateful {
+		obj, err := buildStatefulSetsObject(s)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, *obj)
+	}
+	for _, s := range spec.Deployment {
+		obj, err := buildDeploymentObject(s)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, *obj)
+	}
+	for _, s := range spec.NetworkServices {
+		obj, err := buildNetworkServiceObject(s)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, *obj)
+
+	}
+	return objs, nil
+}
+
+// Return a reconciler statefulset object for the given statefulsets spec
+func buildStatefulSetsObject(spec *StatefulSpec) (*reconciler.Object, error) {
+	obj, err := k8s.ObjectFromFile(templateDir+templateStatefulSet, spec, &appsv1.StatefulSetList{})
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+// Return a reconciler deployment object for the given deployment spec
+func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
+	obj, err := k8s.ObjectFromFile(templateDir+templateDeployment, spec, &appsv1.DeploymentList{})
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+// Return a NodePort service to expose the supplied target service
+func buildNetworkService(master *v1alpha1.CDAPMaster, name NetworkServiceName, target ServiceName, labels map[string]string) *NetworkServiceSpec {
+	s := getCDAPExternalService(target, master)
+	objName := getObjName(master, name)
+	return newNetworkServiceSpec(objName, labels, s.ServiceType, s.ServicePort, master).
+		addSelector(labelContainerKeyPrefix+target, master.Name)
+}
+
+// Return a reconciler NodePort service object for the given network service spec
+func buildNetworkServiceObject(spec *NetworkServiceSpec) (*reconciler.Object, error) {
+	obj, err := k8s.ObjectFromFile(templateDir+templateService, spec, &corev1.ServiceList{})
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
 }
 
 // Return the StorageClassName for the supplied list of services. Ignore services that are stateless. May return empty.
@@ -315,138 +406,6 @@ func getServiceAccount(master *v1alpha1.CDAPMaster, services ServiceGroup) (stri
 	return serviceAccount, nil
 }
 
-// Return a single single-/multi- container deployment containing a list of supplied services
-func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceGroup, labels map[string]string, cconf, hconf, dataDir string) (*DeploymentSpec, error) {
-	objName := getObjName(master, name)
-	serviceAccount, err := getServiceAccount(master, services)
-	if err != nil {
-		return nil, err
-	}
-	runtimeClass, err := getRuntimeClass(master, services)
-	if err != nil {
-		return nil, err
-	}
-	priorityClass, err := getPriorityClass(master, services)
-	if err != nil {
-		return nil, err
-	}
-
-	nodeSelector := getNodeSelector(master, services)
-	spec := newDeploymentSpec(master, objName, labels, cconf, hconf).
-		setServiceAccountName(serviceAccount).
-		setNodeSelector(nodeSelector).
-		setRuntimeClassName(runtimeClass).
-		setPriorityClassName(priorityClass)
-	// Add each service as a container
-	for _, s := range services {
-		ss := getCDAPServiceSpec(master, s)
-		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
-		if s == serviceUserInterface {
-			c = updateSpecForUserInterface(master, c)
-		}
-		spec = spec.withContainer(c)
-
-		// Adding a label to allow k8s service selector to easily find the pod
-		spec = spec.addLabel(labelContainerKeyPrefix + s, master.Name)
-	}
-	return spec, nil
-}
-
-// Return a NodePort service to expose the supplied target service
-func buildNetworkService(master *v1alpha1.CDAPMaster, name NetworkServiceName, target ServiceName, labels map[string]string) *NetworkServiceSpec {
-	s := getCDAPExternalService(target, master)
-	objName := getObjName(master, name)
-	return newNetworkServiceSpec(objName, labels, s.ServiceType, s.ServicePort, master).
-		addSelector(labelContainerKeyPrefix+target, master.Name)
-}
-
-
-
-// Return a list of reconciler objects (e.g. statefulsets, deployment, NodePort service) for the given deployment plan
-func buildObjectsForDeploymentPlan(spec *DeploymentPlanSpec) ([]reconciler.Object, error) {
-	var objs []reconciler.Object
-	for _, s := range spec.Stateful {
-		obj, err := buildStatefulSetsObject(s)
-		if err != nil {
-			return nil, err
-		}
-		objs = append(objs, *obj)
-	}
-	for _, s := range spec.Deployment {
-		obj, err := buildDeploymentObject(s)
-		if err != nil {
-			return nil, err
-		}
-		objs = append(objs, *obj)
-	}
-	for _, s := range spec.NetworkServices {
-		obj, err := buildNetworkServiceObject(s)
-		if err != nil {
-			return nil, err
-		}
-		objs = append(objs, *obj)
-
-	}
-	return objs, nil
-}
-
-// Return a reconciler statefulset object for the given statefulsets spec
-func buildStatefulSetsObject(spec *StatefulSpec) (*reconciler.Object, error) {
-	obj, err := k8s.ObjectFromFile(templateDir+templateStatefulSet, spec, &appsv1.StatefulSetList{})
-	if err != nil {
-		return nil, err
-	}
-	return obj, nil
-}
-
-// Return a reconciler deployment object for the given deployment spec
-func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
-	obj, err := k8s.ObjectFromFile(templateDir+templateDeployment, spec, &appsv1.DeploymentList{})
-	if err != nil {
-		return nil, err
-	}
-	return obj, nil
-}
-
-// Return a reconciler NodePort service object for the given network service spec
-func buildNetworkServiceObject(spec *NetworkServiceSpec) (*reconciler.Object, error) {
-	obj, err := k8s.ObjectFromFile(templateDir+templateService, spec, &corev1.ServiceList{})
-	if err != nil {
-		return nil, err
-	}
-	return obj, nil
-}
-
-// Derive from memory resource requirements and add java max heap size to the supplied env var array if not present
-func addJavaMaxHeapEnvIfNotPresent (env []corev1.EnvVar, resources *corev1.ResourceRequirements) []corev1.EnvVar {
-	if resources == nil {
-		return env
-	}
-
-	// Nothing to set if already present
-	hasMaxHeap := false
-	for _, e := range env {
-		if e.Name == javaMaxHeapSizeEnvVarName {
-			hasMaxHeap = true
-		}
-	}
-	if hasMaxHeap {
-		return env
-	}
-
-	// Derive from memory resource requirement
-	memory := max(resources.Requests.Memory().Value(), resources.Limits.Memory().Value())
-	if memory > 0 {
-		xmx := max(memory -javaReservedNonHeap, int64(float64(memory) * javaMinHeapRatio))
-		env = append(env, corev1.EnvVar{
-			Name:  javaMaxHeapSizeEnvVarName,
-			Value: fmt.Sprintf("-Xmx%v", xmx),
-		})
-	}
-	return env
-}
-
 // Use reflection to extract the string value of supplied field name across all service specs. Return the value only
 // if it is the same across all services. Otherwise return an error.
 // This is used to ensure  all services in the same pod not having conflicting Pod-level settings
@@ -503,4 +462,43 @@ func getFieldValueIfUnique(master *v1alpha1.CDAPMaster, services ServiceGroup, f
 		}
 	}
 	return returnVal, nil
+}
+
+// Update settings in container spec for userinterface service
+func updateSpecForUserInterface(master *v1alpha1.CDAPMaster, spec *ContainerSpec) *ContainerSpec {
+	return spec.
+		setImage(master.Status.UserInterfaceImageToUse).
+		setWorkingDir("/opt/cdap/ui").
+		setCommand("bin/node").
+		setArgs("index.js", "start").
+		addEnv("NODE_ENV", "production")
+}
+
+// Derive from memory resource requirements and add java max heap size to the supplied env var array if not present
+func addJavaMaxHeapEnvIfNotPresent (env []corev1.EnvVar, resources *corev1.ResourceRequirements) []corev1.EnvVar {
+	if resources == nil {
+		return env
+	}
+
+	// Nothing to set if already present
+	hasMaxHeap := false
+	for _, e := range env {
+		if e.Name == javaMaxHeapSizeEnvVarName {
+			hasMaxHeap = true
+		}
+	}
+	if hasMaxHeap {
+		return env
+	}
+
+	// Derive from memory resource requirement
+	memory := max(resources.Requests.Memory().Value(), resources.Limits.Memory().Value())
+	if memory > 0 {
+		xmx := max(memory -javaReservedNonHeap, int64(float64(memory) * javaMinHeapRatio))
+		env = append(env, corev1.EnvVar{
+			Name:  javaMaxHeapSizeEnvVarName,
+			Value: fmt.Sprintf("-Xmx%v", xmx),
+		})
+	}
+	return env
 }
