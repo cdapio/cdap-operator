@@ -53,6 +53,8 @@ var _ = Describe("Controller Suite", func() {
 			strategyHandler.Init()
 			serviceGroupMap, err := strategyHandler.getStrategy(0)
 
+			expectedCount := len(serviceGroupMap.stateful) + len(serviceGroupMap.deployment) + len(serviceGroupMap.networkService)
+			actualCount := 0
 			for _, obj := range objs {
 				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.StatefulSet); ok {
 					for k, _ := range serviceGroupMap.stateful {
@@ -61,6 +63,7 @@ var _ = Describe("Controller Suite", func() {
 							Expect(err).To(BeNil())
 							expected := readExpectedJson(k + ".json")
 							diffJson(expected, actual)
+							actualCount++
 						}
 					}
 				}
@@ -71,6 +74,7 @@ var _ = Describe("Controller Suite", func() {
 							Expect(err).To(BeNil())
 							expected := readExpectedJson(k + ".json")
 							diffJson(expected, actual)
+							actualCount++
 						}
 					}
 				}
@@ -81,12 +85,15 @@ var _ = Describe("Controller Suite", func() {
 							Expect(err).To(BeNil())
 							expected := readExpectedJson(k + "_service.json")
 							diffJson(expected, actual)
+							actualCount++
 						}
 					}
 				}
 			}
+			Expect(expectedCount).To(Equal(actualCount))
 		})
 	})
+
 	Describe("Set java max heap size env var", func() {
 		var (
 			envVar    []corev1.EnvVar
@@ -117,6 +124,76 @@ var _ = Describe("Controller Suite", func() {
 		It("java max heap size added", func() {
 			envNew := addJavaMaxHeapEnvIfNotPresent(envVar, resources)
 			Expect(envNew).To(Equal(envVar))
+		})
+	})
+	Describe("Extract field value from CDAPServiceSpec", func() {
+		var (
+			// Make the value the same as field name to simplifying the tests below
+			serviceAccountName = "ServiceAccountName"
+			runtimeClassName   = "RuntimeClassName"
+			priorityClassName  = "PriorityClassName"
+			invalidFiledValue  = "some_invalid_field_value"
+			master             *v1alpha1.CDAPMaster
+			emptyMaster        *v1alpha1.CDAPMaster
+			invalidMaster      *v1alpha1.CDAPMaster
+			services           ServiceGroup
+		)
+		BeforeEach(func() {
+			emptyMaster = &v1alpha1.CDAPMaster{}
+			master = &v1alpha1.CDAPMaster{
+				Spec: v1alpha1.CDAPMasterSpec{
+					ServiceAccountName: "service_account_name",
+					Logs: v1alpha1.LogsSpec{
+						CDAPStatefulServiceSpec: v1alpha1.CDAPStatefulServiceSpec{
+							CDAPServiceSpec: v1alpha1.CDAPServiceSpec{
+								ServiceAccountName: serviceAccountName,
+								NodeSelector:       nil,
+								RuntimeClassName:   &runtimeClassName,
+								PriorityClassName:  &priorityClassName,
+							},
+						},
+					},
+					Metrics: v1alpha1.MetricsSpec{
+						CDAPStatefulServiceSpec: v1alpha1.CDAPStatefulServiceSpec{
+							CDAPServiceSpec: v1alpha1.CDAPServiceSpec{
+								ServiceAccountName: serviceAccountName,
+								NodeSelector:       nil,
+								RuntimeClassName:   &runtimeClassName,
+								PriorityClassName:  &priorityClassName,
+							},
+						},
+					},
+				},
+			}
+			invalidMaster = &v1alpha1.CDAPMaster{}
+			*invalidMaster = *master
+			invalidMaster.Spec.Logs.CDAPServiceSpec.ServiceAccountName = invalidFiledValue
+			invalidMaster.Spec.Logs.CDAPServiceSpec.RuntimeClassName = &invalidFiledValue
+			invalidMaster.Spec.Logs.CDAPServiceSpec.PriorityClassName = &invalidFiledValue
+			// Adding AppFabric intentionally to test the case where fields are unset for one of the service
+			services = ServiceGroup{serviceLogs, serviceMetrics, serviceAppFabric}
+		})
+		It("Extract empty field value", func() {
+			for _, field := range []string{"ServiceAccountName", "RuntimeClassName", "PriorityClassName"} {
+				val, err := extractFieldValueIfUnique(emptyMaster, services, field)
+				Expect(err).To(BeNil())
+				Expect(val).To(BeNil())
+			}
+		})
+		It("Extract valid non-empty field value", func() {
+			for _, field := range []string{"ServiceAccountName", "RuntimeClassName", "PriorityClassName"} {
+				val, err := extractFieldValueIfUnique(master, services, field)
+				Expect(err).To(BeNil())
+				val, ok := val.(string)
+				Expect(ok).To(BeTrue())
+				Expect(val).To(Equal(field))
+			}
+		})
+		It("Extract invalid non-empty field value", func() {
+			for _, field := range []string{"ServiceAccountName", "RuntimeClassName", "PriorityClassName"} {
+				_, err := extractFieldValueIfUnique(invalidMaster, services, field)
+				Expect(err).NotTo(BeNil())
+			}
 		})
 	})
 })

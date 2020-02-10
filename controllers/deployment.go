@@ -5,13 +5,17 @@ import (
 	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"log"
+	"reflect"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
+	"strings"
 )
 
 var strategyHandler DeploymentStrategy
 
 func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	strategyHandler.Init()
 }
 
@@ -138,13 +142,35 @@ func buildCDAPDeploymentSpec(master *alpha1.CDAPMaster, labels map[string]string
 			addEnv("NODE_ENV", "production")
 	}
 
+	extractFieldValueAndUpdate := func(master *alpha1.CDAPMaster, services ServiceGroup, fieldName string, value *string) error {
+		if newVal, err := extractFieldValueIfUnique(master, services, fieldName); err != nil {
+			return err
+		} else if newVal != nil {
+			if newVal, ok := newVal.(string); !ok {
+				return fmt.Errorf("unable to cast value of field %v to string ", fieldName)
+			} else {
+				*value = newVal
+			}
+		}
+		return nil
+	}
+
 	// Build a single StatefulSet
 	buildStateful := func(name string, serviceGroup ServiceGroup) (*StatefulSpec, error) {
 		objectName := getObjectName(m.Name, name)
-		serviceAccount := m.Spec.ServiceAccountName // TODO: scan all service specs to find override
-		nodeSelector := make(map[string]string)     // TODO: scan all service specs to do a merge
-		runtimeClass := ""                          // TODO: scan all service specs to find override
-		priorityClass := ""                         // TODO: scan all service spaces to find override
+		serviceAccount := m.Spec.ServiceAccountName
+		if err := extractFieldValueAndUpdate(m, serviceGroup, "ServiceAccountName", &serviceAccount); err != nil {
+			return nil, err
+		}
+		runtimeClass := ""
+		if err := extractFieldValueAndUpdate(m, serviceGroup, "RuntimeClassName", &runtimeClass); err != nil {
+			return nil, err
+		}
+		priorityClass := ""
+		if err := extractFieldValueAndUpdate(m, serviceGroup, "PriorityClassName", &priorityClass); err != nil {
+			return nil, err
+		}
+		nodeSelector := make(map[string]string) // TODO
 		spec := newStatefulSpec(objectName, labels, cconf, hconf, master).
 			setServiceAccountName(serviceAccount).
 			setNodeSelector(nodeSelector).
@@ -196,12 +222,21 @@ func buildCDAPDeploymentSpec(master *alpha1.CDAPMaster, labels map[string]string
 		return spec, nil
 	}
 
-	buildDeployment := func(name string, serviceGroup ServiceGroup) *DeploymentSpec {
+	buildDeployment := func(name string, serviceGroup ServiceGroup) (*DeploymentSpec, error) {
 		objectName := getObjectName(m.Name, name)
-		serviceAccount := m.Spec.ServiceAccountName // TODO: scan all service specs to find override
-		nodeSelector := make(map[string]string)     // TODO: scan all service specs to do a merge
-		runtimeClass := ""                          // TODO: scan all service specs to find override
-		priorityClass := ""                         // TODO: scan all service spaces to find override
+		serviceAccount := m.Spec.ServiceAccountName
+		if err := extractFieldValueAndUpdate(m, serviceGroup, "ServiceAccountName", &serviceAccount); err != nil {
+			return nil, err
+		}
+		runtimeClass := ""
+		if err := extractFieldValueAndUpdate(m, serviceGroup, "RuntimeClassName", &runtimeClass); err != nil {
+			return nil, err
+		}
+		priorityClass := ""
+		if err := extractFieldValueAndUpdate(m, serviceGroup, "PriorityClassName", &priorityClass); err != nil {
+			return nil, err
+		}
+		nodeSelector := make(map[string]string) // TODO
 		spec := newDeploymentSpec(objectName, labels, cconf, hconf, master).
 			setServiceAccountName(serviceAccount).
 			setNodeSelector(nodeSelector).
@@ -219,7 +254,7 @@ func buildCDAPDeploymentSpec(master *alpha1.CDAPMaster, labels map[string]string
 			// Adding a label to allow k8s service selector to easily find the pod
 			spec = spec.addLabel(labelContainerKeyPrefix+service, m.Name)
 		}
-		return spec
+		return spec, nil
 	}
 
 	buildNetworkService := func(name NetworkServiceName, target ServiceName, networkType *string, networkPort *int32) *NetworkServiceSpec {
@@ -238,7 +273,11 @@ func buildCDAPDeploymentSpec(master *alpha1.CDAPMaster, labels map[string]string
 		spec = spec.withStateful(statefulsetSpec)
 	}
 	for k, v := range serviceGroupMap.deployment {
-		spec = spec.withDeployment(buildDeployment(k, v))
+		deploymentSpec, err := buildDeployment(k, v)
+		if err != nil {
+			return nil, err
+		}
+		spec = spec.withDeployment(deploymentSpec)
 	}
 	for name, targetService := range serviceGroupMap.networkService {
 		s := getCDAPExternalService(targetService, master)
@@ -318,3 +357,40 @@ func addJavaMaxHeapEnvIfNotPresent (env []corev1.EnvVar, resources *corev1.Resou
 	return env
 }
 
+func extractFieldValueIfUnique(master *alpha1.CDAPMaster, services ServiceGroup, fieldName string) (interface{}, error) {
+	values := make([]interface{}, 0)
+	// Get field value from CDAPServiceSpec of each service
+	for _, service := range services {
+		specVal := reflect.ValueOf(master.Spec).FieldByName(service)
+		if !specVal.IsValid() {
+			return nil, fmt.Errorf("filed %s not valid", service)
+		}
+		fieldVal := reflect.ValueOf(specVal.Interface()).FieldByName(fieldName)
+		if !fieldVal.IsValid() {
+			return nil, fmt.Errorf("filed %s not valid", fieldName)
+		}
+		if fieldVal.Kind() == reflect.Ptr {
+			// Skip if nil pointer
+			if fieldVal.IsNil() {
+				continue
+			}
+			fieldVal = fieldVal.Elem()
+		}
+		// Skip if empty
+		if fieldVal.Len() == 0 {
+			continue
+		}
+		values = append(values, fieldVal.Interface())
+	}
+	// Return the value only if they are all the same.
+	// Mqy return nil indicating value is either empty or not set.
+	var returnVal interface{} = nil
+	for i := 0; i < len(values); i++ {
+		if returnVal == nil {
+			returnVal = values[i]
+		} else if !reflect.DeepEqual(returnVal, values[i]) {
+			return nil, fmt.Errorf("value of field %v not the same across (%s)", fieldName, strings.Join(services, ","))
+		}
+	}
+	return returnVal, nil
+}
