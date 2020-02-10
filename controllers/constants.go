@@ -44,6 +44,7 @@ const (
 	defaultImage             = "gcr.io/cdapio/cdap:latest"
 	defaultRouterPort        = 11015
 	defaultUserInterfacePort = 11011
+	defaultStorageSize       = "200Gi"
 
 	// kubernetes labels
 	labelInstanceKey        = "cdap.instance"

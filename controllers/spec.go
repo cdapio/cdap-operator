@@ -228,11 +228,11 @@ func (s *DeploymentSpec) withContainer(containerSpec *ContainerSpec) *Deployment
 
 // For VolumnClaimTemplate in Statefulset
 type StorageSpec struct {
-	StorageClassName *string `json:"storageClassName,omitempty"`
+	StorageClassName string `json:"storageClassName,omitempty"`
 	StorageSize      string  `json:"storageSize,omitempty"`
 }
 
-func newStorageSpec(storageClassName *string, storageSize string) *StorageSpec {
+func newStorageSpec(storageClassName string, storageSize string) *StorageSpec {
 	s := new(StorageSpec)
 	s.StorageClassName = storageClassName
 	s.StorageSize = storageSize
@@ -293,7 +293,7 @@ func (s *StatefulSpec) withContainer(containerSpec *ContainerSpec) *StatefulSpec
 	return s
 }
 
-func (s *StatefulSpec) withStorage(storageClassName *string, storageSize string) *StatefulSpec {
+func (s *StatefulSpec) withStorage(storageClassName string, storageSize string) *StatefulSpec {
 	s.Storage = newStorageSpec(storageClassName, storageSize)
 	return s
 }

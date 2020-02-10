@@ -5,6 +5,7 @@ import (
 	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"reflect"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
@@ -213,35 +214,68 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	}
 
 	// Get storage class and calculates total disk size required
-	// TODO: refactor the following code
-	var storageClassName *string
-	var totalStorageSize uint64 = 0
-	for _, service := range services {
-		serviceStatefulSpec := getCDAPStatefulServiceSpec(service, master)
-		if serviceStatefulSpec == nil {
+	storageClass, err := getStorageClass(master, services)
+	if err != nil { return nil, err }
+	storageSize, err := aggregateStorageSize(master, services)
+	if err != nil { return nil, err }
+	spec = spec.withStorage(storageClass, storageSize)
+	return spec, nil
+}
+
+// Return the StorageClassName for the supplied list of services. Ignore services that are stateless. May return empty.
+// Fail if found  multiple conflicting settings, this is to ensure consistent settings for the supplied services to
+// be colocated in the same pod
+func getStorageClass(master *v1alpha1.CDAPMaster, services ServiceGroup) (string, error) {
+	vals := make(map[string]bool)
+	storageClass := ""
+	for _, s := range services {
+		ss := getCDAPStatefulServiceSpec(s, master)
+		if ss == nil {
+			// the service in the supplied list might be a stateless.
+			// Depending on deployment plan, we may colocate a stateful and a stateless service in the same pod.
 			continue
 		}
-		if serviceStatefulSpec.StorageSize != "" {
-			size, err := FromHumanReadableBytes(serviceStatefulSpec.StorageSize)
-			if err != nil {
-				return nil, fmt.Errorf("unable to parse stroage size")
-			}
-			totalStorageSize += size
+		if ss.StorageClassName == nil {
+			continue
 		}
-		if serviceStatefulSpec.StorageClassName != nil {
-			if storageClassName == nil {
-				storageClassName = serviceStatefulSpec.StorageClassName
-			} else if *storageClassName != *serviceStatefulSpec.StorageClassName {
-				return nil, fmt.Errorf("StorageClassName inconsistent across services in a group")
-			}
+
+		if len(*ss.StorageClassName) == 0 {
+			continue
 		}
+		vals[*ss.StorageClassName] = true
+		storageClass = *ss.StorageClassName
 	}
-	storageSize := ""
-	if totalStorageSize > 0 {
-		storageSize = ToHumanReadableBytes(totalStorageSize)
+	if len(vals) > 1 {
+		return "", fmt.Errorf("conflicting StorageClassNames across services (%s)", strings.Join(services, ","))
 	}
-	spec = spec.withStorage(storageClassName, storageSize)
-	return spec, nil
+	return storageClass, nil
+}
+
+// Return the aggregated storage size across the supplied list of services. Ignore the services that are stateless
+// and doesn't have storage settings. If no storage size found, return default storage size.
+// Fail if unable to parse storage size string
+func aggregateStorageSize(master *v1alpha1.CDAPMaster, services ServiceGroup) (string, error) {
+	total := resource.NewQuantity(0, resource.BinarySI)
+	for _, s := range services {
+		ss := getCDAPStatefulServiceSpec(s, master)
+		if ss == nil {
+			// the service in the supplied list might be a stateless.
+			// Depending on deployment plan, we may colocate a stateful and a stateless service in the same pod.
+			continue
+		}
+		if len(ss.StorageSize) == 0 {
+			continue
+		}
+		size, err := resource.ParseQuantity(ss.StorageSize)
+		if err != nil {
+			return "", err
+		}
+		total.Add(size)
+	}
+	if total.IsZero() {
+		return defaultStorageSize, nil
+	}
+	return total.String(), nil
 }
 
 // Return merged nodeSelector map across all supplied services
