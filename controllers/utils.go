@@ -16,8 +16,8 @@ func int32Ptr(value int32) *int32 {
 	return &value
 }
 
-func getObjectName(masterName, name string) string {
-	return fmt.Sprintf("%s%s-%s", objectNamePrefix, masterName, strings.ToLower(name))
+func getObjName(master *v1alpha1.CDAPMaster, name string) string {
+	return fmt.Sprintf("%s%s-%s", objectNamePrefix, master.Name, strings.ToLower(name))
 }
 
 func mergeMaps(current, added map[string]string) map[string]string {
@@ -26,7 +26,8 @@ func mergeMaps(current, added map[string]string) map[string]string {
 	return labels
 }
 
-func getCDAPServiceSpec(serviceName ServiceName, master *v1alpha1.CDAPMaster) *v1alpha1.CDAPServiceSpec {
+// TODO: simplify the code by using reflection
+func getCDAPServiceSpec(master *v1alpha1.CDAPMaster, serviceName ServiceName ) *v1alpha1.CDAPServiceSpec {
 	serviceSpecMap := map[ServiceName]func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPServiceSpec{
 		serviceAppFabric: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPServiceSpec {
 			return &master.Spec.AppFabric.CDAPServiceSpec
@@ -56,6 +57,7 @@ func getCDAPServiceSpec(serviceName ServiceName, master *v1alpha1.CDAPMaster) *v
 	return serviceSpecMap[serviceName](master)
 }
 
+// TODO: simplify the code by using reflection
 func getCDAPStatefulServiceSpec(serviceName ServiceName, master *v1alpha1.CDAPMaster) *v1alpha1.CDAPStatefulServiceSpec {
 	serviceSpecMap := map[ServiceName]func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPStatefulServiceSpec{
 		serviceAppFabric: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPStatefulServiceSpec {
@@ -86,6 +88,7 @@ func getCDAPStatefulServiceSpec(serviceName ServiceName, master *v1alpha1.CDAPMa
 	return serviceSpecMap[serviceName](master)
 }
 
+// TODO: simplify the code by using reflection
 func getCDAPExternalService(serviceName ServiceName, master *v1alpha1.CDAPMaster) *v1alpha1.CDAPExternalServiceSpec {
 	serviceSpecMap := map[ServiceName]func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPExternalServiceSpec{
 		serviceRouter: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPExternalServiceSpec {
@@ -98,14 +101,14 @@ func getCDAPExternalService(serviceName ServiceName, master *v1alpha1.CDAPMaster
 	return serviceSpecMap[serviceName](master)
 }
 
-func Min(x, y int64) int64 {
+func min(x, y int64) int64 {
 	if x < y {
 		return x
 	}
 	return y
 }
 
-func Max(x, y int64) int64 {
+func max(x, y int64) int64 {
 	if x > y {
 		return x
 	}

@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	alpha1 "cdap.io/cdap-operator/api/v1alpha1"
+	v1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,7 +47,7 @@ type CDAPMasterReconciler struct {
 
 func (r *CDAPMasterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&alpha1.CDAPMaster{}).
+		For(&v1alpha1.CDAPMaster{}).
 		Complete(NewReconciler(mgr))
 }
 
@@ -65,7 +65,7 @@ func (r *CDAPMasterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func NewReconciler(mgr manager.Manager) *gr.Reconciler {
 	return gr.
 		WithManager(mgr).
-		For(&alpha1.CDAPMaster{}, alpha1.GroupVersion).
+		For(&v1alpha1.CDAPMaster{}, v1alpha1.GroupVersion).
 		Using(&VersionUpdateHandler{}).
 		Using(&ConfigMapHandler{}).
 		Using(&ServiceHandler{}).
@@ -75,7 +75,7 @@ func NewReconciler(mgr manager.Manager) *gr.Reconciler {
 }
 
 func HandleError(resource interface{}, err error, kind string) {
-	cm := resource.(*alpha1.CDAPMaster)
+	cm := resource.(*v1alpha1.CDAPMaster)
 	if err != nil {
 		cm.Status.SetError("ErrorSeen", err.Error())
 	} else {
@@ -84,7 +84,7 @@ func HandleError(resource interface{}, err error, kind string) {
 }
 
 func ApplyDefaults(resource interface{}) {
-	r := resource.(*alpha1.CDAPMaster)
+	r := resource.(*v1alpha1.CDAPMaster)
 	if r.Labels == nil {
 		r.Labels = make(map[string]string)
 	}
@@ -124,7 +124,9 @@ func ApplyDefaults(resource interface{}) {
 	finalizer.EnsureStandard(r)
 }
 
-// Handling reconciling ConfigMapHandler objects
+/////////////////////////////////////////////////////////
+///// Handling reconciling ConfigMapHandler objects /////
+/////////////////////////////////////////////////////////
 type ConfigMapHandler struct{}
 
 func (h *ConfigMapHandler) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
@@ -136,7 +138,7 @@ func (h *ConfigMapHandler) Observables(rsrc interface{}, labels map[string]strin
 
 func (h *ConfigMapHandler) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	var expected []reconciler.Object
-	m := rsrc.(*alpha1.CDAPMaster)
+	m := rsrc.(*v1alpha1.CDAPMaster)
 
 	configs := map[string][]string{
 		configMapCConf: {"cdap-site.xml", "logback.xml", "logback-container.xml"},
@@ -144,7 +146,7 @@ func (h *ConfigMapHandler) Objects(rsrc interface{}, rsrclabels map[string]strin
 	}
 
 	templateData := struct {
-		Master *alpha1.CDAPMaster
+		Master *v1alpha1.CDAPMaster
 	}{
 		Master: m,
 	}
@@ -162,7 +164,7 @@ func (h *ConfigMapHandler) Objects(rsrc interface{}, rsrclabels map[string]strin
 	}
 
 	for key, templateFiles := range configs {
-		spec := newConfigMapSpec(getObjectName(m.Name, key), mergeMaps(m.Labels, rsrclabels), m)
+		spec := newConfigMapSpec(m, getObjName(m, key), mergeMaps(m.Labels, rsrclabels))
 		for _, file := range templateFiles {
 			data, err := fillTemplate(file)
 			if err != nil {
@@ -197,8 +199,9 @@ func buildConfigMapObject(spec *ConfigMapSpec) reconciler.Object {
 	}
 	return obj
 }
-
-// Handling reconciling deployment of all services
+///////////////////////////////////////////////////////////
+///// Handling reconciling deployment of all services /////
+///////////////////////////////////////////////////////////
 type ServiceHandler struct{}
 
 func (h *ServiceHandler) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
@@ -213,16 +216,16 @@ func (h *ServiceHandler) Observables(rsrc interface{}, labels map[string]string,
 func (h *ServiceHandler) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	var expected, objs []reconciler.Object
 
-	m := rsrc.(*alpha1.CDAPMaster)
+	m := rsrc.(*v1alpha1.CDAPMaster)
 	// Merge in labels (e.g. "using: <handler method name>") added by underlying reconciler-controller library
 	labels := mergeMaps(m.Labels, rsrclabels)
 
 	// Build deployment specification that defines the statefulset, deployment, node port services to be created.
-	spec, err := buildCDAPDeploymentSpec(m, labels)
+	spec, err := buildDeploymentPlanSpec(m, labels)
 	if err != nil {
 		return []reconciler.Object{}, err
 	}
-	objs, err = buildObjects(spec)
+	objs, err = buildObjectsForDeploymentPlan(spec)
 	if err != nil {
 		return []reconciler.Object{}, err
 	}
@@ -276,7 +279,9 @@ func CopyNodePortIfAny(expected, observed []reconciler.Object) {
 	}
 }
 
-// Handler for image version upgrade/downgrade
+///////////////////////////////////////////////////////
+///// Handler for image version upgrade/downgrade /////
+///////////////////////////////////////////////////////
 type VersionUpdateHandler struct{}
 
 func (h *VersionUpdateHandler) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
@@ -287,7 +292,7 @@ func (h *VersionUpdateHandler) Observables(rsrc interface{}, labels map[string]s
 }
 
 func (h *VersionUpdateHandler) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
-	m := rsrc.(*alpha1.CDAPMaster)
+	m := rsrc.(*v1alpha1.CDAPMaster)
 	labels := mergeMaps(m.Labels, rsrclabels)
 	return handleVersionUpdate(m, labels, observed)
 }

@@ -25,6 +25,9 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // CDAPMasterSpec defines the desired state of CDAPMaster
+//
+// Field names for individual services must match the constant values of ServiceName in constants.go as reflection
+// is used to find field value.
 type CDAPMasterSpec struct {
 	// Image is the docker image name for the CDAP backend.
 	Image string `json:"image,omitempty"`

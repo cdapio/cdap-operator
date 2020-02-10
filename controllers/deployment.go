@@ -1,30 +1,29 @@
 package controllers
 
 import (
-	alpha1 "cdap.io/cdap-operator/api/v1alpha1"
+	v1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
 	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"log"
 	"reflect"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
 	"strings"
 )
 
-var strategyHandler DeploymentStrategy
+var deploymentPlanner *DeploymentPlan
 
 func init() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	strategyHandler.Init()
+	deploymentPlanner = &DeploymentPlan{}
+	deploymentPlanner.Init()
 }
 
-type DeploymentStrategy struct {
+type DeploymentPlan struct {
 	// Map from number of Pods to a list of statefuls,  deployments and k8s services where each statefulset/deployment
 	// is a multi-container Pod with a list of services in it.
-	strategyMap map[int32]ServiceGroupMap
+	planMap map[int32]ServiceGroups
 }
-type ServiceGroupMap struct {
+type ServiceGroups struct {
 	// Map from statefulset object name to a list services in this statefulset.
 	stateful map[ServiceGroupName]ServiceGroup
 	// Map from deployment object name to a list services in this deployment.
@@ -36,11 +35,11 @@ type ServiceGroupName = string
 type ServiceGroup = []ServiceName
 type NetworkServiceName = string
 
-func (d *DeploymentStrategy) Init() {
-	d.strategyMap = make(map[int32]ServiceGroupMap)
+func (d *DeploymentPlan) Init() {
+	d.planMap = make(map[int32]ServiceGroups)
 
 	// Default: each service runs in its own Pod
-	d.strategyMap[0] = ServiceGroupMap{
+	d.planMap[0] = ServiceGroups{
 		stateful: map[ServiceGroupName]ServiceGroup{
 			"logs":      {serviceLogs},
 			"messaging": {serviceMessaging},
@@ -60,7 +59,7 @@ func (d *DeploymentStrategy) Init() {
 	}
 
 	// 1 Pod: all services run in a single Pod
-	d.strategyMap[1] = ServiceGroupMap{
+	d.planMap[1] = ServiceGroups{
 		stateful: map[ServiceGroupName]ServiceGroup{
 			"standalone": {
 				serviceLogs, serviceMessaging, serviceMetrics, servicePreview, serviceAppFabric, serviceMetadata,
@@ -72,8 +71,8 @@ func (d *DeploymentStrategy) Init() {
 		},
 	}
 
-	// 2 Pod: UserInterface in its own Pod. All other services in "Backend" Pod
-	d.strategyMap[2] = ServiceGroupMap{
+	// 2 Pods: UserInterface in its own Pod. All other services in "Backend" Pod
+	d.planMap[2] = ServiceGroups{
 		stateful: map[ServiceGroupName]ServiceGroup{
 			"backend": {
 				serviceLogs, serviceMessaging, serviceMetrics, servicePreview, serviceAppFabric, serviceMetadata,
@@ -88,8 +87,8 @@ func (d *DeploymentStrategy) Init() {
 		},
 	}
 
-	// 3 Pod: UserInterface and router in their own Pod. Rest in "Backend" Pod
-	d.strategyMap[3] = ServiceGroupMap{
+	// 3 Pods: UserInterface and router in their own Pod. Rest in "Backend" Pod
+	d.planMap[3] = ServiceGroups{
 		stateful: map[ServiceGroupName]ServiceGroup{
 			"backend": {serviceLogs, serviceMessaging, serviceMetrics, servicePreview, serviceAppFabric, serviceMetadata},
 		},
@@ -104,192 +103,237 @@ func (d *DeploymentStrategy) Init() {
 	}
 }
 
-func (d *DeploymentStrategy) getStrategy(numPods int32) (*ServiceGroupMap, error) {
-	s, ok := d.strategyMap[numPods]
+// Given desired number of pods, return a list of service groups where each group contains services colocated in the
+// same pod.
+func (d *DeploymentPlan) getPlan(numPods int32) (*ServiceGroups, error) {
+	s, ok := d.planMap[numPods]
 	if !ok {
-		return nil, fmt.Errorf("unsupported deployment strategy for NumPods %d", numPods)
+		return nil, fmt.Errorf("unsupported deployment plan for NumPods %d", numPods)
 	}
 	return &s, nil
 }
 
-func buildCDAPDeploymentSpec(master *alpha1.CDAPMaster, labels map[string]string) (*CDAPDeploymentSpec, error) {
-	m := master
-
+// Build deployment plan (e.g. a list of statefulsets, deployments and NodePort services)
+func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]string) (*DeploymentPlanSpec, error) {
 	// Wait for version update handler to set the image version to use in the status field
-	if m.Status.ImageToUse == "" || m.Status.UserInterfaceImageToUse == "" {
-		return &CDAPDeploymentSpec{}, nil
+	if master.Status.ImageToUse == "" || master.Status.UserInterfaceImageToUse == "" {
+		return &DeploymentPlanSpec{}, nil
 	}
 
-	cconf := getObjectName(m.Name, configMapCConf)
-	hconf := getObjectName(m.Name, configMapHConf)
-	dataDir := confLocalDataDirVal
-
+	// Get deployment plan depending on the number of pods desired
 	var numPods int32 = 0
-	if m.Spec.NumPods != nil {
-		numPods = *m.Spec.NumPods
+	if master.Spec.NumPods != nil {
+		numPods = *master.Spec.NumPods
 	}
-	serviceGroupMap, err := strategyHandler.getStrategy(numPods)
+	serviceGroups, err := deploymentPlanner.getPlan(numPods)
 	if err != nil {
 		return nil, err
 	}
 
-	updateSpecForUserInterface := func(c *ContainerSpec) *ContainerSpec {
-		return c.
-			setImage(master.Status.UserInterfaceImageToUse).
-			setWorkingDir("/opt/cdap/ui").
-			setCommand("bin/node").
-			setArgs("index.js", "start").
-			addEnv("NODE_ENV", "production")
-	}
+	cconf := getObjName(master, configMapCConf)
+	hconf := getObjName(master, configMapHConf)
+	dataDir := confLocalDataDirVal
 
-	extractFieldValueAndUpdate := func(master *alpha1.CDAPMaster, services ServiceGroup, fieldName string, value *string) error {
-		if newVal, err := extractFieldValueIfUnique(master, services, fieldName); err != nil {
-			return err
-		} else if newVal != nil {
-			if newVal, ok := newVal.(string); !ok {
-				return fmt.Errorf("unable to cast value of field %v to string ", fieldName)
-			} else {
-				*value = newVal
-			}
-		}
-		return nil
-	}
-
-	// Build a single StatefulSet
-	buildStateful := func(name string, serviceGroup ServiceGroup) (*StatefulSpec, error) {
-		objectName := getObjectName(m.Name, name)
-		serviceAccount := m.Spec.ServiceAccountName
-		if err := extractFieldValueAndUpdate(m, serviceGroup, "ServiceAccountName", &serviceAccount); err != nil {
-			return nil, err
-		}
-		runtimeClass := ""
-		if err := extractFieldValueAndUpdate(m, serviceGroup, "RuntimeClassName", &runtimeClass); err != nil {
-			return nil, err
-		}
-		priorityClass := ""
-		if err := extractFieldValueAndUpdate(m, serviceGroup, "PriorityClassName", &priorityClass); err != nil {
-			return nil, err
-		}
-		nodeSelector := make(map[string]string) // TODO
-		spec := newStatefulSpec(objectName, labels, cconf, hconf, master).
-			setServiceAccountName(serviceAccount).
-			setNodeSelector(nodeSelector).
-			setRuntimeClassName(runtimeClass).
-			setPriorityClassName(priorityClass)
-
-		spec = spec.withInitContainer(
-			newContainerSpec("StorageInit", dataDir, master).setArgs(containerStorageMain))
-
-		for _, service := range serviceGroup {
-			serviceSpec := getCDAPServiceSpec(service, m)
-			env := addJavaMaxHeapEnvIfNotPresent(serviceSpec.Env, serviceSpec.Resources)
-			c := newContainerSpec(service, dataDir, m).setResources(serviceSpec.Resources).setEnv(env)
-			if service == serviceUserInterface {
-				c = updateSpecForUserInterface(c)
-			}
-			spec = spec.withContainer(c)
-			// Adding a label to allow k8s service selector to easily find the pod
-			spec = spec.addLabel(labelContainerKeyPrefix+service, m.Name)
-		}
-
-		var storageClassName *string
-		var totalStorageSize uint64 = 0
-		for _, service := range serviceGroup {
-			serviceStatefulSpec := getCDAPStatefulServiceSpec(service, m)
-			if serviceStatefulSpec == nil {
-				continue
-			}
-			if serviceStatefulSpec.StorageSize != "" {
-				size, err := FromHumanReadableBytes(serviceStatefulSpec.StorageSize)
-				if err != nil {
-					return nil, fmt.Errorf("unable to parse stroage size")
-				}
-				totalStorageSize += size
-			}
-			if serviceStatefulSpec.StorageClassName != nil {
-				if storageClassName == nil {
-					storageClassName = serviceStatefulSpec.StorageClassName
-				} else if *storageClassName != *serviceStatefulSpec.StorageClassName {
-					return nil, fmt.Errorf("StorageClassName inconsistent across services in a group")
-				}
-			}
-		}
-		storageSize := ""
-		if totalStorageSize > 0 {
-			storageSize = ToHumanReadableBytes(totalStorageSize)
-		}
-		spec = spec.withStorage(storageClassName, storageSize)
-		return spec, nil
-	}
-
-	buildDeployment := func(name string, serviceGroup ServiceGroup) (*DeploymentSpec, error) {
-		objectName := getObjectName(m.Name, name)
-		serviceAccount := m.Spec.ServiceAccountName
-		if err := extractFieldValueAndUpdate(m, serviceGroup, "ServiceAccountName", &serviceAccount); err != nil {
-			return nil, err
-		}
-		runtimeClass := ""
-		if err := extractFieldValueAndUpdate(m, serviceGroup, "RuntimeClassName", &runtimeClass); err != nil {
-			return nil, err
-		}
-		priorityClass := ""
-		if err := extractFieldValueAndUpdate(m, serviceGroup, "PriorityClassName", &priorityClass); err != nil {
-			return nil, err
-		}
-		nodeSelector := make(map[string]string) // TODO
-		spec := newDeploymentSpec(objectName, labels, cconf, hconf, master).
-			setServiceAccountName(serviceAccount).
-			setNodeSelector(nodeSelector).
-			setRuntimeClassName(runtimeClass).
-			setPriorityClassName(priorityClass)
-		for _, service := range serviceGroup {
-			serviceSpec := getCDAPServiceSpec(service, m)
-			env := addJavaMaxHeapEnvIfNotPresent(serviceSpec.Env, serviceSpec.Resources)
-			c := newContainerSpec(service, dataDir, m).setResources(serviceSpec.Resources).setEnv(env)
-			if service == serviceUserInterface {
-				c = updateSpecForUserInterface(c)
-			}
-			spec = spec.withContainer(c)
-
-			// Adding a label to allow k8s service selector to easily find the pod
-			spec = spec.addLabel(labelContainerKeyPrefix+service, m.Name)
-		}
-		return spec, nil
-	}
-
-	buildNetworkService := func(name NetworkServiceName, target ServiceName, networkType *string, networkPort *int32) *NetworkServiceSpec {
-		objectName := getObjectName(m.Name, name)
-		spec := newNetworkServiceSpec(objectName, labels, networkType, networkPort, master)
-		spec = spec.addSelector(labelContainerKeyPrefix+target, m.Name)
-		return spec
-	}
-
-	spec := newCDAPDeploymentSpec()
-	for k, v := range serviceGroupMap.stateful {
-		statefulsetSpec, err := buildStateful(k, v)
+	spec := newDeploymentPlanSpec()
+	// Build statefulsets
+	for k, v := range serviceGroups.stateful {
+		name := k
+		services := v
+		stateful, err := buildStatefulSets(master, name, services, labels, cconf, hconf, dataDir)
 		if err != nil {
 			return nil, err
 		}
-		spec = spec.withStateful(statefulsetSpec)
+		spec = spec.withStateful(stateful)
 	}
-	for k, v := range serviceGroupMap.deployment {
-		deploymentSpec, err := buildDeployment(k, v)
+	// Build deployment
+	for k, v := range serviceGroups.deployment {
+		name := k
+		services := v
+		deploymentSpec, err := buildDeployment(master, name, services, labels, cconf, hconf, dataDir)
 		if err != nil {
 			return nil, err
 		}
 		spec = spec.withDeployment(deploymentSpec)
 	}
-	for name, targetService := range serviceGroupMap.networkService {
-		s := getCDAPExternalService(targetService, master)
-		spec = spec.withNetworkService(buildNetworkService(name, targetService, s.ServiceType, s.ServicePort))
+	// Build NodePort service
+	for name, targetService := range serviceGroups.networkService {
+		spec = spec.withNetworkService(buildNetworkService(master, name, targetService, labels))
 	}
 	return spec, nil
 }
 
-func buildObjects(spec *CDAPDeploymentSpec) ([]reconciler.Object, error) {
+// Update settings in container spec for userinterface service
+func updateSpecForUserInterface(master *v1alpha1.CDAPMaster, spec *ContainerSpec) *ContainerSpec {
+		return spec.
+			setImage(master.Status.UserInterfaceImageToUse).
+			setWorkingDir("/opt/cdap/ui").
+			setCommand("bin/node").
+			setArgs("index.js", "start").
+			addEnv("NODE_ENV", "production")
+}
+
+// Return a single single-/multi- container StatefulSets containing a list of supplied services
+func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services ServiceGroup, labels map[string]string, cconf, hconf, dataDir string) (*StatefulSpec, error) {
+	objName := getObjName(master, name)
+	serviceAccount, err := getServiceAccount(master, services)
+	if err != nil {
+		return nil, err
+	}
+	runtimeClass, err := getRuntimeClass(master, services)
+	if err != nil {
+		return nil, err
+	}
+	priorityClass, err := getPriorityClass(master, services)
+	if err != nil {
+		return nil, err
+	}
+	nodeSelector := getNodeSelector(master, services)
+
+	spec := newStatefulSpec(master, objName, labels, cconf, hconf).
+		setServiceAccountName(serviceAccount).
+		setNodeSelector(nodeSelector).
+		setRuntimeClassName(runtimeClass).
+		setPriorityClassName(priorityClass)
+
+	// Add init container
+	spec = spec.withInitContainer(
+		newContainerSpec(master, "StorageInit", dataDir).setArgs(containerStorageMain))
+
+	// Add each service as a container
+	for _, s := range services {
+		ss := getCDAPServiceSpec(master, s)
+		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
+		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
+		if s == serviceUserInterface {
+			c = updateSpecForUserInterface(master, c)
+		}
+		spec = spec.withContainer(c)
+		// Adding a label to allow NodePort service selector to find the pod
+		spec = spec.addLabel(labelContainerKeyPrefix + s, master.Name)
+	}
+
+	// Get storage class and calculates total disk size required
+	// TODO: refactor the following code
+	var storageClassName *string
+	var totalStorageSize uint64 = 0
+	for _, service := range services {
+		serviceStatefulSpec := getCDAPStatefulServiceSpec(service, master)
+		if serviceStatefulSpec == nil {
+			continue
+		}
+		if serviceStatefulSpec.StorageSize != "" {
+			size, err := FromHumanReadableBytes(serviceStatefulSpec.StorageSize)
+			if err != nil {
+				return nil, fmt.Errorf("unable to parse stroage size")
+			}
+			totalStorageSize += size
+		}
+		if serviceStatefulSpec.StorageClassName != nil {
+			if storageClassName == nil {
+				storageClassName = serviceStatefulSpec.StorageClassName
+			} else if *storageClassName != *serviceStatefulSpec.StorageClassName {
+				return nil, fmt.Errorf("StorageClassName inconsistent across services in a group")
+			}
+		}
+	}
+	storageSize := ""
+	if totalStorageSize > 0 {
+		storageSize = ToHumanReadableBytes(totalStorageSize)
+	}
+	spec = spec.withStorage(storageClassName, storageSize)
+	return spec, nil
+}
+
+// Return merged nodeSelector map across all supplied services
+func getNodeSelector(master *v1alpha1.CDAPMaster, services ServiceGroup) map[string]string {
+	nodeSelector := make(map[string]string)
+	for _, service := range services {
+		nodeSelector = mergeMaps(nodeSelector, getCDAPServiceSpec(master, service).NodeSelector)
+	}
+	return nodeSelector
+}
+
+// Return PriorityClassName if all supplied services have the same setting, otherwise return an error
+func getPriorityClass(master *v1alpha1.CDAPMaster, services ServiceGroup) (string, error) {
+	priorityClass := ""
+	if err := getStringFieldValue(master, services, "PriorityClassName", &priorityClass); err != nil {
+		return "", err
+	}
+	return priorityClass, nil
+}
+
+// Return RuntimeClassName if all supplied services have the same setting, otherwise return an error
+func getRuntimeClass(master *v1alpha1.CDAPMaster, services ServiceGroup) (string, error) {
+	runtimeClass := ""
+	if err := getStringFieldValue(master, services, "RuntimeClassName", &runtimeClass); err != nil {
+		return "", err
+	}
+	return runtimeClass, nil
+}
+
+// Return default ServiceAccountName in CDAPMaster.Spec or the overridden setting if all supplied services have the
+// same overridden setting, otherwise return an error
+func getServiceAccount(master *v1alpha1.CDAPMaster, services ServiceGroup) (string, error) {
+	serviceAccount := master.Spec.ServiceAccountName
+	if err := getStringFieldValue(master, services, "ServiceAccountName", &serviceAccount); err != nil {
+		return "", nil
+	}
+	return serviceAccount, nil
+}
+
+// Return a single single-/multi- container deployment containing a list of supplied services
+func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceGroup, labels map[string]string, cconf, hconf, dataDir string) (*DeploymentSpec, error) {
+	objName := getObjName(master, name)
+	serviceAccount, err := getServiceAccount(master, services)
+	if err != nil {
+		return nil, err
+	}
+	runtimeClass, err := getRuntimeClass(master, services)
+	if err != nil {
+		return nil, err
+	}
+	priorityClass, err := getPriorityClass(master, services)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeSelector := getNodeSelector(master, services)
+	spec := newDeploymentSpec(master, objName, labels, cconf, hconf).
+		setServiceAccountName(serviceAccount).
+		setNodeSelector(nodeSelector).
+		setRuntimeClassName(runtimeClass).
+		setPriorityClassName(priorityClass)
+	// Add each service as a container
+	for _, s := range services {
+		ss := getCDAPServiceSpec(master, s)
+		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
+		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
+		if s == serviceUserInterface {
+			c = updateSpecForUserInterface(master, c)
+		}
+		spec = spec.withContainer(c)
+
+		// Adding a label to allow k8s service selector to easily find the pod
+		spec = spec.addLabel(labelContainerKeyPrefix + s, master.Name)
+	}
+	return spec, nil
+}
+
+// Return a NodePort service to expose the supplied target service
+func buildNetworkService(master *v1alpha1.CDAPMaster, name NetworkServiceName, target ServiceName, labels map[string]string) *NetworkServiceSpec {
+	s := getCDAPExternalService(target, master)
+	objName := getObjName(master, name)
+	return newNetworkServiceSpec(objName, labels, s.ServiceType, s.ServicePort, master).
+		addSelector(labelContainerKeyPrefix+target, master.Name)
+}
+
+
+
+// Return a list of reconciler objects (e.g. statefulsets, deployment, NodePort service) for the given deployment plan
+func buildObjectsForDeploymentPlan(spec *DeploymentPlanSpec) ([]reconciler.Object, error) {
 	var objs []reconciler.Object
 	for _, s := range spec.Stateful {
-		obj, err := buildStatefulObject(s)
+		obj, err := buildStatefulSetsObject(s)
 		if err != nil {
 			return nil, err
 		}
@@ -313,7 +357,8 @@ func buildObjects(spec *CDAPDeploymentSpec) ([]reconciler.Object, error) {
 	return objs, nil
 }
 
-func buildStatefulObject(spec *StatefulSpec) (*reconciler.Object, error) {
+// Return a reconciler statefulset object for the given statefulsets spec
+func buildStatefulSetsObject(spec *StatefulSpec) (*reconciler.Object, error) {
 	obj, err := k8s.ObjectFromFile(templateDir+templateStatefulSet, spec, &appsv1.StatefulSetList{})
 	if err != nil {
 		return nil, err
@@ -321,6 +366,7 @@ func buildStatefulObject(spec *StatefulSpec) (*reconciler.Object, error) {
 	return obj, nil
 }
 
+// Return a reconciler deployment object for the given deployment spec
 func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 	obj, err := k8s.ObjectFromFile(templateDir+templateDeployment, spec, &appsv1.DeploymentList{})
 	if err != nil {
@@ -329,6 +375,7 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 	return obj, nil
 }
 
+// Return a reconciler NodePort service object for the given network service spec
 func buildNetworkServiceObject(spec *NetworkServiceSpec) (*reconciler.Object, error) {
 	obj, err := k8s.ObjectFromFile(templateDir+templateService, spec, &corev1.ServiceList{})
 	if err != nil {
@@ -337,27 +384,56 @@ func buildNetworkServiceObject(spec *NetworkServiceSpec) (*reconciler.Object, er
 	return obj, nil
 }
 
+// Derive from memory resource requirements and add java max heap size to the supplied env var array if not present
 func addJavaMaxHeapEnvIfNotPresent (env []corev1.EnvVar, resources *corev1.ResourceRequirements) []corev1.EnvVar {
+	if resources == nil {
+		return env
+	}
+
+	// Nothing to set if already present
 	hasMaxHeap := false
 	for _, e := range env {
 		if e.Name == javaMaxHeapSizeEnvVarName {
 			hasMaxHeap = true
 		}
 	}
-	if !hasMaxHeap {
-		memory := Max(resources.Requests.Memory().Value(), resources.Limits.Memory().Value())
-		if memory > 0 {
-			xmx := Max(memory -javaReservedNonHeap, int64(float64(memory) * javaMinHeapRatio))
-			env = append(env, corev1.EnvVar{
-				Name:  javaMaxHeapSizeEnvVarName,
-				Value: fmt.Sprintf("-Xmx%v", xmx),
-			})
-		}
+	if hasMaxHeap {
+		return env
+	}
+
+	// Derive from memory resource requirement
+	memory := max(resources.Requests.Memory().Value(), resources.Limits.Memory().Value())
+	if memory > 0 {
+		xmx := max(memory -javaReservedNonHeap, int64(float64(memory) * javaMinHeapRatio))
+		env = append(env, corev1.EnvVar{
+			Name:  javaMaxHeapSizeEnvVarName,
+			Value: fmt.Sprintf("-Xmx%v", xmx),
+		})
 	}
 	return env
 }
 
-func extractFieldValueIfUnique(master *alpha1.CDAPMaster, services ServiceGroup, fieldName string) (interface{}, error) {
+// Use reflection to extract the string value of supplied field name across all service specs. Return the value only
+// if it is the same across all services. Otherwise return an error.
+// This is used to ensure  all services in the same pod not having conflicting Pod-level settings
+func getStringFieldValue(master *v1alpha1.CDAPMaster, services ServiceGroup, fieldName string, value *string) error {
+	if newVal, err := getFieldValueIfUnique(master, services, fieldName); err != nil {
+		return err
+	} else if newVal != nil {
+		// The field is set.
+		if newVal, ok := newVal.(string); !ok {
+			return fmt.Errorf("unable to cast value of field %v to string ", fieldName)
+		} else {
+			*value = newVal
+		}
+	}
+	return nil
+}
+
+// Use reflection to extract the value of supplied field name across all service specs. Return the value only
+// if it is the same across all services. Otherwise return an error.
+// This is used to ensure all services in the same pod not having conflicting Pod-level settings
+func getFieldValueIfUnique(master *v1alpha1.CDAPMaster, services ServiceGroup, fieldName string) (interface{}, error) {
 	values := make([]interface{}, 0)
 	// Get field value from CDAPServiceSpec of each service
 	for _, service := range services {
@@ -383,7 +459,7 @@ func extractFieldValueIfUnique(master *alpha1.CDAPMaster, services ServiceGroup,
 		values = append(values, fieldVal.Interface())
 	}
 	// Return the value only if they are all the same.
-	// Mqy return nil indicating value is either empty or not set.
+	// May return nil indicating value is either empty or not set.
 	var returnVal interface{} = nil
 	for i := 0; i < len(values); i++ {
 		if returnVal == nil {

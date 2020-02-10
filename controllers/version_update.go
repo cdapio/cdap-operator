@@ -22,7 +22,6 @@ var (
 )
 
 func init() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	updateStatus = new(VersionUpdateStatus)
 	updateStatus.init()
 }
@@ -112,7 +111,7 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	// Find either pre- or post- upgrade job
 	findJob := func(jobName string) *batchv1.Job {
 		var job *batchv1.Job = nil
-		objName := getObjectName(master.Name, jobName)
+		objName := getObjName(master, jobName)
 		item := k8s.GetItem(observed, &batchv1.Job{}, objName, master.Namespace)
 		if item != nil {
 			job = item.(*batchv1.Job)
@@ -121,7 +120,7 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	}
 
 	// Create either pre- or post- upgrade job object based on the supplied job spec
-	createJob := func(jobSpec *UpgradeJobSpec) (*reconciler.Object, error) {
+	createJob := func(jobSpec *VersionUpgradeJobSpec) (*reconciler.Object, error) {
 		jobObject, err := buildUpgradeJobObject(jobSpec)
 		if err != nil {
 			return nil, err
@@ -458,16 +457,16 @@ func getPostUpgradeJobName(startTimeMs int64) string {
 }
 
 // Return upgrade job spec
-func buildUpgradeJobSpec(jobName string, master *v1alpha1.CDAPMaster, labels map[string]string) *UpgradeJobSpec {
+func buildUpgradeJobSpec(jobName string, master *v1alpha1.CDAPMaster, labels map[string]string) *VersionUpgradeJobSpec {
 	startTimeMs := master.Status.UpgradeStartTimeMillis
-	cconf := getObjectName(master.Name, configMapCConf)
-	hconf := getObjectName(master.Name, configMapHConf)
-	name := getObjectName(master.Name, jobName)
-	return newUpgradeJobSpec(name, labels, startTimeMs, cconf, hconf, master).SetPreUpgrade(true)
+	cconf := getObjName(master, configMapCConf)
+	hconf := getObjName(master, configMapHConf)
+	name := getObjName(master, jobName)
+	return newUpgradeJobSpec(master, name, labels, startTimeMs, cconf, hconf).SetPreUpgrade(true)
 }
 
 // Given an upgrade job spec, return a reconciler object as expected state
-func buildUpgradeJobObject(spec *UpgradeJobSpec) (*reconciler.Object, error) {
+func buildUpgradeJobObject(spec *VersionUpgradeJobSpec) (*reconciler.Object, error) {
 	obj, err := k8s.ObjectFromFile(templateDir+templateUpgradeJob, spec, &batchv1.JobList{})
 	if err != nil {
 		return nil, err

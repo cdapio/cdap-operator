@@ -3,6 +3,8 @@ package controllers
 // ServiceName is the name identifying various CDAP services
 type ServiceName = string
 
+// ServiceNames must match the field name defined in CDAPMasterSpec as they are used by reflection to
+// find the field value.
 const (
 	// serviceAppFabric defines the service type for app-fabric
 	serviceAppFabric ServiceName = "AppFabric"

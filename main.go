@@ -17,6 +17,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"os"
 
 	cdapv1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
@@ -42,6 +43,8 @@ func init() {
 }
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	var metricsAddr string
 	var enableLeaderElection bool
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")

@@ -17,7 +17,7 @@ type ConfigMapSpec struct {
 	Data      map[string]string `json:"configMap,omitempty"`
 }
 
-func newConfigMapSpec(name string, labels map[string]string, master *v1alpha1.CDAPMaster) *ConfigMapSpec {
+func newConfigMapSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string) *ConfigMapSpec {
 	s := new(ConfigMapSpec)
 	s.Name = name
 	s.Namespace = master.Namespace
@@ -45,7 +45,7 @@ type ContainerSpec struct {
 	DataDir          string                        `json:"dataDir,omitempty"`
 }
 
-func newContainerSpec(name, dataDir string, master *v1alpha1.CDAPMaster) *ContainerSpec {
+func newContainerSpec(master *v1alpha1.CDAPMaster, name, dataDir string) *ContainerSpec {
 	c := new(ContainerSpec)
 	c.Name = strings.ToLower(name)
 	c.Image = master.Status.ImageToUse
@@ -133,7 +133,7 @@ type BaseSpec struct {
 	HConf              string            `json:"hadoopConf,omitempty"`
 }
 
-func newBaseSpec(name string, labels map[string]string, cconf, hconf string, master *v1alpha1.CDAPMaster) *BaseSpec {
+func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf string) *BaseSpec {
 	s := new(BaseSpec)
 	s.Name = name
 	s.Namespace = master.Namespace
@@ -185,9 +185,9 @@ type DeploymentSpec struct {
 	Containers []*ContainerSpec `json:"containers,omitempty"`
 }
 
-func newDeploymentSpec(name string, labels map[string]string, cconf, hconf string, master *v1alpha1.CDAPMaster) *DeploymentSpec {
+func newDeploymentSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf string) *DeploymentSpec {
 	s := new(DeploymentSpec)
-	s.Base = newBaseSpec(name, labels, cconf, hconf, master)
+	s.Base = newBaseSpec(master, name, labels, cconf, hconf)
 	return s
 }
 
@@ -247,9 +247,9 @@ type StatefulSpec struct {
 	Storage        *StorageSpec     `json:"storage,omitempty"`
 }
 
-func newStatefulSpec(name string, labels map[string]string, cconf, hconf string, master *v1alpha1.CDAPMaster) *StatefulSpec {
+func newStatefulSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf string) *StatefulSpec {
 	s := new(StatefulSpec)
-	s.Base = newBaseSpec(name, labels, cconf, hconf, master)
+	s.Base = newBaseSpec(master, name, labels, cconf, hconf)
 	return s
 }
 
@@ -330,30 +330,30 @@ func (s *NetworkServiceSpec) addSelector(key, val string) *NetworkServiceSpec {
 }
 
 // Top level CDAP service deployment configuration
-type CDAPDeploymentSpec struct {
+type DeploymentPlanSpec struct {
 	Stateful        []*StatefulSpec       `json:"stateful,omitempty"`
 	Deployment      []*DeploymentSpec     `json:"stateless,omitempty"`
 	NetworkServices []*NetworkServiceSpec `json:"networkService,omitempty"`
 }
 
-func newCDAPDeploymentSpec() *CDAPDeploymentSpec {
-	c := new(CDAPDeploymentSpec)
+func newDeploymentPlanSpec() *DeploymentPlanSpec {
+	c := new(DeploymentPlanSpec)
 	return c
 }
-func (s *CDAPDeploymentSpec) withStateful(stateful *StatefulSpec) *CDAPDeploymentSpec {
+func (s *DeploymentPlanSpec) withStateful(stateful *StatefulSpec) *DeploymentPlanSpec {
 	s.Stateful = append(s.Stateful, stateful)
 	return s
 }
-func (s *CDAPDeploymentSpec) withDeployment(stateless *DeploymentSpec) *CDAPDeploymentSpec {
+func (s *DeploymentPlanSpec) withDeployment(stateless *DeploymentSpec) *DeploymentPlanSpec {
 	s.Deployment = append(s.Deployment, stateless)
 	return s
 }
-func (s *CDAPDeploymentSpec) withNetworkService(networkService *NetworkServiceSpec) *CDAPDeploymentSpec {
+func (s *DeploymentPlanSpec) withNetworkService(networkService *NetworkServiceSpec) *DeploymentPlanSpec {
 	s.NetworkServices = append(s.NetworkServices, networkService)
 	return s
 }
 
-func (s *CDAPDeploymentSpec) toString() (string, error) {
+func (s *DeploymentPlanSpec) toString() (string, error) {
 	data, err := json.Marshal(*s)
 	if err != nil {
 		return "", err
@@ -361,7 +361,7 @@ func (s *CDAPDeploymentSpec) toString() (string, error) {
 	return string(data), nil
 }
 
-type UpgradeJobSpec struct {
+type VersionUpgradeJobSpec struct {
 	Image              string            `json:"image,omitempty"`
 	JobName            string            `json:"jobName,omitempty"`
 	Labels             map[string]string `json:"labels,omitempty"`
@@ -380,12 +380,12 @@ type UpgradeJobSpec struct {
 	PostUpgrade        bool              `json:"postUpgrade,omitempty"`
 }
 
-func newUpgradeJobSpec(name string, labels map[string]string, startTimeMs int64, cconf, hconf string, master *v1alpha1.CDAPMaster) *UpgradeJobSpec {
-	s := new(UpgradeJobSpec)
+func newUpgradeJobSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, startTimeMs int64, cconf, hconf string) *VersionUpgradeJobSpec {
+	s := new(VersionUpgradeJobSpec)
 	s.Image = master.Spec.Image
 	s.JobName = name
 	s.Labels = labels
-	s.HostName = getObjectName(master.Name, serviceRouter)
+	s.HostName = getObjName(master, serviceRouter)
 	s.BackoffLimit = imageVersionUpgradeFailureLimit
 	s.ReferentName = master.Name
 	s.ReferentKind = master.Kind
@@ -399,12 +399,12 @@ func newUpgradeJobSpec(name string, labels map[string]string, startTimeMs int64,
 	return s
 }
 
-func (s *UpgradeJobSpec) SetPreUpgrade(isPreUpgrade bool) *UpgradeJobSpec {
+func (s *VersionUpgradeJobSpec) SetPreUpgrade(isPreUpgrade bool) *VersionUpgradeJobSpec {
 	s.PreUpgrade = isPreUpgrade
 	return s
 }
 
-func (s *UpgradeJobSpec) SetPostUpgrade(isPostUpgrade bool) *UpgradeJobSpec {
+func (s *VersionUpgradeJobSpec) SetPostUpgrade(isPostUpgrade bool) *VersionUpgradeJobSpec {
 	s.PostUpgrade = isPostUpgrade
 	return s
 }

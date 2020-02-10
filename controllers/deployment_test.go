@@ -31,10 +31,10 @@ var _ = Describe("Controller Suite", func() {
 			err := fromJson("testdata/cdap_master_cr_num_pods_0.json", master)
 			Expect(err).To(BeNil())
 
-			spec, err := buildCDAPDeploymentSpec(master, emptyLabels)
+			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
 			Expect(err).To(BeNil())
 
-			objs, err := buildObjects(spec)
+			objs, err := buildObjectsForDeploymentPlan(spec)
 			Expect(err).To(BeNil())
 
 			readExpectedJson := func(fileName string) []byte {
@@ -49,16 +49,16 @@ var _ = Describe("Controller Suite", func() {
 				Expect(diff.String()).To(Equal(jsondiff.SupersetMatch.String()), text)
 			}
 
-			var strategyHandler DeploymentStrategy
+			var strategyHandler DeploymentPlan
 			strategyHandler.Init()
-			serviceGroupMap, err := strategyHandler.getStrategy(0)
+			serviceGroupMap, err := strategyHandler.getPlan(0)
 
 			expectedCount := len(serviceGroupMap.stateful) + len(serviceGroupMap.deployment) + len(serviceGroupMap.networkService)
 			actualCount := 0
 			for _, obj := range objs {
 				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.StatefulSet); ok {
 					for k, _ := range serviceGroupMap.stateful {
-						if o.Name == getObjectName(master.Name, k) {
+						if o.Name == getObjName(master, k) {
 							actual, err := json.Marshal(o)
 							Expect(err).To(BeNil())
 							expected := readExpectedJson(k + ".json")
@@ -69,7 +69,7 @@ var _ = Describe("Controller Suite", func() {
 				}
 				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.Deployment); ok {
 					for k, _ := range serviceGroupMap.deployment {
-						if o.Name == getObjectName(master.Name, k) {
+						if o.Name == getObjName(master, k) {
 							actual, err := json.Marshal(o)
 							Expect(err).To(BeNil())
 							expected := readExpectedJson(k + ".json")
@@ -80,7 +80,7 @@ var _ = Describe("Controller Suite", func() {
 				}
 				if o, ok := obj.Obj.(*k8s.Object).Obj.(*corev1.Service); ok {
 					for k, _ := range serviceGroupMap.networkService {
-						if o.Name == getObjectName(master.Name, k) {
+						if o.Name == getObjName(master, k) {
 							actual, err := json.Marshal(o)
 							Expect(err).To(BeNil())
 							expected := readExpectedJson(k + "_service.json")
@@ -175,14 +175,14 @@ var _ = Describe("Controller Suite", func() {
 		})
 		It("Extract empty field value", func() {
 			for _, field := range []string{"ServiceAccountName", "RuntimeClassName", "PriorityClassName"} {
-				val, err := extractFieldValueIfUnique(emptyMaster, services, field)
+				val, err := getFieldValueIfUnique(emptyMaster, services, field)
 				Expect(err).To(BeNil())
 				Expect(val).To(BeNil())
 			}
 		})
 		It("Extract valid non-empty field value", func() {
 			for _, field := range []string{"ServiceAccountName", "RuntimeClassName", "PriorityClassName"} {
-				val, err := extractFieldValueIfUnique(master, services, field)
+				val, err := getFieldValueIfUnique(master, services, field)
 				Expect(err).To(BeNil())
 				val, ok := val.(string)
 				Expect(ok).To(BeTrue())
@@ -191,7 +191,7 @@ var _ = Describe("Controller Suite", func() {
 		})
 		It("Extract invalid non-empty field value", func() {
 			for _, field := range []string{"ServiceAccountName", "RuntimeClassName", "PriorityClassName"} {
-				_, err := extractFieldValueIfUnique(invalidMaster, services, field)
+				_, err := getFieldValueIfUnique(invalidMaster, services, field)
 				Expect(err).NotTo(BeNil())
 			}
 		})
