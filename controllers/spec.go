@@ -229,7 +229,7 @@ func (s *DeploymentSpec) withContainer(containerSpec *ContainerSpec) *Deployment
 // For VolumnClaimTemplate in Statefulset
 type StorageSpec struct {
 	StorageClassName string `json:"storageClassName,omitempty"`
-	StorageSize      string  `json:"storageSize,omitempty"`
+	StorageSize      string `json:"storageSize,omitempty"`
 }
 
 func newStorageSpec(storageClassName string, storageSize string) *StorageSpec {

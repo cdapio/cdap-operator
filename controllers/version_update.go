@@ -327,7 +327,7 @@ func parseImageString(imageString string) (*Version, error) {
 	if splits[1] == imageVersionLatest {
 		return &Version{
 			rawString: imageString,
-			latest: true,
+			latest:    true,
 		}, nil
 	}
 

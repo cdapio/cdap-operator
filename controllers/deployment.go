@@ -159,7 +159,9 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 	// Build NodePort service
 	for name, targetService := range serviceGroups.networkService {
 		networkService, err := buildNetworkService(master, name, targetService, labels)
-		if err != nil { return nil, err}
+		if err != nil {
+			return nil, err
+		}
 		spec = spec.withNetworkService(networkService)
 	}
 	return spec, nil
@@ -198,7 +200,9 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	// Add each service as a container
 	for _, s := range services {
 		ss, err := getCDAPServiceSpec(master, s)
-		if err != nil { return nil, err }
+		if err != nil {
+			return nil, err
+		}
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
 		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
 		if s == serviceUserInterface {
@@ -206,14 +210,18 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		}
 		spec = spec.withContainer(c)
 		// Adding a label to allow NodePort service selector to find the pod
-		spec = spec.addLabel(labelContainerKeyPrefix + s, master.Name)
+		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
 	}
 
 	// Get storage class and calculates total disk size required
 	storageClass, err := getStorageClass(master, services)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	storageSize, err := aggregateStorageSize(master, services)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	spec = spec.withStorage(storageClass, storageSize)
 	return spec, nil
 }
@@ -245,7 +253,9 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 	// Add each service as a container
 	for _, s := range services {
 		ss, err := getCDAPServiceSpec(master, s)
-		if err != nil { return nil, err }
+		if err != nil {
+			return nil, err
+		}
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
 		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
 		if s == serviceUserInterface {
@@ -254,7 +264,7 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		spec = spec.withContainer(c)
 
 		// Adding a label to allow k8s service selector to easily find the pod
-		spec = spec.addLabel(labelContainerKeyPrefix + s, master.Name)
+		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
 	}
 	return spec, nil
 }
@@ -308,7 +318,9 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 // Return a NodePort service to expose the supplied target service
 func buildNetworkService(master *v1alpha1.CDAPMaster, name NetworkServiceName, target ServiceName, labels map[string]string) (*NetworkServiceSpec, error) {
 	s, err := getCDAPExternalServiceSpec(master, target)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	objName := getObjName(master, name)
 	return newNetworkServiceSpec(objName, labels, s.ServiceType, s.ServicePort, master).
 		addSelector(labelContainerKeyPrefix+target, master.Name), nil
@@ -331,7 +343,9 @@ func getStorageClass(master *v1alpha1.CDAPMaster, services ServiceGroup) (string
 	storageClass := ""
 	for _, s := range services {
 		ss, err := getCDAPStatefulServiceSpec(master, s)
-		if err != nil { return "", err}
+		if err != nil {
+			return "", err
+		}
 		if ss == nil {
 			// the service in the supplied list might be a stateless.
 			// Depending on deployment plan, we may colocate a stateful and a stateless service in the same pod.
@@ -360,7 +374,9 @@ func aggregateStorageSize(master *v1alpha1.CDAPMaster, services ServiceGroup) (s
 	total := resource.NewQuantity(0, resource.BinarySI)
 	for _, s := range services {
 		ss, err := getCDAPStatefulServiceSpec(master, s)
-		if err != nil { return "", err }
+		if err != nil {
+			return "", err
+		}
 		if ss == nil {
 			// the service in the supplied list might be a stateless.
 			// Depending on deployment plan, we may colocate a stateful and a stateless service in the same pod.
@@ -386,7 +402,9 @@ func getNodeSelector(master *v1alpha1.CDAPMaster, services ServiceGroup) (map[st
 	nodeSelector := make(map[string]string)
 	for _, service := range services {
 		spec, err := getCDAPServiceSpec(master, service)
-		if err != nil {	return nil, err	}
+		if err != nil {
+			return nil, err
+		}
 		nodeSelector = mergeMaps(nodeSelector, spec.NodeSelector)
 	}
 	return nodeSelector, nil
@@ -489,7 +507,7 @@ func updateSpecForUserInterface(master *v1alpha1.CDAPMaster, spec *ContainerSpec
 }
 
 // Derive from memory resource requirements and add java max heap size to the supplied env var array if not present
-func addJavaMaxHeapEnvIfNotPresent (env []corev1.EnvVar, resources *corev1.ResourceRequirements) []corev1.EnvVar {
+func addJavaMaxHeapEnvIfNotPresent(env []corev1.EnvVar, resources *corev1.ResourceRequirements) []corev1.EnvVar {
 	if resources == nil {
 		return env
 	}
@@ -508,7 +526,7 @@ func addJavaMaxHeapEnvIfNotPresent (env []corev1.EnvVar, resources *corev1.Resou
 	// Derive from memory resource requirement
 	memory := max(resources.Requests.Memory().Value(), resources.Limits.Memory().Value())
 	if memory > 0 {
-		xmx := max(memory -javaReservedNonHeap, int64(float64(memory) * javaMinHeapRatio))
+		xmx := max(memory-javaReservedNonHeap, int64(float64(memory)*javaMinHeapRatio))
 		env = append(env, corev1.EnvVar{
 			Name:  javaMaxHeapSizeEnvVarName,
 			Value: fmt.Sprintf("-Xmx%v", xmx),

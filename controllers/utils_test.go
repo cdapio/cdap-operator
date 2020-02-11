@@ -9,41 +9,41 @@ import (
 var _ = Describe("Controller Suite", func() {
 	Describe("Reflection to get CDAPServiceSpec", func() {
 		var (
-			master *v1alpha1.CDAPMaster
-			serviceToSpec map[string]*v1alpha1.CDAPServiceSpec
+			master                *v1alpha1.CDAPMaster
+			serviceToSpec         map[string]*v1alpha1.CDAPServiceSpec
 			serviceToStatefulSpec map[string]*v1alpha1.CDAPStatefulServiceSpec
 			serviceToExternalSpec map[string]*v1alpha1.CDAPExternalServiceSpec
 		)
 		BeforeEach(func() {
 			master = &v1alpha1.CDAPMaster{}
 			serviceToSpec = map[string]*v1alpha1.CDAPServiceSpec{
-				serviceLogs: &master.Spec.Logs.CDAPServiceSpec,
-				serviceAppFabric: &master.Spec.AppFabric.CDAPServiceSpec,
-				serviceMetrics: &master.Spec.Metrics.CDAPServiceSpec,
-				serviceRouter: &master.Spec.Router.CDAPServiceSpec,
-				serviceMessaging: &master.Spec.Messaging.CDAPServiceSpec,
-				serviceMetadata: &master.Spec.Metadata.CDAPServiceSpec,
-				servicePreview: &master.Spec.Preview.CDAPServiceSpec,
+				serviceLogs:          &master.Spec.Logs.CDAPServiceSpec,
+				serviceAppFabric:     &master.Spec.AppFabric.CDAPServiceSpec,
+				serviceMetrics:       &master.Spec.Metrics.CDAPServiceSpec,
+				serviceRouter:        &master.Spec.Router.CDAPServiceSpec,
+				serviceMessaging:     &master.Spec.Messaging.CDAPServiceSpec,
+				serviceMetadata:      &master.Spec.Metadata.CDAPServiceSpec,
+				servicePreview:       &master.Spec.Preview.CDAPServiceSpec,
 				serviceUserInterface: &master.Spec.UserInterface.CDAPServiceSpec,
 			}
 			serviceToStatefulSpec = map[string]*v1alpha1.CDAPStatefulServiceSpec{
-				serviceLogs: &master.Spec.Logs.CDAPStatefulServiceSpec,
-				serviceAppFabric: nil,
-				serviceMetrics: &master.Spec.Metrics.CDAPStatefulServiceSpec,
-				serviceRouter: nil,
-				serviceMessaging: &master.Spec.Messaging.CDAPStatefulServiceSpec,
-				serviceMetadata: nil,
-				servicePreview: &master.Spec.Preview.CDAPStatefulServiceSpec,
+				serviceLogs:          &master.Spec.Logs.CDAPStatefulServiceSpec,
+				serviceAppFabric:     nil,
+				serviceMetrics:       &master.Spec.Metrics.CDAPStatefulServiceSpec,
+				serviceRouter:        nil,
+				serviceMessaging:     &master.Spec.Messaging.CDAPStatefulServiceSpec,
+				serviceMetadata:      nil,
+				servicePreview:       &master.Spec.Preview.CDAPStatefulServiceSpec,
 				serviceUserInterface: nil,
 			}
 			serviceToExternalSpec = map[string]*v1alpha1.CDAPExternalServiceSpec{
-				serviceLogs: nil,
-				serviceAppFabric: nil,
-				serviceMetrics: nil,
-				serviceRouter: &master.Spec.Router.CDAPExternalServiceSpec,
-				serviceMessaging: nil,
-				serviceMetadata: nil,
-				servicePreview: nil,
+				serviceLogs:          nil,
+				serviceAppFabric:     nil,
+				serviceMetrics:       nil,
+				serviceRouter:        &master.Spec.Router.CDAPExternalServiceSpec,
+				serviceMessaging:     nil,
+				serviceMetadata:      nil,
+				servicePreview:       nil,
 				serviceUserInterface: &master.Spec.UserInterface.CDAPExternalServiceSpec,
 			}
 		})

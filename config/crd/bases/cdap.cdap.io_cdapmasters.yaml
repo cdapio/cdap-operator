@@ -32,7 +32,9 @@ spec:
         metadata:
           type: object
         spec:
-          description: CDAPMasterSpec defines the desired state of CDAPMaster
+          description: "CDAPMasterSpec defines the desired state of CDAPMaster \n
+            Field names for individual services must match the constant values of
+            ServiceName in constants.go as reflection is used to find field value."
           properties:
             appFabric:
               description: AppFabric is specification for the CDAP app-fabric service.

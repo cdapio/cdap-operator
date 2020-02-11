@@ -4,17 +4,16 @@ import (
 	"cdap.io/cdap-operator/api/v1alpha1"
 	"encoding/json"
 	"github.com/nsf/jsondiff"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"io/ioutil"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"reflect"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
 	"sigs.k8s.io/controller-reconciler/pkg/status"
 )
-
 
 var _ = Describe("Controller Suite", func() {
 	Describe("Parsing image string", func() {
@@ -243,7 +242,3 @@ var _ = Describe("Controller Suite", func() {
 		})
 	})
 })
-
-
-
-

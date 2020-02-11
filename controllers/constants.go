@@ -33,7 +33,7 @@ const (
 
 const (
 	// CRD field name (used by reflection)
-	fieldNameCDAPServiceSpec = "CDAPServiceSpec"
+	fieldNameCDAPServiceSpec         = "CDAPServiceSpec"
 	fieldNameCDAPStatefulServiceSpec = "CDAPStatefulServiceSpec"
 	fieldNameCDAPExternalServiceSpec = "CDAPExternalServiceSpec"
 
@@ -79,7 +79,7 @@ const (
 	javaReservedNonHeap       = int64(768 * 1024 * 1024)
 	javaMaxHeapSizeEnvVarName = "JAVA_HEAPMAX"
 
-	Bytes = int64(1)
+	Bytes     = int64(1)
 	kiloBytes = int64(1024)
 	megaBytes = int64(1024 * 1024)
 	gigaBytes = int64(1024 * 1024 * 1024)
