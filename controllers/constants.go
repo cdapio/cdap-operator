@@ -32,6 +32,9 @@ const (
 )
 
 const (
+	// CRD field name (used by reflection)
+	fieldNameCDAPServiceSpec = "CDAPServiceSpec"
+
 	// cconf and hconf
 	confExploreEnabled        = "explore.enabled"
 	confLocalDataDirKey       = "local.data.dir"

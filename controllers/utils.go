@@ -3,6 +3,7 @@ package controllers
 import (
 	"cdap.io/cdap-operator/api/v1alpha1"
 	"fmt"
+	"reflect"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	"strings"
 )
@@ -25,36 +26,25 @@ func mergeMaps(current, added map[string]string) map[string]string {
 	labels.Merge(current, added)
 	return labels
 }
-
-// TODO: simplify the code by using reflection
-func getCDAPServiceSpec(master *v1alpha1.CDAPMaster, serviceName ServiceName ) *v1alpha1.CDAPServiceSpec {
-	serviceSpecMap := map[ServiceName]func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPServiceSpec{
-		serviceAppFabric: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPServiceSpec {
-			return &master.Spec.AppFabric.CDAPServiceSpec
-		},
-		serviceLogs: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPServiceSpec {
-			return &master.Spec.Logs.CDAPServiceSpec
-		},
-		serviceMessaging: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPServiceSpec {
-			return &master.Spec.Messaging.CDAPServiceSpec
-		},
-		serviceMetadata: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPServiceSpec {
-			return &master.Spec.Metadata.CDAPServiceSpec
-		},
-		serviceMetrics: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPServiceSpec {
-			return &master.Spec.Metrics.CDAPServiceSpec
-		},
-		servicePreview: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPServiceSpec {
-			return &master.Spec.Preview.CDAPServiceSpec
-		},
-		serviceRouter: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPServiceSpec {
-			return &master.Spec.Router.CDAPServiceSpec
-		},
-		serviceUserInterface: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPServiceSpec {
-			return &master.Spec.UserInterface.CDAPServiceSpec
-		},
+// Return pointer to CDAPServiceSpec for the given service (using reflection).
+// Fail if any of the following occurs
+// - unable to find the field for the service
+// - unable to find CDAPServiceSpec field
+// - unable to cast to CDAPServiceSpec type
+func getCDAPServiceSpec(master *v1alpha1.CDAPMaster, service ServiceName) (*v1alpha1.CDAPServiceSpec, error) {
+	val := reflect.Indirect(reflect.ValueOf(&master.Spec)).FieldByName(service)
+	if !val.IsValid() {
+		return nil, fmt.Errorf("failed to find field %v in %v", service, reflect.TypeOf(master.Spec).Name())
 	}
-	return serviceSpecMap[serviceName](master)
+	val = reflect.Indirect(reflect.ValueOf(val.Addr().Interface())).FieldByName(fieldNameCDAPServiceSpec)
+	if !val.IsValid() {
+		return nil, fmt.Errorf("failed to find field %v in %v", fieldNameCDAPServiceSpec, reflect.TypeOf(val).Name())
+	}
+	ret, ok := val.Addr().Interface().(*v1alpha1.CDAPServiceSpec)
+	if !ok {
+		return nil, fmt.Errorf("failed to cast to poiter to CDAPServiceSpec")
+	}
+	return ret, nil
 }
 
 // TODO: simplify the code by using reflection

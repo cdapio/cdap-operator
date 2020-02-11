@@ -178,7 +178,10 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	if err != nil {
 		return nil, err
 	}
-	nodeSelector := getNodeSelector(master, services)
+	nodeSelector, err := getNodeSelector(master, services)
+	if err != nil {
+		return nil, err
+	}
 
 	spec := newStatefulSpec(master, objName, labels, cconf, hconf).
 		setServiceAccountName(serviceAccount).
@@ -192,7 +195,8 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 
 	// Add each service as a container
 	for _, s := range services {
-		ss := getCDAPServiceSpec(master, s)
+		ss, err := getCDAPServiceSpec(master, s)
+		if err != nil { return nil, err }
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
 		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
 		if s == serviceUserInterface {
@@ -227,8 +231,10 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 	if err != nil {
 		return nil, err
 	}
-
-	nodeSelector := getNodeSelector(master, services)
+	nodeSelector, err := getNodeSelector(master, services)
+	if err != nil {
+		return nil, err
+	}
 	spec := newDeploymentSpec(master, objName, labels, cconf, hconf).
 		setServiceAccountName(serviceAccount).
 		setNodeSelector(nodeSelector).
@@ -236,7 +242,8 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		setPriorityClassName(priorityClass)
 	// Add each service as a container
 	for _, s := range services {
-		ss := getCDAPServiceSpec(master, s)
+		ss, err := getCDAPServiceSpec(master, s)
+		if err != nil { return nil, err }
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
 		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
 		if s == serviceUserInterface {
@@ -370,12 +377,14 @@ func aggregateStorageSize(master *v1alpha1.CDAPMaster, services ServiceGroup) (s
 }
 
 // Return merged nodeSelector map across all supplied services
-func getNodeSelector(master *v1alpha1.CDAPMaster, services ServiceGroup) map[string]string {
+func getNodeSelector(master *v1alpha1.CDAPMaster, services ServiceGroup) (map[string]string, error) {
 	nodeSelector := make(map[string]string)
 	for _, service := range services {
-		nodeSelector = mergeMaps(nodeSelector, getCDAPServiceSpec(master, service).NodeSelector)
+		spec, err := getCDAPServiceSpec(master, service)
+		if err != nil {	return nil, err	}
+		nodeSelector = mergeMaps(nodeSelector, spec.NodeSelector)
 	}
-	return nodeSelector
+	return nodeSelector, nil
 }
 
 // Return PriorityClassName if all supplied services have the same setting, otherwise return an error
