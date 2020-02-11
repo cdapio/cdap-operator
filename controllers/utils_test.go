@@ -26,7 +26,7 @@ var _ = Describe("Controller Suite", func() {
 				Expect(spec).To(Equal(expectedSpec))
 			}
 		})
-		It("Successfully get pointer to CDAPServiceSpec", func() {
+		It("Failed get pointer to CDAPServiceSpec due to invalid field name", func() {
 			master := &v1alpha1.CDAPMaster{}
 			invalidService := "InvalidService"
 			spec, err := getCDAPServiceSpec(master, invalidService)
