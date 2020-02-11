@@ -71,6 +71,8 @@ type CDAPMasterSpec struct {
 }
 
 // CDAPServiceSpec defines the base set of specifications applicable to all master services.
+//
+// If the name of structure needs to be changed, update the code where it uses reflect to find this field.
 type CDAPServiceSpec struct {
 	// Metadata for the service.
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -97,6 +99,8 @@ type CDAPScalableServiceSpec struct {
 }
 
 // CDAPExternalServiceSpec defines the base specification for master services that expose to outside of the cluster.
+//
+// If the name of structure needs to be changed, update the code where it uses reflect to find this field.
 type CDAPExternalServiceSpec struct {
 	CDAPScalableServiceSpec `json:",inline"`
 	// ServiceType is the service type in kubernetes, default is NodePort.
@@ -106,6 +110,8 @@ type CDAPExternalServiceSpec struct {
 }
 
 // CDAPStatefulServiceSpec defines the base specification for stateful master services.
+//
+// If the name of structure needs to be changed, update the code where it uses reflect to find this field.
 type CDAPStatefulServiceSpec struct {
 	CDAPServiceSpec `json:",inline"`
 	// StorageSize is specification for the persistent volume size used by the service.

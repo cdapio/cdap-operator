@@ -158,7 +158,9 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 	}
 	// Build NodePort service
 	for name, targetService := range serviceGroups.networkService {
-		spec = spec.withNetworkService(buildNetworkService(master, name, targetService, labels))
+		networkService, err := buildNetworkService(master, name, targetService, labels)
+		if err != nil { return nil, err}
+		spec = spec.withNetworkService(networkService)
 	}
 	return spec, nil
 }
@@ -304,11 +306,12 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 }
 
 // Return a NodePort service to expose the supplied target service
-func buildNetworkService(master *v1alpha1.CDAPMaster, name NetworkServiceName, target ServiceName, labels map[string]string) *NetworkServiceSpec {
-	s := getCDAPExternalService(target, master)
+func buildNetworkService(master *v1alpha1.CDAPMaster, name NetworkServiceName, target ServiceName, labels map[string]string) (*NetworkServiceSpec, error) {
+	s, err := getCDAPExternalServiceSpec(master, target)
+	if err != nil { return nil, err }
 	objName := getObjName(master, name)
 	return newNetworkServiceSpec(objName, labels, s.ServiceType, s.ServicePort, master).
-		addSelector(labelContainerKeyPrefix+target, master.Name)
+		addSelector(labelContainerKeyPrefix+target, master.Name), nil
 }
 
 // Return a reconciler NodePort service object for the given network service spec
@@ -327,7 +330,8 @@ func getStorageClass(master *v1alpha1.CDAPMaster, services ServiceGroup) (string
 	vals := make(map[string]bool)
 	storageClass := ""
 	for _, s := range services {
-		ss := getCDAPStatefulServiceSpec(s, master)
+		ss, err := getCDAPStatefulServiceSpec(master, s)
+		if err != nil { return "", err}
 		if ss == nil {
 			// the service in the supplied list might be a stateless.
 			// Depending on deployment plan, we may colocate a stateful and a stateless service in the same pod.
@@ -355,7 +359,8 @@ func getStorageClass(master *v1alpha1.CDAPMaster, services ServiceGroup) (string
 func aggregateStorageSize(master *v1alpha1.CDAPMaster, services ServiceGroup) (string, error) {
 	total := resource.NewQuantity(0, resource.BinarySI)
 	for _, s := range services {
-		ss := getCDAPStatefulServiceSpec(s, master)
+		ss, err := getCDAPStatefulServiceSpec(master, s)
+		if err != nil { return "", err }
 		if ss == nil {
 			// the service in the supplied list might be a stateless.
 			// Depending on deployment plan, we may colocate a stateful and a stateless service in the same pod.

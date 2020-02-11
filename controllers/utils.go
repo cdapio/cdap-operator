@@ -26,7 +26,8 @@ func mergeMaps(current, added map[string]string) map[string]string {
 	labels.Merge(current, added)
 	return labels
 }
-// Return pointer to CDAPServiceSpec for the given service (using reflection).
+
+// Return pointer to CDAPServiceSpec for the given service (using reflect).
 // Fail if any of the following occurs
 // - unable to find the field for the service
 // - unable to find CDAPServiceSpec field
@@ -42,53 +43,49 @@ func getCDAPServiceSpec(master *v1alpha1.CDAPMaster, service ServiceName) (*v1al
 	}
 	ret, ok := val.Addr().Interface().(*v1alpha1.CDAPServiceSpec)
 	if !ok {
-		return nil, fmt.Errorf("failed to cast to poiter to CDAPServiceSpec")
+		return nil, fmt.Errorf("failed to cast to poiter to %v for %v", fieldNameCDAPServiceSpec, service)
 	}
 	return ret, nil
 }
 
-// TODO: simplify the code by using reflection
-func getCDAPStatefulServiceSpec(serviceName ServiceName, master *v1alpha1.CDAPMaster) *v1alpha1.CDAPStatefulServiceSpec {
-	serviceSpecMap := map[ServiceName]func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPStatefulServiceSpec{
-		serviceAppFabric: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPStatefulServiceSpec {
-			return nil
-		},
-		serviceLogs: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPStatefulServiceSpec {
-			return &master.Spec.Logs.CDAPStatefulServiceSpec
-		},
-		serviceMessaging: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPStatefulServiceSpec {
-			return &master.Spec.Messaging.CDAPStatefulServiceSpec
-		},
-		serviceMetadata: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPStatefulServiceSpec {
-			return nil
-		},
-		serviceMetrics: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPStatefulServiceSpec {
-			return &master.Spec.Metrics.CDAPStatefulServiceSpec
-		},
-		servicePreview: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPStatefulServiceSpec {
-			return &master.Spec.Preview.CDAPStatefulServiceSpec
-		},
-		serviceRouter: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPStatefulServiceSpec {
-			return nil
-		},
-		serviceUserInterface: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPStatefulServiceSpec {
-			return nil
-		},
+// Return pointer to CDAPStatefulServiceSpec for the given service (using reflect) if it contains one, otherwise nil
+// Fail if any of the following occurs
+// - unable to find the field for the service
+// - unable to cast to CDAPStatefulServiceSpec type
+func getCDAPStatefulServiceSpec(master *v1alpha1.CDAPMaster, service ServiceName) (*v1alpha1.CDAPStatefulServiceSpec, error) {
+	val := reflect.Indirect(reflect.ValueOf(&master.Spec)).FieldByName(service)
+	if !val.IsValid() {
+		return nil, fmt.Errorf("failed to find field %v in %v", service, reflect.TypeOf(master.Spec).Name())
 	}
-	return serviceSpecMap[serviceName](master)
+	val = reflect.Indirect(reflect.ValueOf(val.Addr().Interface())).FieldByName(fieldNameCDAPStatefulServiceSpec)
+	if !val.IsValid() {
+		return nil, nil
+	}
+	ret, ok := val.Addr().Interface().(*v1alpha1.CDAPStatefulServiceSpec)
+	if !ok {
+		return nil, fmt.Errorf("failed to cast to poiter to %v for %v", fieldNameCDAPStatefulServiceSpec, service)
+	}
+	return ret, nil
 }
 
-// TODO: simplify the code by using reflection
-func getCDAPExternalService(serviceName ServiceName, master *v1alpha1.CDAPMaster) *v1alpha1.CDAPExternalServiceSpec {
-	serviceSpecMap := map[ServiceName]func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPExternalServiceSpec{
-		serviceRouter: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPExternalServiceSpec {
-			return &master.Spec.Router.CDAPExternalServiceSpec
-		},
-		serviceUserInterface: func(master *v1alpha1.CDAPMaster) *v1alpha1.CDAPExternalServiceSpec {
-			return &master.Spec.UserInterface.CDAPExternalServiceSpec
-		},
+// Return pointer to CDAPExternalServiceSpec for the given service (using reflect) if it contains one, otherwise nil
+// Fail if any of the following occurs
+// - unable to find the field for the service
+// - unable to cast to CDAPExternalServiceSpec type
+func getCDAPExternalServiceSpec(master *v1alpha1.CDAPMaster, service ServiceName) (*v1alpha1.CDAPExternalServiceSpec, error) {
+	val := reflect.Indirect(reflect.ValueOf(&master.Spec)).FieldByName(service)
+	if !val.IsValid() {
+		return nil, fmt.Errorf("failed to find field %v in %v", service, reflect.TypeOf(master.Spec).Name())
 	}
-	return serviceSpecMap[serviceName](master)
+	val = reflect.Indirect(reflect.ValueOf(val.Addr().Interface())).FieldByName(fieldNameCDAPExternalServiceSpec)
+	if !val.IsValid() {
+		return nil, nil
+	}
+	ret, ok := val.Addr().Interface().(*v1alpha1.CDAPExternalServiceSpec)
+	if !ok {
+		return nil, fmt.Errorf("failed to cast to poiter to %v for %v", fieldNameCDAPExternalServiceSpec, service)
+	}
+	return ret, nil
 }
 
 func min(x, y int64) int64 {

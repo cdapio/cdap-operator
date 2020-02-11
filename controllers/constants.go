@@ -34,6 +34,8 @@ const (
 const (
 	// CRD field name (used by reflection)
 	fieldNameCDAPServiceSpec = "CDAPServiceSpec"
+	fieldNameCDAPStatefulServiceSpec = "CDAPStatefulServiceSpec"
+	fieldNameCDAPExternalServiceSpec = "CDAPExternalServiceSpec"
 
 	// cconf and hconf
 	confExploreEnabled        = "explore.enabled"
