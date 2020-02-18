@@ -1,6 +1,6 @@
 package controllers
 
-import (
+/*import (
 	"cdap.io/cdap-operator/api/v1alpha1"
 	"encoding/json"
 	"fmt"
@@ -196,4 +196,4 @@ var _ = Describe("Controller Suite", func() {
 			}
 		})
 	})
-})
+})*/

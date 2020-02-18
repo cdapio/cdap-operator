@@ -131,9 +131,10 @@ type BaseSpec struct {
 	SecuritySecret     string            `json:"securitySecret,omitempty"`
 	CConf              string            `json:"cdapConf,omitempty"`
 	HConf              string            `json:"hadoopConf,omitempty"`
+	SysAppConf         string            `json:"sysAppConf,omitempty"`
 }
 
-func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf string) *BaseSpec {
+func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf, sysappconf string) *BaseSpec {
 	s := new(BaseSpec)
 	s.Name = name
 	s.Namespace = master.Namespace
@@ -145,6 +146,7 @@ func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]str
 	s.SecuritySecret = master.Spec.SecuritySecret
 	s.CConf = cconf
 	s.HConf = hconf
+	s.SysAppConf = sysappconf
 	return s
 }
 
@@ -185,9 +187,9 @@ type DeploymentSpec struct {
 	Containers []*ContainerSpec `json:"containers,omitempty"`
 }
 
-func newDeploymentSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf string) *DeploymentSpec {
+func newDeploymentSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf, sysappconf string) *DeploymentSpec {
 	s := new(DeploymentSpec)
-	s.Base = newBaseSpec(master, name, labels, cconf, hconf)
+	s.Base = newBaseSpec(master, name, labels, cconf, hconf, sysappconf)
 	return s
 }
 
@@ -247,9 +249,9 @@ type StatefulSpec struct {
 	Storage        *StorageSpec     `json:"storage,omitempty"`
 }
 
-func newStatefulSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf string) *StatefulSpec {
+func newStatefulSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf, sysappconf string) *StatefulSpec {
 	s := new(StatefulSpec)
-	s.Base = newBaseSpec(master, name, labels, cconf, hconf)
+	s.Base = newBaseSpec(master, name, labels, cconf, hconf, sysappconf)
 	return s
 }
 

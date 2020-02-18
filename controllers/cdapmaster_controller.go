@@ -175,6 +175,12 @@ func (h *ConfigMapHandler) Objects(rsrc interface{}, rsrclabels map[string]strin
 		obj := buildConfigMapObject(spec)
 		expected = append(expected, obj)
 	}
+
+	sysAppConfigSpec := newConfigMapSpec(m, getObjName(m, "sysappconf"), mergeMaps(m.Labels, rsrclabels))
+	for filename, sysAppConfig := range m.Spec.SystemAppConfigFiles {
+		sysAppConfigSpec = sysAppConfigSpec.AddData(filename, sysAppConfig)
+	}
+	expected = append(expected, buildConfigMapObject(sysAppConfigSpec))
 	return expected, nil
 }
 

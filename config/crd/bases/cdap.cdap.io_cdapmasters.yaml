@@ -1154,6 +1154,13 @@ spec:
               description: ServiceAccountName is the service account for all the service
                 pods.
               type: string
+            systemappconfigs:
+              additionalProperties:
+                type: string
+              description: Map for system app config files with each entry as <filename,
+                json app config>. Each entry in the map will create a separate system
+                config file with entry value as file content.
+              type: object
             userInterface:
               description: UserInterface is specification for the CDAP UI service.
               properties:

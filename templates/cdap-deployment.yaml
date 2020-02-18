@@ -94,6 +94,9 @@ spec:
             - name: hadoop-conf
               mountPath: /etc/hadoop/conf
               readOnly: true
+            - name: cdap-sysappconf
+              mountPath: /etc/hadoop/sys-app-conf
+              readOnly: true
             {{if $.Base.SecuritySecret}}
             - name: cdap-security
               mountPath: /etc/cdap/security
@@ -116,6 +119,9 @@ spec:
         - name: hadoop-conf
           configMap:
             name: {{.Base.HConf}}
+        - name: cdap-sysappconf
+            configMap:
+              name: {{.Base.SysAppConf}}
         {{if .Base.SecuritySecret}}
         - name: cdap-security
           secret:
