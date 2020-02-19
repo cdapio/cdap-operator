@@ -1157,10 +1157,10 @@ spec:
             systemappconfigs:
               additionalProperties:
                 type: string
-              description: SystemAppConfigs specifies system app configs used by CDAP
-                to run system apps dynamically. Each entry is of format <filename,
-                json app config> which will create a separate system config file with
-                entry value as file content.
+              description: SystemAppConfigs specifies configs used by CDAP to run
+                system apps dynamically. Each entry is of format <filename, json app
+                config> which will create a separate system config file with entry
+                value as file content.
               type: object
             userInterface:
               description: UserInterface is specification for the CDAP UI service.
