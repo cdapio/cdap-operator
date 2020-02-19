@@ -78,7 +78,7 @@ spec:
               mountPath: /etc/hadoop/conf
               readOnly: true
             - name: cdap-sysappconf
-              mountPath: /etc/hadoop/sys-app-conf
+              mountPath: /opt/cdap/master/system-app-config
               readOnly: true
             - name: {{$.Base.Name}}-data
               mountPath: {{.DataDir}}
@@ -129,7 +129,7 @@ spec:
               mountPath: /etc/hadoop/conf
               readOnly: true
             - name: cdap-sysappconf
-              mountPath: /etc/hadoop/sys-app-conf
+              mountPath: /opt/cdap/master/system-app-config
               readOnly: true
             - name: {{$.Base.Name}}-data
               mountPath: {{.DataDir}}

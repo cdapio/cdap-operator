@@ -96,6 +96,11 @@
                 "readOnly": true
               },
               {
+                "mountPath": "/opt/cdap/master/system-app-config",
+                "name": "cdap-sysappconf",
+                "readOnly": true
+              },
+              {
                 "mountPath": "/data",
                 "name": "cdap-test-logs-data"
               },
@@ -133,6 +138,11 @@
               {
                 "mountPath": "/etc/hadoop/conf",
                 "name": "hadoop-conf",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/opt/cdap/master/system-app-config",
+                "name": "cdap-sysappconf",
                 "readOnly": true
               },
               {
@@ -189,6 +199,13 @@
               "name": "cdap-test-hconf"
             },
             "name": "hadoop-conf"
+          },
+          {
+            "configMap": {
+              "defaultMode": 420,
+              "name": "cdap-test-sysappconf"
+            },
+            "name": "cdap-sysappconf"
           },
           {
             "name": "cdap-security",

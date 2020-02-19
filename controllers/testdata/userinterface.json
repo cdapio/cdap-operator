@@ -112,6 +112,11 @@
                 "readOnly": true
               },
               {
+                "mountPath": "/opt/cdap/master/system-app-config",
+                "name": "cdap-sysappconf",
+                "readOnly": true
+              },
+              {
                 "mountPath": "/etc/cdap/security",
                 "name": "cdap-security",
                 "readOnly": true
@@ -163,6 +168,13 @@
               "name": "cdap-test-hconf"
             },
             "name": "hadoop-conf"
+          },
+          {
+            "configMap": {
+              "defaultMode": 420,
+              "name": "cdap-test-sysappconf"
+            },
+            "name": "cdap-sysappconf"
           },
           {
             "name": "cdap-security",
