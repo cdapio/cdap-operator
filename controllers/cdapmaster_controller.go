@@ -176,6 +176,7 @@ func (h *ConfigMapHandler) Objects(rsrc interface{}, rsrclabels map[string]strin
 		expected = append(expected, obj)
 	}
 
+	// Creates system app config object. Creates one data object per system app config file.
 	sysAppConfigSpec := newConfigMapSpec(m, getObjName(m, configMapSysAppConf), mergeMaps(m.Labels, rsrclabels))
 	for filename, sysAppConfig := range m.Spec.SystemAppConfigs {
 		sysAppConfigSpec = sysAppConfigSpec.AddData(filename, sysAppConfig)
