@@ -155,8 +155,8 @@ func (in *CDAPMasterSpec) DeepCopyInto(out *CDAPMasterSpec) {
 		*out = new(int32)
 		**out = **in
 	}
-	if in.SystemAppConfigFiles != nil {
-		in, out := &in.SystemAppConfigFiles, &out.SystemAppConfigFiles
+	if in.SystemAppConfigs != nil {
+		in, out := &in.SystemAppConfigs, &out.SystemAppConfigs
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val

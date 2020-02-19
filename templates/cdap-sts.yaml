@@ -156,8 +156,8 @@ spec:
           configMap:
             name: {{.Base.HConf}}
         - name: cdap-sysappconf
-            configMap:
-              name: {{.Base.SysAppConf}}
+          configMap:
+            name: {{.Base.SysAppConf}}
         {{if $.Base.SecuritySecret}}
         - name: cdap-security
           secret:

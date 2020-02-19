@@ -69,7 +69,7 @@ type CDAPMasterSpec struct {
 	// 3:        UI and Router in their own Pod. All other services runs in a multi-container Pod
 	NumPods *int32 `json:"numPods,omitempty"`
 	// Map for system app config files with each entry as <filename, json app config>. Each entry in the map will create a separate system config file with entry value as file content.
-	SystemAppConfigFiles map[string]string `json:"systemappconfigs,omitempty"`
+	SystemAppConfigs map[string]string `json:"systemappconfigs,omitempty"`
 }
 
 // CDAPServiceSpec defines the base set of specifications applicable to all master services.

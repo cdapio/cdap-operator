@@ -14,3 +14,5 @@ spec:
     metadata.storage.implementation: elastic
     metadata.elasticsearch.cluster.hosts: elasticsearch-master
     hdfs.user: root
+  systemappconfigs:
+    filename1235.json: "{}"
