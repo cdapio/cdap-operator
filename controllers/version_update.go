@@ -59,17 +59,29 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 
 	switch compareVersion(curVersion, newVersion) {
 	case -1:
-		// Upgrade:
+		// Upgrade case
+
+		// Don't retry upgrade if it failed.
+		if isConditionTrue(master, updateStatus.UpgradeFailed) {
+			return []reconciler.Object{}, nil
+		}
+
+		// Clear all conditions in preparation for a fresh upgrade
 		updateStatus.clearAllConditions(master)
+
 		setCondition(master, updateStatus.Inprogress)
 		master.Status.UpgradeStartTimeMillis = getCurrentTimeMs()
 		log.Printf("Version update: start upgrading %s -> %s ", curVersion.rawString, newVersion.rawString)
 		return upgradeForBackend(master, labels, observed)
 	case 0:
-		// nothing to do
+		// Reset all condition so that failed upgraded/downgrade can be retried later if needed.
+		// This is needed when last upgrade failed and user has reset the version in spec.
+		updateStatus.clearAllConditions(master)
 		break
 	case 1:
 		// Downgrade
+
+		// At the moment, downgrade never fails, so no need to check if isConditionTrue(downgrade failed)
 		updateStatus.clearAllConditions(master)
 		setCondition(master, updateStatus.Inprogress)
 		master.Status.DowngradeStartTimeMillis = getCurrentTimeMs()
