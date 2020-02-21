@@ -142,7 +142,7 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	}
 
 	// First, run pre-upgrade job
-	if !isConditionTrue(master, updateStatus.PreUpgradeJobDone) {
+	if !isConditionTrue(master, updateStatus.PreUpgradeSucceeded) {
 		log.Printf("Version update: pre-upgrade job not completed")
 		preJobName := getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis)
 		preJobSpec := buildUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
@@ -155,11 +155,12 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 			log.Printf("Version update: creating pre-upgrade job")
 			return []reconciler.Object{*obj}, nil
 		} else if job.Status.Succeeded > 0 {
-			setCondition(master, updateStatus.PreUpgradeJobDone)
+			setCondition(master, updateStatus.PreUpgradeSucceeded)
 			log.Printf("Version update: pre-upgrade job succeeded")
 			// Return empty to delete preUpgrade jobObj
 			return []reconciler.Object{}, nil
 		} else if job.Status.Failed > imageVersionUpgradeFailureLimit {
+			setCondition(master, updateStatus.PreUpgradeFailed)
 			setCondition(master, updateStatus.UpgradeFailed)
 			clearCondition(master, updateStatus.Inprogress)
 			log.Printf("Version update: pre-upgrade job failed, exceeded max retries.")
@@ -179,7 +180,7 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	}
 
 	// At last, run post-upgrade job
-	if !isConditionTrue(master, updateStatus.PostUpgradeJobDone) {
+	if !isConditionTrue(master, updateStatus.PostUpgradeSucceeded) {
 		log.Printf("Version update: post-upgrade job not completed")
 		postJobName := getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis)
 		postJobSpec := buildUpgradeJobSpec(getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
@@ -192,11 +193,12 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 			log.Printf("Version update: creating post-upgrade job")
 			return []reconciler.Object{*obj}, nil
 		} else if job.Status.Succeeded > 0 {
-			setCondition(master, updateStatus.PostUpgradeJobDone)
+			setCondition(master, updateStatus.PostUpgradeSucceeded)
 			log.Printf("Version update: post-upgrade job succeeded")
 			// Return empty to delete postUpgrade job
 			return []reconciler.Object{}, nil
 		} else if job.Status.Failed > imageVersionUpgradeFailureLimit {
+			setCondition(master, updateStatus.PostUpgradeFailed)
 			setCondition(master, updateStatus.UpgradeFailed)
 			clearCondition(master, updateStatus.Inprogress)
 			log.Printf("Version update: post-upgrade job failed, exceeded max retries.")
@@ -222,10 +224,12 @@ type VersionUpdateStatus struct {
 	VersionUpdated status.Condition
 
 	// states specifically upgrade
-	PreUpgradeJobDone  status.Condition
-	PostUpgradeJobDone status.Condition
-	UpgradeSucceeded   status.Condition
-	UpgradeFailed      status.Condition
+	PreUpgradeSucceeded  status.Condition
+	PreUpgradeFailed     status.Condition
+	PostUpgradeSucceeded status.Condition
+	PostUpgradeFailed    status.Condition
+	UpgradeSucceeded     status.Condition
+	UpgradeFailed        status.Condition
 
 	// states specifically downgrade
 	DowngradeSucceeded status.Condition
@@ -245,15 +249,25 @@ func (s *VersionUpdateStatus) init() {
 	}
 
 	// States for upgrade
-	s.PreUpgradeJobDone = status.Condition{
-		Type:    "VersionPreUpgradeJobDone",
+	s.PreUpgradeSucceeded = status.Condition{
+		Type:    "VersionPreUpgradeJobSucceeded",
 		Reason:  "Start",
-		Message: "Version pre-upgrade job is done",
+		Message: "Version pre-upgrade job is succeeded",
 	}
-	s.PostUpgradeJobDone = status.Condition{
-		Type:    "VersionPostUpgradeJobDone",
+	s.PreUpgradeFailed = status.Condition{
+		Type:    "VersionPreUpgradeJobFailed",
 		Reason:  "Start",
-		Message: "Version post-upgrade job done",
+		Message: "Version pre-upgrade job is failed",
+	}
+	s.PostUpgradeSucceeded = status.Condition{
+		Type:    "VersionPostUpgradeJobSucceeded",
+		Reason:  "Start",
+		Message: "Version post-upgrade job succeeded",
+	}
+	s.PostUpgradeFailed = status.Condition{
+		Type:    "VersionPostUpgradeJobFailed",
+		Reason:  "Start",
+		Message: "Version post-upgrade job failed",
 	}
 	s.UpgradeSucceeded = status.Condition{
 		Type:    "VersionUpgradeSucceeded",
