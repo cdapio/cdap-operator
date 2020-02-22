@@ -230,6 +230,22 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 ////// Struct and util functions to tack version upgrade progress /////
 ///////////////////////////////////////////////////////////////////////
 
+// For upgrade:
+// - When succeeded:
+//   * PreUpgradeSucceeded, PostUpgradeSucceeded and UpgradeSucceeded are set
+//   * Status.ImageToUse (new image) == Spec.Image (new image)
+// - When failed, two cases
+//   1) Preupgrade failed
+//      * PreUpgradeFailed and UpgradeFailed are set
+//      * Status.ImageToUse (new image) != Spec.Image (current image)
+//   2) Postupgrade failed
+//      * PostUpgradeFailed and UpgradeFailed are set
+//      * Status.ImageToUse (new image) == Spec.Image (new image)
+// For downgrade:
+// - When succeeded:
+//   * DowngradeSucceeded is set
+//   * Status.ImageToUse (new image) == Spec.Image (new image)
+// - When failed (currently not possible, as we just set the new version directly)
 type VersionUpdateStatus struct {
 	// common states
 	Inprogress     status.Condition
