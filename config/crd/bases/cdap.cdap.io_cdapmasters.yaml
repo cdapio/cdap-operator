@@ -32,7 +32,9 @@ spec:
         metadata:
           type: object
         spec:
-          description: CDAPMasterSpec defines the desired state of CDAPMaster
+          description: "CDAPMasterSpec defines the desired state of CDAPMaster \n
+            Field names for individual services must match the constant values of
+            ServiceName in constants.go as reflection is used to find field value."
           properties:
             appFabric:
               description: AppFabric is specification for the CDAP app-fabric service.
@@ -819,6 +821,15 @@ spec:
                     size used by the service.
                   type: string
               type: object
+            numPods:
+              description: 'NumPods specifies the number of Pods to deploy all of
+                above CDAP services across. Currently supported configurations are:
+                0/unset:  Each service runs in its own Pod 1:        All services
+                run in a single multi-container Pod 2:        UI in its own Pod. Other
+                services in a single multi-container Pod 3:        UI and Router in
+                their own Pod. All other services runs in a multi-container Pod'
+              format: int32
+              type: integer
             preview:
               description: Preview is specification for the CDAP preview service.
               properties:
@@ -1411,6 +1422,11 @@ spec:
                 - type
                 type: object
               type: array
+            downgradeStartTimeMillis:
+              description: DowngradeStartTimeMillis is the start time in milliseconds
+                of the downgrade process
+              format: int64
+              type: integer
             imageToUse:
               description: ImageToUse is the Docker image of CDAP backend the operator
                 uses to deploy.
@@ -1422,8 +1438,8 @@ spec:
               format: int64
               type: integer
             upgradeStartTimeMillis:
-              description: UpgradeStartTimeMillis is the start time in millis of the
-                upgrade process
+              description: UpgradeStartTimeMillis is the start time in milliseconds
+                of the upgrade process
               format: int64
               type: integer
             userInterfaceImageToUse:

@@ -14,39 +14,40 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{.Job.JobName}}
-  namespace: {{.Job.Namespace}}
-{{if .Labels}}
+  name: {{.JobName}}
+  namespace: {{.Namespace}}
+  {{if .Labels}}
   labels:
     {{range $k,$v := .Labels}}
-    {{$k}}: '{{$v}}'
+    {{$k}}: {{$v}}
     {{end}}
-{{end}}
+  {{end}}
   ownerReferences:
-  - apiVersion: {{.Job.ReferentApiVersion}}
+  - apiVersion: {{.ReferentApiVersion}}
     controller: false
-    kind: {{.Job.ReferentKind}}
-    name: {{.Job.ReferentName}}
-    uid: {{.Job.ReferentUID}}
+    kind: {{.ReferentKind}}
+    name: {{.ReferentName}}
+    uid: {{.ReferentUID}}
 spec:
   template:
     metadata:
-    {{if .Labels}}
+      {{if .Labels}}
       labels:
         {{range $k,$v := .Labels}}
-          {{$k}}: '{{$v}}'
+          {{$k}}: {{$v}}
           {{end}}
-    {{end}}
+      {{end}}
     spec:
       containers:
-        {{if .Job.StartTimeMillis}}
+        {{if .PostUpgrade}}
         - name: post-upgrade
-          args: ["io.cdap.cdap.master.upgrade.PostUpgradeJobMain", "{{.Job.HostName}}", "11015", "{{.Job.StartTimeMillis}}"]
-        {{else}}
-        - name: pre-upgrade
-          args: ["io.cdap.cdap.master.upgrade.UpgradeJobMain", "{{.Job.HostName}}", "11015"]
+          args: ["io.cdap.cdap.master.upgrade.PostUpgradeJobMain", "{{.HostName}}", "11015", "{{.StartTimeMs}}"]
         {{end}}
-          image: {{.Job.Image}}
+        {{if .PreUpgrade}}
+        - name: pre-upgrade
+          args: ["io.cdap.cdap.master.upgrade.UpgradeJobMain", "{{.HostName}}", "11015"]
+        {{end}}
+          image: {{.Image}}
           volumeMounts:
             - name: cdap-conf
               mountPath: /etc/cdap/conf
@@ -54,24 +55,23 @@ spec:
             - name: hadoop-conf
               mountPath: /etc/hadoop/conf
               readOnly: true
-          {{if .Job.SecuritySecret}}
+            {{if .SecuritySecret}}
             - name: cdap-security
               mountPath: /etc/cdap/security
               readOnly: true
-          {{end}}
+            {{end}}
       volumes:
         - name: cdap-conf
           configMap:
-            name: {{.CConfName}}
+            name: {{.CConf}}
         - name: hadoop-conf
           configMap:
-            name: {{.HConfName}}
-      {{if .Job.SecuritySecret}}
+            name: {{.HConf}}
+      {{if .SecuritySecret}}
         - name: cdap-security
           secret:
-            secretName: {{.Job.SecuritySecret}}
+            secretName: {{.SecuritySecret}}
       {{end}}
       restartPolicy: Never
-  backoffLimit: {{.Job.BackoffLimit}}
+  backoffLimit: {{.BackoffLimit}}
   activeDeadlineSeconds: 600
-  ttlSecondsAfterFinished: 1200

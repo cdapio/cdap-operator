@@ -25,6 +25,9 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // CDAPMasterSpec defines the desired state of CDAPMaster
+//
+// Field names for individual services must match the constant values of ServiceName in constants.go as reflection
+// is used to find field value.
 type CDAPMasterSpec struct {
 	// Image is the docker image name for the CDAP backend.
 	Image string `json:"image,omitempty"`
@@ -58,9 +61,18 @@ type CDAPMasterSpec struct {
 	Router RouterSpec `json:"router,omitempty"`
 	// UserInterface is specification for the CDAP UI service.
 	UserInterface UserInterfaceSpec `json:"userInterface,omitempty"`
+	// NumPods specifies the number of Pods to deploy all of above CDAP services across.
+	// Currently supported configurations are:
+	// 0/unset:  Each service runs in its own Pod
+	// 1:        All services run in a single multi-container Pod
+	// 2:        UI in its own Pod. Other services in a single multi-container Pod
+	// 3:        UI and Router in their own Pod. All other services runs in a multi-container Pod
+	NumPods *int32 `json:"numPods,omitempty"`
 }
 
 // CDAPServiceSpec defines the base set of specifications applicable to all master services.
+//
+// If the name of structure needs to be changed, update the code where it uses reflect to find this field.
 type CDAPServiceSpec struct {
 	// Metadata for the service.
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -87,6 +99,8 @@ type CDAPScalableServiceSpec struct {
 }
 
 // CDAPExternalServiceSpec defines the base specification for master services that expose to outside of the cluster.
+//
+// If the name of structure needs to be changed, update the code where it uses reflect to find this field.
 type CDAPExternalServiceSpec struct {
 	CDAPScalableServiceSpec `json:",inline"`
 	// ServiceType is the service type in kubernetes, default is NodePort.
@@ -96,6 +110,8 @@ type CDAPExternalServiceSpec struct {
 }
 
 // CDAPStatefulServiceSpec defines the base specification for stateful master services.
+//
+// If the name of structure needs to be changed, update the code where it uses reflect to find this field.
 type CDAPStatefulServiceSpec struct {
 	CDAPServiceSpec `json:",inline"`
 	// StorageSize is specification for the persistent volume size used by the service.
@@ -152,8 +168,10 @@ type CDAPMasterStatus struct {
 	ImageToUse string `json:"imageToUse,omitempty"`
 	// UserInterfaceImageToUse is the Docker image of CDAP UI the operator uses to deploy.
 	UserInterfaceImageToUse string `json:"userInterfaceImageToUse,omitempty"`
-	// UpgradeStartTimeMillis is the start time in millis of the upgrade process
+	// UpgradeStartTimeMillis is the start time in milliseconds of the upgrade process
 	UpgradeStartTimeMillis int64 `json:"upgradeStartTimeMillis,omitempty"`
+	// DowngradeStartTimeMillis is the start time in milliseconds of the downgrade process
+	DowngradeStartTimeMillis int64 `json:"downgradeStartTimeMillis,omitempty"`
 }
 
 // +kubebuilder:object:root=true

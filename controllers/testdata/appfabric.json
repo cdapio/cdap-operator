@@ -1,0 +1,195 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "annotations": {
+      "deployment.kubernetes.io/revision": "8"
+    },
+    "creationTimestamp": null,
+    "generation": 535,
+    "labels": {
+      "cdap.container.AppFabric": "test",
+      "cdap.instance": "test",
+      "custom-resource": "v1alpha1.CDAPMaster",
+      "custom-resource-name": "test",
+      "custom-resource-namespace": "default",
+      "using": "controllers.ServiceHandler"
+    },
+    "name": "cdap-test-appfabric",
+    "namespace": "default",
+    "ownerReferences": [
+      {
+        "apiVersion": "cdap.cdap.io/v1alpha1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "*v1alpha1.CDAPMaster",
+        "name": "test",
+        "uid": "7aeaad53-4afe-11ea-8611-42010a800022"
+      }
+    ],
+    "resourceVersion": "1912414",
+    "selfLink": "/apis/extensions/v1beta1/namespaces/default/deployments/cdap-test-appfabric",
+    "uid": "7b7154a1-4afe-11ea-8611-42010a800022"
+  },
+  "spec": {
+    "progressDeadlineSeconds": 600,
+    "replicas": 1,
+    "revisionHistoryLimit": 10,
+    "selector": {
+      "matchLabels": {
+        "cdap.container.AppFabric": "test",
+        "cdap.instance": "test",
+        "custom-resource": "v1alpha1.CDAPMaster",
+        "custom-resource-name": "test",
+        "custom-resource-namespace": "default",
+        "using": "controllers.ServiceHandler"
+      }
+    },
+    "strategy": {
+      "rollingUpdate": {
+        "maxSurge": "25%",
+        "maxUnavailable": "25%"
+      },
+      "type": "RollingUpdate"
+    },
+    "template": {
+      "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+          "cdap.container.AppFabric": "test",
+          "cdap.instance": "test",
+          "custom-resource": "v1alpha1.CDAPMaster",
+          "custom-resource-name": "test",
+          "custom-resource-namespace": "default",
+          "using": "controllers.ServiceHandler"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "io.cdap.cdap.master.environment.k8s.AppFabricServiceMain",
+              "--env=k8s"
+            ],
+            "env": [
+              {
+                "name": "JAVA_HEAPMAX",
+                "value": "-Xmx62914560"
+              }
+            ],
+            "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "appfabric",
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "100Mi"
+              }
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/etc/podinfo",
+                "name": "podinfo",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/cdap/conf",
+                "name": "cdap-conf",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/hadoop/conf",
+                "name": "hadoop-conf",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/cdap/security",
+                "name": "cdap-security",
+                "readOnly": true
+              }
+            ]
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "serviceAccount": "cdap",
+        "serviceAccountName": "cdap",
+        "terminationGracePeriodSeconds": 120,
+        "volumes": [
+          {
+            "downwardAPI": {
+              "defaultMode": 420,
+              "items": [
+                {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "metadata.labels"
+                  },
+                  "path": "pod.labels.properties"
+                },
+                {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "metadata.name"
+                  },
+                  "path": "pod.name"
+                }
+              ]
+            },
+            "name": "podinfo"
+          },
+          {
+            "configMap": {
+              "defaultMode": 420,
+              "name": "cdap-test-cconf"
+            },
+            "name": "cdap-conf"
+          },
+          {
+            "configMap": {
+              "defaultMode": 420,
+              "name": "cdap-test-hconf"
+            },
+            "name": "hadoop-conf"
+          },
+          {
+            "name": "cdap-security",
+            "secret": {
+              "defaultMode": 420,
+              "secretName": "cdap-secret"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "status": {
+    "availableReplicas": 1,
+    "conditions": [
+      {
+        "lastTransitionTime": "2020-02-09T05:39:28Z",
+        "lastUpdateTime": "2020-02-09T05:39:28Z",
+        "message": "Deployment has minimum availability.",
+        "reason": "MinimumReplicasAvailable",
+        "status": "True",
+        "type": "Available"
+      },
+      {
+        "lastTransitionTime": "2020-02-09T05:39:04Z",
+        "lastUpdateTime": "2020-02-09T08:58:40Z",
+        "message": "ReplicaSet \"cdap-test-appfabric-5fdddcfcb4\" has successfully progressed.",
+        "reason": "NewReplicaSetAvailable",
+        "status": "True",
+        "type": "Progressing"
+      }
+    ],
+    "observedGeneration": 535,
+    "readyReplicas": 1,
+    "replicas": 0,
+    "updatedReplicas": 1
+  }
+}

@@ -523,7 +523,7 @@ func (rm *RsrcManager) Create(item reconciler.Object) error {
 
 // Delete - Generic client delete
 func (rm *RsrcManager) Delete(item reconciler.Object) error {
-	return rm.client.Delete(context.TODO(), item.Obj.(*Object).Obj.(runtime.Object))
+	return rm.client.Delete(context.TODO(), item.Obj.(*Object).Obj.(runtime.Object), client.PropagationPolicy(metav1.DeletePropagationForeground))
 }
 
 // Get a specific k8s obj

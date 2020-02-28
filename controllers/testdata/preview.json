@@ -1,0 +1,243 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "creationTimestamp": null,
+    "generation": 8,
+    "labels": {
+      "cdap.container.Preview": "test",
+      "cdap.instance": "test",
+      "custom-resource": "v1alpha1.CDAPMaster",
+      "custom-resource-name": "test",
+      "custom-resource-namespace": "default",
+      "using": "controllers.ServiceHandler"
+    },
+    "name": "cdap-test-preview",
+    "namespace": "default",
+    "ownerReferences": [
+      {
+        "apiVersion": "cdap.cdap.io/v1alpha1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "*v1alpha1.CDAPMaster",
+        "name": "test",
+        "uid": "7aeaad53-4afe-11ea-8611-42010a800022"
+      }
+    ],
+    "resourceVersion": "1897401",
+    "selfLink": "/apis/apps/v1/namespaces/default/statefulsets/cdap-test-preview",
+    "uid": "7b3ad755-4afe-11ea-8611-42010a800022"
+  },
+  "spec": {
+    "podManagementPolicy": "OrderedReady",
+    "replicas": 1,
+    "revisionHistoryLimit": 10,
+    "selector": {
+      "matchLabels": {
+        "cdap.container.Preview": "test",
+        "cdap.instance": "test",
+        "custom-resource": "v1alpha1.CDAPMaster",
+        "custom-resource-name": "test",
+        "custom-resource-namespace": "default",
+        "using": "controllers.ServiceHandler"
+      }
+    },
+    "serviceName": "cdap-test-preview",
+    "template": {
+      "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+          "cdap.container.Preview": "test",
+          "cdap.instance": "test",
+          "custom-resource": "v1alpha1.CDAPMaster",
+          "custom-resource-name": "test",
+          "custom-resource-namespace": "default",
+          "using": "controllers.ServiceHandler"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "io.cdap.cdap.master.environment.k8s.PreviewServiceMain",
+              "--env=k8s"
+            ],
+            "env": [
+              {
+                "name": "JAVA_HEAPMAX",
+                "value": "-Xmx62914560"
+              }
+            ],
+            "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "preview",
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "100Mi"
+              }
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/etc/podinfo",
+                "name": "podinfo",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/cdap/conf",
+                "name": "cdap-conf",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/hadoop/conf",
+                "name": "hadoop-conf",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/data",
+                "name": "cdap-test-preview-data"
+              },
+              {
+                "mountPath": "/etc/cdap/security",
+                "name": "cdap-security",
+                "readOnly": true
+              }
+            ]
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "initContainers": [
+          {
+            "args": [
+              "io.cdap.cdap.master.environment.k8s.StorageMain"
+            ],
+            "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "storageinit",
+            "resources": {},
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/etc/podinfo",
+                "name": "podinfo",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/cdap/conf",
+                "name": "cdap-conf",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/hadoop/conf",
+                "name": "hadoop-conf",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/data",
+                "name": "cdap-test-preview-data"
+              },
+              {
+                "mountPath": "/etc/cdap/security",
+                "name": "cdap-security",
+                "readOnly": true
+              }
+            ]
+          }
+        ],
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "serviceAccount": "cdap",
+        "serviceAccountName": "cdap",
+        "terminationGracePeriodSeconds": 120,
+        "volumes": [
+          {
+            "downwardAPI": {
+              "defaultMode": 420,
+              "items": [
+                {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "metadata.labels"
+                  },
+                  "path": "pod.labels.properties"
+                },
+                {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "metadata.name"
+                  },
+                  "path": "pod.name"
+                }
+              ]
+            },
+            "name": "podinfo"
+          },
+          {
+            "configMap": {
+              "defaultMode": 420,
+              "name": "cdap-test-cconf"
+            },
+            "name": "cdap-conf"
+          },
+          {
+            "configMap": {
+              "defaultMode": 420,
+              "name": "cdap-test-hconf"
+            },
+            "name": "hadoop-conf"
+          },
+          {
+            "name": "cdap-security",
+            "secret": {
+              "defaultMode": 420,
+              "secretName": "cdap-secret"
+            }
+          }
+        ]
+      }
+    },
+    "updateStrategy": {
+      "rollingUpdate": {
+        "partition": 0
+      },
+      "type": "RollingUpdate"
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "creationTimestamp": null,
+          "name": "cdap-test-preview-data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "dataSource": null,
+          "resources": {
+            "requests": {
+              "storage": "100Gi"
+            }
+          },
+          "volumeMode": "Filesystem"
+        },
+        "status": {
+          "phase": "Pending"
+        }
+      }
+    ]
+  },
+  "status": {
+    "collisionCount": 0,
+    "currentReplicas": 1,
+    "currentRevision": "cdap-test-preview-59d99db958",
+    "observedGeneration": 8,
+    "readyReplicas": 1,
+    "replicas": 0,
+    "updateRevision": "cdap-test-preview-59d99db958",
+    "updatedReplicas": 1
+  }
+}
