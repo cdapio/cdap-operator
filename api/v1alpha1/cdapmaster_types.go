@@ -48,7 +48,7 @@ type CDAPMasterSpec struct {
 	// create a separate system config file with entry value as file content.
 	SystemAppConfigs map[string]string `json:"systemappconfigs,omitempty"`
 	// LogLevels is a set of logger name to log level settings.
-	LogLevels        map[string]string `json:"logLevels,omitempty"`
+	LogLevels map[string]string `json:"logLevels,omitempty"`
 	// AppFabric is specification for the CDAP app-fabric service.
 	AppFabric AppFabricSpec `json:"appFabric,omitempty"`
 	// Logs is specification for the CDAP logging service.
