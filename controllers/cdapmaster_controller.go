@@ -163,8 +163,9 @@ func (h *ConfigMapHandler) Objects(rsrc interface{}, rsrclabels map[string]strin
 		return output.String(), nil
 	}
 
+	mergedLabelmap := mergeMaps(m.Labels, rsrclabels)
 	for key, templateFiles := range configs {
-		spec := newConfigMapSpec(m, getObjName(m, key), mergeMaps(m.Labels, rsrclabels))
+		spec := newConfigMapSpec(m, getObjName(m, key), mergedLabelmap)
 		for _, file := range templateFiles {
 			data, err := fillTemplate(file)
 			if err != nil {
@@ -175,6 +176,13 @@ func (h *ConfigMapHandler) Objects(rsrc interface{}, rsrclabels map[string]strin
 		obj := buildConfigMapObject(spec)
 		expected = append(expected, obj)
 	}
+
+	// Creates system app config object. Creates one data object per system app config file.
+	sysAppConfigSpec := newConfigMapSpec(m, getObjName(m, configMapSysAppConf), mergedLabelmap)
+	for filename, sysAppConfig := range m.Spec.SystemAppConfigs {
+		sysAppConfigSpec = sysAppConfigSpec.AddData(filename, sysAppConfig)
+	}
+	expected = append(expected, buildConfigMapObject(sysAppConfigSpec))
 	return expected, nil
 }
 

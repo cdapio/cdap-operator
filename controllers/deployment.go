@@ -133,6 +133,7 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 
 	cconf := getObjName(master, configMapCConf)
 	hconf := getObjName(master, configMapHConf)
+	sysappconf := getObjName(master, configMapSysAppConf)
 	dataDir := confLocalDataDirVal
 
 	spec := newDeploymentPlanSpec()
@@ -140,7 +141,7 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 	for k, v := range serviceGroups.stateful {
 		name := k
 		services := v
-		stateful, err := buildStatefulSets(master, name, services, labels, cconf, hconf, dataDir)
+		stateful, err := buildStatefulSets(master, name, services, labels, cconf, hconf, sysappconf, dataDir)
 		if err != nil {
 			return nil, err
 		}
@@ -150,7 +151,7 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 	for k, v := range serviceGroups.deployment {
 		name := k
 		services := v
-		deploymentSpec, err := buildDeployment(master, name, services, labels, cconf, hconf, dataDir)
+		deploymentSpec, err := buildDeployment(master, name, services, labels, cconf, hconf, sysappconf, dataDir)
 		if err != nil {
 			return nil, err
 		}
@@ -168,7 +169,7 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 }
 
 // Return a single single-/multi- container StatefulSets containing a list of supplied services
-func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services ServiceGroup, labels map[string]string, cconf, hconf, dataDir string) (*StatefulSpec, error) {
+func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services ServiceGroup, labels map[string]string, cconf, hconf, sysappconf, dataDir string) (*StatefulSpec, error) {
 	objName := getObjName(master, name)
 	serviceAccount, err := getServiceAccount(master, services)
 	if err != nil {
@@ -187,7 +188,7 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		return nil, err
 	}
 
-	spec := newStatefulSpec(master, objName, labels, cconf, hconf).
+	spec := newStatefulSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
 		setNodeSelector(nodeSelector).
 		setRuntimeClassName(runtimeClass).
@@ -227,7 +228,7 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 }
 
 // Return a single single-/multi- container deployment containing a list of supplied services
-func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceGroup, labels map[string]string, cconf, hconf, dataDir string) (*DeploymentSpec, error) {
+func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceGroup, labels map[string]string, cconf, hconf, sysappconf, dataDir string) (*DeploymentSpec, error) {
 	objName := getObjName(master, name)
 	serviceAccount, err := getServiceAccount(master, services)
 	if err != nil {
@@ -245,7 +246,7 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 	if err != nil {
 		return nil, err
 	}
-	spec := newDeploymentSpec(master, objName, labels, cconf, hconf).
+	spec := newDeploymentSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
 		setNodeSelector(nodeSelector).
 		setRuntimeClassName(runtimeClass).

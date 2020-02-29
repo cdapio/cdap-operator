@@ -56,9 +56,10 @@ const (
 	labelContainerKeyPrefix = "cdap.container."
 
 	// kubernetes object name related
-	objectNamePrefix = "cdap-"
-	configMapCConf   = "cconf"
-	configMapHConf   = "hconf"
+	objectNamePrefix    = "cdap-"
+	configMapCConf      = "cconf"
+	configMapHConf      = "hconf"
+	configMapSysAppConf = "sysappconf"
 
 	// yaml template
 	templateDir         = "templates/"

@@ -135,6 +135,13 @@ func (in *CDAPMasterSpec) DeepCopyInto(out *CDAPMasterSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.SystemAppConfigs != nil {
+		in, out := &in.SystemAppConfigs, &out.SystemAppConfigs
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.LogLevels != nil {
 		in, out := &in.LogLevels, &out.LogLevels
 		*out = make(map[string]string, len(*in))
