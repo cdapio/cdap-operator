@@ -1,27 +1,23 @@
 # Build the manager binary
 FROM golang:1.13 as builder
 
-WORKDIR /workspace
-# Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
-RUN go mod download
-
-# Copy the go source
-COPY main.go main.go
+# Copy in the go src
+WORKDIR /go/src/cdap.io/cdap-operator
 COPY api/ api/
+COPY vendor/ vendor/
+COPY main.go main.go
 COPY controllers/ controllers/
+COPY ./ ./
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager ./main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
-COPY --from=builder /workspace/manager .
-USER nonroot:nonroot
-
+COPY --from=builder /go/src/cdap.io/cdap-operator/manager .
+COPY templates/ templates/
+COPY config/crd/ crds/
+COPY config/ config/
 ENTRYPOINT ["/manager"]
