@@ -1,12 +1,8 @@
 # Build the manager binary
 FROM golang:1.13 as builder
 
-# Copy in the go src
+# Copy everything in the go src
 WORKDIR /go/src/cdap.io/cdap-operator
-COPY api/ api/
-COPY vendor/ vendor/
-COPY main.go main.go
-COPY controllers/ controllers/
 COPY ./ ./
 
 # Build
@@ -18,6 +14,5 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /go/src/cdap.io/cdap-operator/manager .
 COPY templates/ templates/
-COPY config/crd/ crds/
 COPY config/ config/
 ENTRYPOINT ["/manager"]
