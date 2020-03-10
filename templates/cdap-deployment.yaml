@@ -19,21 +19,21 @@ metadata:
   {{if .Base.Labels}}
   labels:
     {{range $k,$v := .Base.Labels}}
-    {{$k}}: {{$v}}
+    {{$k}}: "{{$v}}"
     {{end}}
   {{end}}
 spec:
   selector:
     matchLabels:
       {{range $k,$v := .Base.Labels}}
-      {{$k}}: {{$v}}
+      {{$k}}: "{{$v}}"
       {{end}}
   replicas: {{.Base.Replicas}}
   template:
     metadata:
       labels:
         {{range $k,$v := .Base.Labels }}
-        {{$k}}: {{$v}}
+        {{$k}}: "{{$v}}"
         {{end}}
     spec:
       {{if .Base.ServiceAccountName}}
@@ -41,7 +41,7 @@ spec:
       {{end}}
       nodeSelector:
         {{range $k,$v := .Base.NodeSelector}}
-        {{$k}}: {{$v}}
+        {{$k}}: "{{$v}}"
         {{end}}
       {{if .Base.RuntimeClassName}}
       runtimeClassName: {{.Base.RuntimeClassName}}
@@ -68,8 +68,8 @@ spec:
           {{end}}
           env:
           {{range $e := $c.Env }}
-          - name: {{$e.Name}}
-            value: {{$e.Value}}
+          - name: "{{$e.Name}}"
+            value: "{{$e.Value}}"
           {{end}}
           resources:
             {{if $c.ResourceRequests}}
