@@ -1,6 +1,6 @@
 {
   "apiVersion": "apps/v1",
-  "kind": "Deployment",
+  "kind": "StatefulSet",
   "metadata": {
     "annotations": {
       "deployment.kubernetes.io/revision": "8"
@@ -52,6 +52,7 @@
       },
       "type": "RollingUpdate"
     },
+    "serviceName": "cdap-test-appfabric",
     "template": {
       "metadata": {
         "creationTimestamp": null,
@@ -110,9 +111,55 @@
                 "readOnly": true
               },
               {
+                "mountPath": "/data",
+                "name": "cdap-test-appfabric-data",
+                "readOnly": true
+              },
+              {
                 "mountPath": "/etc/cdap/security",
                 "name": "cdap-security",
                 "readOnly": true
+              }
+            ]
+          }
+        ],
+        "initContainers": [
+          {
+            "name": "storageinit",
+            "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
+            "args": [
+              "io.cdap.cdap.master.environment.k8s.StorageMain"
+            ],
+            "resources": {},
+            "volumeMounts": [
+              {
+                "name": "podinfo",
+                "readOnly": true,
+                "mountPath": "/etc/podinfo"
+              },
+              {
+                "name": "cdap-conf",
+                "readOnly": true,
+                "mountPath": "/etc/cdap/conf"
+              },
+              {
+                "name": "hadoop-conf",
+                "readOnly": true,
+                "mountPath": "/etc/hadoop/conf"
+              },
+              {
+                "name": "cdap-sysappconf",
+                "readOnly": true,
+                "mountPath": "/opt/cdap/master/system-app-config"
+              },
+              {
+                "mountPath": "/data",
+                "name": "cdap-test-appfabric-data"
+              },
+              {
+                "name": "cdap-security",
+                "readOnly": true,
+                "mountPath": "/etc/cdap/security"
               }
             ]
           }
@@ -177,7 +224,27 @@
           }
         ]
       }
-    }
+    },
+    "updateStrategy": {},
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "cdap-test-appfabric-data",
+          "creationTimestamp": null
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "200Gi"
+            }
+          }
+        },
+        "status": {}
+      }
+    ]
   },
   "status": {
     "availableReplicas": 1,
