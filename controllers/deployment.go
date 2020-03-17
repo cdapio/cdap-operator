@@ -58,50 +58,6 @@ func (d *DeploymentPlan) Init() {
 			"userinterface": serviceUserInterface,
 		},
 	}
-
-	// 1 Pod: all services run in a single Pod
-	d.planMap[1] = ServiceGroups{
-		stateful: map[ServiceGroupName]ServiceGroup{
-			"standalone": {
-				serviceLogs, serviceMessaging, serviceMetrics, servicePreview, serviceAppFabric, serviceMetadata,
-				serviceRouter, serviceUserInterface},
-		},
-		networkService: map[NetworkServiceName]ServiceName{
-			"router":        serviceRouter,
-			"userinterface": serviceUserInterface,
-		},
-	}
-
-	// 2 Pods: UserInterface in its own Pod. All other services in "Backend" Pod
-	d.planMap[2] = ServiceGroups{
-		stateful: map[ServiceGroupName]ServiceGroup{
-			"backend": {
-				serviceLogs, serviceMessaging, serviceMetrics, servicePreview, serviceAppFabric, serviceMetadata,
-				serviceRouter},
-		},
-		deployment: map[ServiceGroupName]ServiceGroup{
-			"userinterface": {serviceUserInterface},
-		},
-		networkService: map[NetworkServiceName]ServiceName{
-			"router":        serviceRouter,
-			"userinterface": serviceUserInterface,
-		},
-	}
-
-	// 3 Pods: UserInterface and router in their own Pod. Rest in "Backend" Pod
-	d.planMap[3] = ServiceGroups{
-		stateful: map[ServiceGroupName]ServiceGroup{
-			"backend": {serviceLogs, serviceMessaging, serviceMetrics, servicePreview, serviceAppFabric, serviceMetadata},
-		},
-		deployment: map[ServiceGroupName]ServiceGroup{
-			"router":        {serviceRouter},
-			"userinterface": {serviceUserInterface},
-		},
-		networkService: map[NetworkServiceName]ServiceName{
-			"router":        serviceRouter,
-			"userinterface": serviceUserInterface,
-		},
-	}
 }
 
 // Given desired number of pods, return a list of service groups where each group contains services colocated in the
@@ -121,11 +77,9 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 		return &DeploymentPlanSpec{}, nil
 	}
 
-	// Get deployment plan depending on the number of pods desired
+	// Get the deployment plan. At the moment, it only supports numPods = 0 (i.e. one service per pod).
+	// But can be easily extended to colocate services together in a single pod to form a multi-container pod
 	var numPods int32 = 0
-	if master.Spec.NumPods != nil {
-		numPods = *master.Spec.NumPods
-	}
 	serviceGroups, err := deploymentPlanner.getPlan(numPods)
 	if err != nil {
 		return nil, err

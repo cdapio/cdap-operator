@@ -65,13 +65,6 @@ type CDAPMasterSpec struct {
 	Router RouterSpec `json:"router,omitempty"`
 	// UserInterface is specification for the CDAP UI service.
 	UserInterface UserInterfaceSpec `json:"userInterface,omitempty"`
-	// NumPods specifies the number of Pods to deploy all of above CDAP services across.
-	// Currently supported configurations are:
-	// 0/unset:  Each service runs in its own Pod
-	// 1:        All services run in a single multi-container Pod
-	// 2:        UI in its own Pod. Other services in a single multi-container Pod
-	// 3:        UI and Router in their own Pod. All other services runs in a multi-container Pod
-	NumPods *int32 `json:"numPods,omitempty"`
 }
 
 // CDAPServiceSpec defines the base set of specifications applicable to all master services.
