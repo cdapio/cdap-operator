@@ -821,15 +821,6 @@ spec:
                     size used by the service.
                   type: string
               type: object
-            numPods:
-              description: 'NumPods specifies the number of Pods to deploy all of
-                above CDAP services across. Currently supported configurations are:
-                0/unset:  Each service runs in its own Pod 1:        All services
-                run in a single multi-container Pod 2:        UI in its own Pod. Other
-                services in a single multi-container Pod 3:        UI and Router in
-                their own Pod. All other services runs in a multi-container Pod'
-              format: int32
-              type: integer
             preview:
               description: Preview is specification for the CDAP preview service.
               properties:
