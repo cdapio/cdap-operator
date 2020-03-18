@@ -19,12 +19,12 @@ metadata:
   labels:
     cdap.service: {{.Name}}
     {{range $k,$v := .Labels}}
-    {{$k}}: {{$v}}
+    {{$k}}: "{{$v}}"
     {{end}}
 {{if .Annotations}}
   annotations:
     {{range $k,$v := .Annotations}}
-    {{$k}}: '{{$v}}'
+    {{$k}}: "{{$v}}"
     {{end}}
 {{end}}
 spec:
@@ -35,7 +35,7 @@ spec:
 {{end}}
   selector:
     {{range $k,$v := .Selectors}}
-    {{$k}}: '{{$v}}'
+    {{$k}}: "{{$v}}"
     {{end}}
   ports:
 
