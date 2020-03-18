@@ -37,7 +37,16 @@ func getCDAPServiceSpec(master *v1alpha1.CDAPMaster, service ServiceName) (*v1al
 	if !val.IsValid() {
 		return nil, fmt.Errorf("failed to find field %v in %v", service, reflect.TypeOf(master.Spec).Name())
 	}
-	val = reflect.Indirect(reflect.ValueOf(val.Addr().Interface())).FieldByName(fieldNameCDAPServiceSpec)
+	// For optional service, its service field is a pointer to spec.
+	if val.Kind() == reflect.Ptr {
+		// Return nil if optional service is disabled (e.g. service field is nil)
+		if val.IsNil() {
+			return nil, nil
+		}
+	} else {
+		val = val.Addr()
+	}
+	val = reflect.Indirect(reflect.ValueOf(val.Interface())).FieldByName(fieldNameCDAPServiceSpec)
 	if !val.IsValid() {
 		return nil, fmt.Errorf("failed to find field %v in %v", fieldNameCDAPServiceSpec, reflect.TypeOf(val).Name())
 	}
@@ -57,7 +66,16 @@ func getCDAPStatefulServiceSpec(master *v1alpha1.CDAPMaster, service ServiceName
 	if !val.IsValid() {
 		return nil, fmt.Errorf("failed to find field %v in %v", service, reflect.TypeOf(master.Spec).Name())
 	}
-	val = reflect.Indirect(reflect.ValueOf(val.Addr().Interface())).FieldByName(fieldNameCDAPStatefulServiceSpec)
+	// For optional service, its service field is a pointer to spec
+	if val.Kind() == reflect.Ptr {
+		// Return nil if optional service is disabled (e.g. service field is nil)
+		if val.IsNil() {
+			return nil, nil
+		}
+	} else {
+		val = val.Addr()
+	}
+	val = reflect.Indirect(reflect.ValueOf(val.Interface())).FieldByName(fieldNameCDAPStatefulServiceSpec)
 	if !val.IsValid() {
 		return nil, nil
 	}

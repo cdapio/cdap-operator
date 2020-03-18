@@ -50,6 +50,7 @@ func (d *DeploymentPlan) Init() {
 			"metadata":  {serviceMetadata},
 		},
 		deployment: map[ServiceGroupName]ServiceGroup{
+			"runtime":       {serviceRuntime},
 			"router":        {serviceRouter},
 			"userinterface": {serviceUserInterface},
 		},
@@ -99,6 +100,11 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 		if err != nil {
 			return nil, err
 		}
+		// stateful could be nil when the list of services are optional and they are disabled in CR
+		// (i.e. service spec is set to nil)
+		if stateful == nil {
+			continue
+		}
 		spec = spec.withStateful(stateful)
 	}
 	// Build deployment
@@ -108,6 +114,11 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 		deploymentSpec, err := buildDeployment(master, name, services, labels, cconf, hconf, sysappconf, dataDir)
 		if err != nil {
 			return nil, err
+		}
+		// deploymentSpec could be nil when the list of services are optional and they are disabled in CR
+		// (i.e. service spec is set to nil)
+		if deploymentSpec == nil {
+			continue
 		}
 		spec = spec.withDeployment(deploymentSpec)
 	}
@@ -158,6 +169,11 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		if err != nil {
 			return nil, err
 		}
+		// This happens when the service is optional and disabled in CR
+		// (i.e. service spec is set to nil)
+		if ss == nil {
+			continue
+		}
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
 		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
 		if s == serviceUserInterface {
@@ -166,6 +182,12 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		spec = spec.withContainer(c)
 		// Adding a label to allow NodePort service selector to find the pod
 		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
+	}
+
+	// All services are optional services and are disabled in CR.
+	// Return nil to indicate no statefulset is built.
+	if len(spec.Containers) == 0 {
+		return nil, nil
 	}
 
 	// Get storage class and calculates total disk size required
@@ -211,6 +233,11 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		if err != nil {
 			return nil, err
 		}
+		// This happens when the service is optional and disabled in CR
+		// (i.e. service spec is set to nil)
+		if ss == nil {
+			continue
+		}
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
 		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
 		if s == serviceUserInterface {
@@ -220,6 +247,11 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 
 		// Adding a label to allow k8s service selector to easily find the pod
 		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
+	}
+	// All services are optional services and are disabled in CR.
+	// Return nil to indicate no deployment is built.
+	if len(spec.Containers) == 0 {
+		return nil, nil
 	}
 	return spec, nil
 }
@@ -360,6 +392,11 @@ func getNodeSelector(master *v1alpha1.CDAPMaster, services ServiceGroup) (map[st
 		if err != nil {
 			return nil, err
 		}
+		// This happens when the service is optional and disabled in CR
+		// (i.e. service spec is set to nil)
+		if spec == nil {
+			continue
+		}
 		nodeSelector = mergeMaps(nodeSelector, spec.NodeSelector)
 	}
 	return nodeSelector, nil
@@ -420,6 +457,13 @@ func getFieldValueIfUnique(master *v1alpha1.CDAPMaster, services ServiceGroup, f
 		specVal := reflect.ValueOf(master.Spec).FieldByName(service)
 		if !specVal.IsValid() {
 			return nil, fmt.Errorf("filed %s not valid", service)
+		}
+		// For optional service, its service field should be a pointer to spec
+		if specVal.Kind() == reflect.Ptr {
+			if specVal.IsNil() {
+				continue
+			}
+			specVal = specVal.Elem()
 		}
 		fieldVal := reflect.ValueOf(specVal.Interface()).FieldByName(fieldName)
 		if !fieldVal.IsValid() {

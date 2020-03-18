@@ -26,8 +26,11 @@ import (
 
 // CDAPMasterSpec defines the desired state of CDAPMaster
 //
-// Field names for individual services must match the constant values of ServiceName in constants.go as reflection
-// is used to find field value.
+// Important notes:
+// * The field name of each service MUST match the constant values of ServiceName in constants.go as reflection
+//   is used to find field value.
+// * For services that are optional (i.e. may or may not be required for CDAP to be operational), their service
+//   specification fields are pointers. By default, these optional services are disabled. Set to non-nil to enable them.
 type CDAPMasterSpec struct {
 	// Image is the docker image name for the CDAP backend.
 	Image string `json:"image,omitempty"`
@@ -65,6 +68,11 @@ type CDAPMasterSpec struct {
 	Router RouterSpec `json:"router,omitempty"`
 	// UserInterface is specification for the CDAP UI service.
 	UserInterface UserInterfaceSpec `json:"userInterface,omitempty"`
+	// Runtime is specification for the CDAP runtime service.
+	// This is an optional service and may not be required for CDAP to be operational.
+	// To disable this service: either omit or set the field to nil
+	// To enable this service: set it to a pointer to a RuntimeSpec struct (can be an empty struct)
+	Runtime *RuntimeSpec `json:"runtime,omitempty"`
 }
 
 // CDAPServiceSpec defines the base set of specifications applicable to all master services.
@@ -145,6 +153,11 @@ type MetricsSpec struct {
 // PreviewSpec defines the specification for the Preview service.
 type PreviewSpec struct {
 	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+// RuntimeSpec defines the specification for the Runtime service.
+type RuntimeSpec struct {
+	CDAPServiceSpec `json:",inline"`
 }
 
 // RouterSpec defines the specification for the Router service.
