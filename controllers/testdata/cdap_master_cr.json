@@ -94,7 +94,6 @@
       },
       "storageSize": "100Gi"
     },
-    "numPods": 0,
     "preview": {
       "metadata": {
         "creationTimestamp": null
@@ -106,6 +105,17 @@
         }
       },
       "storageSize": "100Gi"
+    },
+    "runtime": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "100Mi"
+        }
+      }
     },
     "router": {
       "metadata": {

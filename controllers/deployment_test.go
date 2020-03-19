@@ -23,37 +23,93 @@ func fromJson(filename string, obj interface{}) error {
 }
 
 var _ = Describe("Controller Suite", func() {
-	Describe("NumPods == 0", func() {
-		It("k8s objects", func() {
-			emptyLabels := make(map[string]string)
-
-			master := &v1alpha1.CDAPMaster{}
-			err := fromJson("testdata/cdap_master_cr_num_pods_0.json", master)
+	Describe("Fully distributed one service per pod", func() {
+		var (
+			master *v1alpha1.CDAPMaster
+		)
+		BeforeEach(func() {
+			master = &v1alpha1.CDAPMaster{}
+			err := fromJson("testdata/cdap_master_cr.json", master)
 			Expect(err).To(BeNil())
-
+		})
+		readExpectedJson := func(fileName string) []byte {
+			json, err := ioutil.ReadFile("testdata/" + fileName)
+			Expect(err).To(BeNil())
+			return json
+		}
+		diffJson := func(expected, actual []byte) {
+			opts := jsondiff.DefaultConsoleOptions()
+			diff, text := jsondiff.Compare(expected, actual, &opts)
+			Expect(diff.String()).To(Equal(jsondiff.SupersetMatch.String()), text)
+		}
+		It("k8s objs for all services including essential and optional", func() {
+			emptyLabels := make(map[string]string)
 			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
 			Expect(err).To(BeNil())
-
 			objs, err := buildObjectsForDeploymentPlan(spec)
 			Expect(err).To(BeNil())
-
-			readExpectedJson := func(fileName string) []byte {
-				json, err := ioutil.ReadFile("testdata/" + fileName)
-				Expect(err).To(BeNil())
-				return json
-			}
-
-			diffJson := func(expected, actual []byte) {
-				opts := jsondiff.DefaultConsoleOptions()
-				diff, text := jsondiff.Compare(expected, actual, &opts)
-				Expect(diff.String()).To(Equal(jsondiff.SupersetMatch.String()), text)
-			}
 
 			var strategyHandler DeploymentPlan
 			strategyHandler.Init()
 			serviceGroupMap, err := strategyHandler.getPlan(0)
 
-			expectedCount := len(serviceGroupMap.stateful) + len(serviceGroupMap.deployment) + len(serviceGroupMap.networkService)
+			totalServiceCount := len(serviceGroupMap.stateful) + len(serviceGroupMap.deployment) + len(serviceGroupMap.networkService)
+			expectedCount := totalServiceCount
+			actualCount := 0
+			for _, obj := range objs {
+				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.StatefulSet); ok {
+					for k, _ := range serviceGroupMap.stateful {
+						if o.Name == getObjName(master, k) {
+							actual, err := json.Marshal(o)
+							Expect(err).To(BeNil())
+							expected := readExpectedJson(k + ".json")
+							diffJson(expected, actual)
+							actualCount++
+						}
+					}
+				}
+				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.Deployment); ok {
+					for k, _ := range serviceGroupMap.deployment {
+						if o.Name == getObjName(master, k) {
+							actual, err := json.Marshal(o)
+							Expect(err).To(BeNil())
+							expected := readExpectedJson(k + ".json")
+							diffJson(expected, actual)
+							actualCount++
+						}
+					}
+				}
+				if o, ok := obj.Obj.(*k8s.Object).Obj.(*corev1.Service); ok {
+					for k, _ := range serviceGroupMap.networkService {
+						if o.Name == getObjName(master, k) {
+							actual, err := json.Marshal(o)
+							Expect(err).To(BeNil())
+							expected := readExpectedJson(k + "_service.json")
+							diffJson(expected, actual)
+							actualCount++
+						}
+					}
+				}
+			}
+			Expect(expectedCount).To(Equal(actualCount))
+		})
+		It("k8s objs for just essential services", func() {
+			master.Spec.Runtime = nil
+			numOptionalServices := 1
+
+			emptyLabels := make(map[string]string)
+			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
+			Expect(err).To(BeNil())
+			objs, err := buildObjectsForDeploymentPlan(spec)
+			Expect(err).To(BeNil())
+
+			var strategyHandler DeploymentPlan
+			strategyHandler.Init()
+			serviceGroupMap, err := strategyHandler.getPlan(0)
+
+			totalServiceCount := len(serviceGroupMap.stateful) + len(serviceGroupMap.deployment) + len(serviceGroupMap.networkService)
+			expectedCount := totalServiceCount - numOptionalServices
+
 			actualCount := 0
 			for _, obj := range objs {
 				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.StatefulSet); ok {

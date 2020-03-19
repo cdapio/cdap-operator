@@ -24,6 +24,10 @@ const (
 	// servicePreview defines the service type for preview service
 	servicePreview ServiceName = "Preview"
 
+	// serviceRuntime defines the service type for runtime service.
+	// This is an optional serivce which may or may not be deployed depending on the setting of customer resource.
+	serviceRuntime ServiceName = "Runtime"
+
 	// serviceRouter defines the service type for the router
 	serviceRouter ServiceName = "Router"
 
