@@ -48,9 +48,9 @@ func (d *DeploymentPlan) Init() {
 			"preview":   {servicePreview},
 			"appfabric": {serviceAppFabric},
 			"metadata":  {serviceMetadata},
+			"runtime":   {serviceRuntime},
 		},
 		deployment: map[ServiceGroupName]ServiceGroup{
-			"runtime":       {serviceRuntime},
 			"router":        {serviceRouter},
 			"userinterface": {serviceUserInterface},
 		},

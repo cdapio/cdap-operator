@@ -127,7 +127,7 @@ type CDAPStatefulServiceSpec struct {
 
 // AppFabricSpec defines the specification for the AppFabric service.
 type AppFabricSpec struct {
-	CDAPServiceSpec `json:",inline"`
+	CDAPStatefulServiceSpec `json:",inline"`
 }
 
 // LogsSpec defines the specification for the Logs service.
@@ -142,7 +142,7 @@ type MessagingSpec struct {
 
 // MetadataSpec defines the specification for the Metadata service
 type MetadataSpec struct {
-	CDAPServiceSpec `json:",inline"`
+	CDAPStatefulServiceSpec `json:",inline"`
 }
 
 // MetricsSpec defines the specification for the Metrics service.
@@ -157,7 +157,7 @@ type PreviewSpec struct {
 
 // RuntimeSpec defines the specification for the Runtime service.
 type RuntimeSpec struct {
-	CDAPServiceSpec `json:",inline"`
+	CDAPStatefulServiceSpec `json:",inline"`
 }
 
 // RouterSpec defines the specification for the Router service.

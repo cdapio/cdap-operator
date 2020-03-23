@@ -33,8 +33,12 @@ spec:
           type: object
         spec:
           description: "CDAPMasterSpec defines the desired state of CDAPMaster \n
-            Field names for individual services must match the constant values of
-            ServiceName in constants.go as reflection is used to find field value."
+            Important notes: * The field name of each service MUST match the constant
+            values of ServiceName in constants.go as reflection   is used to find
+            field value. * For services that are optional (i.e. may or may not be
+            required for CDAP to be operational), their service   specification fields
+            are pointers. By default, these optional services are disabled. Set to
+            non-nil to enable them."
           properties:
             appFabric:
               description: AppFabric is specification for the CDAP app-fabric service.
@@ -85,7 +89,7 @@ spec:
                             description: 'Selects a field of the pod: supports metadata.name,
                               metadata.namespace, metadata.labels, metadata.annotations,
                               spec.nodeName, spec.serviceAccountName, status.hostIP,
-                              status.podIP, status.podIPs.'
+                              status.podIP.'
                             properties:
                               apiVersion:
                                 description: Version of the schema the FieldPath is
@@ -183,6 +187,14 @@ spec:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
                   type: string
+                storageClassName:
+                  description: StorageClassName is the name of the StorageClass for
+                    the persistent volume used by the service.
+                  type: string
+                storageSize:
+                  description: StorageSize is specification for the persistent volume
+                    size used by the service.
+                  type: string
               type: object
             config:
               additionalProperties:
@@ -254,7 +266,7 @@ spec:
                             description: 'Selects a field of the pod: supports metadata.name,
                               metadata.namespace, metadata.labels, metadata.annotations,
                               spec.nodeName, spec.serviceAccountName, status.hostIP,
-                              status.podIP, status.podIPs.'
+                              status.podIP.'
                             properties:
                               apiVersion:
                                 description: Version of the schema the FieldPath is
@@ -410,7 +422,7 @@ spec:
                             description: 'Selects a field of the pod: supports metadata.name,
                               metadata.namespace, metadata.labels, metadata.annotations,
                               spec.nodeName, spec.serviceAccountName, status.hostIP,
-                              status.podIP, status.podIPs.'
+                              status.podIP.'
                             properties:
                               apiVersion:
                                 description: Version of the schema the FieldPath is
@@ -566,7 +578,7 @@ spec:
                             description: 'Selects a field of the pod: supports metadata.name,
                               metadata.namespace, metadata.labels, metadata.annotations,
                               spec.nodeName, spec.serviceAccountName, status.hostIP,
-                              status.podIP, status.podIPs.'
+                              status.podIP.'
                             properties:
                               apiVersion:
                                 description: Version of the schema the FieldPath is
@@ -664,6 +676,14 @@ spec:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
                   type: string
+                storageClassName:
+                  description: StorageClassName is the name of the StorageClass for
+                    the persistent volume used by the service.
+                  type: string
+                storageSize:
+                  description: StorageSize is specification for the persistent volume
+                    size used by the service.
+                  type: string
               type: object
             metrics:
               description: Metrics is specification for the CDAP metrics service.
@@ -714,7 +734,7 @@ spec:
                             description: 'Selects a field of the pod: supports metadata.name,
                               metadata.namespace, metadata.labels, metadata.annotations,
                               spec.nodeName, spec.serviceAccountName, status.hostIP,
-                              status.podIP, status.podIPs.'
+                              status.podIP.'
                             properties:
                               apiVersion:
                                 description: Version of the schema the FieldPath is
@@ -870,7 +890,7 @@ spec:
                             description: 'Selects a field of the pod: supports metadata.name,
                               metadata.namespace, metadata.labels, metadata.annotations,
                               spec.nodeName, spec.serviceAccountName, status.hostIP,
-                              status.podIP, status.podIPs.'
+                              status.podIP.'
                             properties:
                               apiVersion:
                                 description: Version of the schema the FieldPath is
@@ -1026,7 +1046,7 @@ spec:
                             description: 'Selects a field of the pod: supports metadata.name,
                               metadata.namespace, metadata.labels, metadata.annotations,
                               spec.nodeName, spec.serviceAccountName, status.hostIP,
-                              status.podIP, status.podIPs.'
+                              status.podIP.'
                             properties:
                               apiVersion:
                                 description: Version of the schema the FieldPath is
@@ -1190,7 +1210,7 @@ spec:
                             description: 'Selects a field of the pod: supports metadata.name,
                               metadata.namespace, metadata.labels, metadata.annotations,
                               spec.nodeName, spec.serviceAccountName, status.hostIP,
-                              status.podIP, status.podIPs.'
+                              status.podIP.'
                             properties:
                               apiVersion:
                                 description: Version of the schema the FieldPath is
@@ -1288,6 +1308,14 @@ spec:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
                   type: string
+                storageClassName:
+                  description: StorageClassName is the name of the StorageClass for
+                    the persistent volume used by the service.
+                  type: string
+                storageSize:
+                  description: StorageSize is specification for the persistent volume
+                    size used by the service.
+                  type: string
               type: object
             securitySecret:
               description: SecuritySecret is secret that contains security related
@@ -1354,7 +1382,7 @@ spec:
                             description: 'Selects a field of the pod: supports metadata.name,
                               metadata.namespace, metadata.labels, metadata.annotations,
                               spec.nodeName, spec.serviceAccountName, status.hostIP,
-                              status.podIP, status.podIPs.'
+                              status.podIP.'
                             properties:
                               apiVersion:
                                 description: Version of the schema the FieldPath is
