@@ -16,6 +16,7 @@ limitations under the License.
 package controllers
 
 import (
+	"cdap.io/cdap-operator/controllers/cdapmaster"
 	"fmt"
 	batchv1 "k8s.io/api/batch/v1"
 	"sigs.k8s.io/controller-reconciler/pkg/finalizer"
@@ -63,9 +64,21 @@ func (r *CDAPMasterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // Intentionally leave a blank line, otherwise controller-gen won't generate RBAC
 
 func NewReconciler(mgr manager.Manager) *gr.Reconciler {
+	// Registering cdapmaster.* handlers (from old version tags/v1.0) in order to support backward compatibility
+	// Essentially those handler will delete CDAP services and configures created by previous version of operator
+	// and let the handlers in the new operator to re-deploy CDAP.
 	return gr.
 		WithManager(mgr).
 		For(&v1alpha1.CDAPMaster{}, v1alpha1.GroupVersion).
+		Using(&cdapmaster.Base{}).
+		Using(&cdapmaster.Messaging{}).
+		Using(&cdapmaster.AppFabric{}).
+		Using(&cdapmaster.Metrics{}).
+		Using(&cdapmaster.Logs{}).
+		Using(&cdapmaster.Metadata{}).
+		Using(&cdapmaster.Preview{}).
+		Using(&cdapmaster.Router{}).
+		Using(&cdapmaster.UserInterface{}).
 		Using(&VersionUpdateHandler{}).
 		Using(&ConfigMapHandler{}).
 		Using(&ServiceHandler{}).
