@@ -388,7 +388,7 @@ func newUpgradeJobSpec(master *v1alpha1.CDAPMaster, name string, labels map[stri
 	s.JobName = name
 	s.Labels = labels
 	s.HostName = getObjName(master, serviceRouter)
-	s.BackoffLimit = imageVersionUpgradeFailureLimit
+	s.BackoffLimit = imageVersionUpgradeJobMaxRetryCount
 	s.ReferentName = master.Name
 	s.ReferentKind = master.Kind
 	s.ReferentApiVersion = master.APIVersion

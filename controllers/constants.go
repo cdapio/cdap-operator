@@ -73,8 +73,12 @@ const (
 	templateUpgradeJob  = "upgrade-job.yaml"
 
 	// Image version upgrade/downgrade
-	imageVersionLatest              = "latest"
-	imageVersionUpgradeFailureLimit = 5
+	imageVersionLatest = "latest"
+	// Have a high number of retry count to increase the chance of pre-/post- upgrade job succeeding,
+	// because for instance it may take a while for CDAP services to be fully up after pods being restarted
+	// following image version update, thus post-upgrade job may have to be retried a number of times before
+	// it can actually communicate with CDAP services.
+	imageVersionUpgradeJobMaxRetryCount = 10
 
 	// CDAP services
 	containerStorageMain = "io.cdap.cdap.master.environment.k8s.StorageMain"
