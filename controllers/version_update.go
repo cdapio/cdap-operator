@@ -171,7 +171,7 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 			log.Printf("Version update: pre-upgrade job succeeded")
 			// Return empty to delete preUpgrade jobObj
 			return []reconciler.Object{}, nil
-		} else if job.Status.Failed > imageVersionUpgradeFailureLimit {
+		} else if job.Status.Failed > imageVersionUpgradeJobMaxRetryCount {
 			setCondition(master, updateStatus.PreUpgradeFailed)
 			setCondition(master, updateStatus.UpgradeFailed)
 			clearCondition(master, updateStatus.Inprogress)
@@ -209,7 +209,7 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 			log.Printf("Version update: post-upgrade job succeeded")
 			// Return empty to delete postUpgrade job
 			return []reconciler.Object{}, nil
-		} else if job.Status.Failed > imageVersionUpgradeFailureLimit {
+		} else if job.Status.Failed > imageVersionUpgradeJobMaxRetryCount {
 			setCondition(master, updateStatus.PostUpgradeFailed)
 			setCondition(master, updateStatus.UpgradeFailed)
 			clearCondition(master, updateStatus.Inprogress)

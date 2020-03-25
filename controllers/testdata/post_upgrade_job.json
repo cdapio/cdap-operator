@@ -35,7 +35,7 @@
   },
   "spec": {
     "activeDeadlineSeconds": 600,
-    "backoffLimit": 5,
+    "backoffLimit": 10,
     "completions": 1,
     "parallelism": 1,
     "selector": {
