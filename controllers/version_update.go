@@ -154,6 +154,11 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	}
 
 	// First, run pre-upgrade job
+	//
+	// Note that pre-upgrade job doesn't have an "activeDeadlineSeconds" set it on, so it will
+	// try as many as imageVersionUpgradeJobMaxRetryCount times before giving up. If we ever
+	// needed to set an overall deadline for the pre-upgrade job, the logic below needs to check
+	// deadline exceeded condition on job's status
 	if !isConditionTrue(master, updateStatus.PreUpgradeSucceeded) {
 		log.Printf("Version update: pre-upgrade job not completed")
 		preJobName := getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis)
@@ -192,6 +197,11 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	}
 
 	// At last, run post-upgrade job
+	//
+	// Note that post-upgrade job doesn't have an "activeDeadlineSeconds" set it on, so it will
+	// try as many as imageVersionUpgradeJobMaxRetryCount times before giving up. If we ever
+	// needed to set an overall deadline for the post-upgrade job, the logic below needs to check
+	// deadline exceeded condition on job's status
 	if !isConditionTrue(master, updateStatus.PostUpgradeSucceeded) {
 		log.Printf("Version update: post-upgrade job not completed")
 		postJobName := getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis)

@@ -74,4 +74,3 @@ spec:
       {{end}}
       restartPolicy: Never
   backoffLimit: {{.BackoffLimit}}
-  activeDeadlineSeconds: 600
