@@ -34,7 +34,6 @@
     "uid": "401828eb-4b1a-11ea-8611-42010a800022"
   },
   "spec": {
-    "activeDeadlineSeconds": 600,
     "backoffLimit": 10,
     "completions": 1,
     "parallelism": 1,
