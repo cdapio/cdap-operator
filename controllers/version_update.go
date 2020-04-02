@@ -162,7 +162,7 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	if !isConditionTrue(master, updateStatus.PreUpgradeSucceeded) {
 		log.Printf("Version update: pre-upgrade job not completed")
 		preJobName := getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis)
-		preJobSpec := buildUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
+		preJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
 		job := findJob(preJobName)
 		if job == nil {
 			obj, err := createJob(preJobSpec)
@@ -205,7 +205,7 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	if !isConditionTrue(master, updateStatus.PostUpgradeSucceeded) {
 		log.Printf("Version update: post-upgrade job not completed")
 		postJobName := getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis)
-		postJobSpec := buildUpgradeJobSpec(getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
+		postJobSpec := buildPostUpgradeJobSpec(getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
 		job := findJob(postJobName)
 		if job == nil {
 			obj, err := createJob(postJobSpec)
@@ -508,13 +508,22 @@ func getPostUpgradeJobName(startTimeMs int64) string {
 	return fmt.Sprintf("post-upgrade-job-%d", startTimeMs)
 }
 
-// Return upgrade job spec
-func buildUpgradeJobSpec(jobName string, master *v1alpha1.CDAPMaster, labels map[string]string) *VersionUpgradeJobSpec {
+// Return pre-upgrade job spec
+func buildPreUpgradeJobSpec(jobName string, master *v1alpha1.CDAPMaster, labels map[string]string) *VersionUpgradeJobSpec {
 	startTimeMs := master.Status.UpgradeStartTimeMillis
 	cconf := getObjName(master, configMapCConf)
 	hconf := getObjName(master, configMapHConf)
 	name := getObjName(master, jobName)
 	return newUpgradeJobSpec(master, name, labels, startTimeMs, cconf, hconf).SetPreUpgrade(true)
+}
+
+// Return post-upgrade job spec
+func buildPostUpgradeJobSpec(jobName string, master *v1alpha1.CDAPMaster, labels map[string]string) *VersionUpgradeJobSpec {
+	startTimeMs := master.Status.UpgradeStartTimeMillis
+	cconf := getObjName(master, configMapCConf)
+	hconf := getObjName(master, configMapHConf)
+	name := getObjName(master, jobName)
+	return newUpgradeJobSpec(master, name, labels, startTimeMs, cconf, hconf).SetPostUpgrade(true)
 }
 
 // Given an upgrade job spec, return a reconciler object as expected state

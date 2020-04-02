@@ -59,13 +59,14 @@
         "containers": [
           {
             "args": [
-              "io.cdap.cdap.master.upgrade.UpgradeJobMain",
+              "io.cdap.cdap.master.upgrade.PostUpgradeJobMain",
               "cdap-test-router",
-              "11015"
+              "11015",
+              "1581238669880"
             ],
             "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
             "imagePullPolicy": "IfNotPresent",
-            "name": "pre-upgrade",
+            "name": "post-upgrade",
             "resources": {},
             "terminationMessagePath": "/dev/termination-log",
             "terminationMessagePolicy": "File",

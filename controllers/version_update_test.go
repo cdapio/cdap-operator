@@ -180,7 +180,7 @@ var _ = Describe("Controller Suite", func() {
 			Expect(master.Status.UserInterfaceImageToUse).To(Equal(newUIImage))
 		})
 	})
-	Describe("Post upgrade job", func() {
+	Describe("Pre upgrade job", func() {
 		It("k8s object", func() {
 			const upgradeTimeMs int64 = 1581238669880
 			const newUIImage = "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5"
@@ -199,7 +199,7 @@ var _ = Describe("Controller Suite", func() {
 					ImageToUse:             curUIImage,
 				},
 			}
-			postJobSpec := buildUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, emptyLabels)
+			postJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, emptyLabels)
 			object, err := buildUpgradeJobObject(postJobSpec)
 			Expect(err).To(BeNil())
 
@@ -230,7 +230,7 @@ var _ = Describe("Controller Suite", func() {
 					ImageToUse:             curUIImage,
 				},
 			}
-			postJobSpec := buildUpgradeJobSpec(getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, emptyLabels)
+			postJobSpec := buildPostUpgradeJobSpec(getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, emptyLabels)
 			object, err := buildUpgradeJobObject(postJobSpec)
 			Expect(err).To(BeNil())
 
