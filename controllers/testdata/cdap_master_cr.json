@@ -45,6 +45,10 @@
       "router.bind.port": "11015",
       "router.server.address": "cdap-test-router"
     },
+    "configMapVolumes": {
+      "my-config-map-1": "/my/config/map/1",
+      "my-config-map-2": "/my/config/map/2"
+    },
     "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
     "locationURI": "hdfs://hadoop:9000",
     "logs": {

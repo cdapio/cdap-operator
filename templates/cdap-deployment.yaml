@@ -102,6 +102,10 @@ spec:
               mountPath: /etc/cdap/security
               readOnly: true
             {{end}}
+            {{range $k,$v := $.Base.ConfigMapVolumes}}
+            - name: cdap-config-map-volumes-k
+              mountPath: {{$v}}
+            {{end}}
       {{end}}
       volumes:
         - name: podinfo
@@ -126,4 +130,9 @@ spec:
         - name: cdap-security
           secret:
             secretName: {{.Base.SecuritySecret}}
+        {{end}}
+        {{range $k,$v := $.Base.ConfigMapVolumes}}
+        - name: cdap-config-map-volumes-{{$k}}
+          configMap:
+            name: {{$k}}
         {{end}}

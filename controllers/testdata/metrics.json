@@ -108,6 +108,14 @@
                 "mountPath": "/etc/cdap/security",
                 "name": "cdap-security",
                 "readOnly": true
+              },
+              {
+                "name": "cdap-config-map-volumes-my-config-map-1",
+                "mountPath": "/my/config/map/1"
+              },
+              {
+                "mountPath": "/my/config/map/2",
+                "name": "cdap-config-map-volumes-my-config-map-2"
               }
             ]
           }
@@ -153,6 +161,14 @@
                 "mountPath": "/etc/cdap/security",
                 "name": "cdap-security",
                 "readOnly": true
+              },
+              {
+                "name": "cdap-config-map-volumes-my-config-map-1",
+                "mountPath": "/my/config/map/1"
+              },
+              {
+                "mountPath": "/my/config/map/2",
+                "name": "cdap-config-map-volumes-my-config-map-2"
               }
             ]
           }
@@ -212,6 +228,20 @@
             "secret": {
               "defaultMode": 420,
               "secretName": "cdap-secret"
+            }
+          },
+          {
+            "name": "cdap-config-map-volumes-my-config-map-1",
+            "configMap": {
+              "defaultMode": 420,
+              "name": "my-config-map-1"
+            }
+          },
+          {
+            "name": "cdap-config-map-volumes-my-config-map-2",
+            "configMap": {
+              "defaultMode": 420,
+              "name": "my-config-map-2"
             }
           }
         ]
