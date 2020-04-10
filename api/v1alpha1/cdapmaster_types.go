@@ -49,7 +49,7 @@ type CDAPMasterSpec struct {
 	// ConfigMapVolumes defines a map from ConfigMap names to volume mount path.
 	// Key is the configmap object name. Value is the mount path.
 	// This adds ConfigMap data to the directory specified by the volume mount path.
-	ConfigMapVolumes map[string]string `json:configMapVolumes,omitempty`
+	ConfigMapVolumes map[string]string `json:"configMapVolumes,omitempty"`
 	// SystemAppConfigs specifies configs used by CDAP to run system apps
 	// dynamically. Each entry is of format <filename, json app config> which will
 	// create a separate system config file with entry value as file content.
