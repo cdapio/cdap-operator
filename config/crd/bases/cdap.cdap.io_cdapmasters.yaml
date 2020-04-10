@@ -201,6 +201,14 @@ spec:
                 type: string
               description: Config is a set of configurations that goes into cdap-site.xml.
               type: object
+            configMapVolumes:
+              additionalProperties:
+                type: string
+              description: ConfigMapVolumes defines a map from ConfigMap names to
+                volume mount path. Key is the configmap object name. Value is the
+                mount path. This adds ConfigMap data to the directory specified by
+                the volume mount path.
+              type: object
             image:
               description: Image is the docker image name for the CDAP backend.
               type: string
