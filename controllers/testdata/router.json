@@ -116,10 +116,10 @@
               },
               {
                 "mountPath": "/my/config/map/1",
-                "name": "cdap-config-map-volumes-k"
+                "name": "cdap-config-map-volumes-my-config-map-1"
               },
               {
-                "name": "cdap-config-map-volumes-k",
+                "name": "cdap-config-map-volumes-my-config-map-2",
                 "mountPath": "/my/config/map/2"
               }
             ]
