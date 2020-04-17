@@ -1,6 +1,6 @@
 {
   "apiVersion": "apps/v1",
-  "kind": "StatefulSet",
+  "kind": "Deployment",
   "metadata": {
     "annotations": {
       "deployment.kubernetes.io/revision": "8"
@@ -111,63 +111,9 @@
                 "readOnly": true
               },
               {
-                "mountPath": "/data",
-                "name": "cdap-test-metadata-data",
-                "readOnly": true
-              },
-              {
                 "mountPath": "/etc/cdap/security",
                 "name": "cdap-security",
                 "readOnly": true
-              },
-              {
-                "name": "cdap-cm-vol-my-config-map-1",
-                "mountPath": "/my/config/map/1"
-              },
-              {
-                "mountPath": "/my/config/map/2",
-                "name": "cdap-cm-vol-my-config-map-2"
-              }
-            ]
-          }
-        ],
-        "initContainers": [
-          {
-            "name": "storageinit",
-            "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
-            "args": [
-              "io.cdap.cdap.master.environment.k8s.StorageMain"
-            ],
-            "resources": {},
-            "volumeMounts": [
-              {
-                "name": "podinfo",
-                "readOnly": true,
-                "mountPath": "/etc/podinfo"
-              },
-              {
-                "name": "cdap-conf",
-                "readOnly": true,
-                "mountPath": "/etc/cdap/conf"
-              },
-              {
-                "name": "hadoop-conf",
-                "readOnly": true,
-                "mountPath": "/etc/hadoop/conf"
-              },
-              {
-                "name": "cdap-sysappconf",
-                "readOnly": true,
-                "mountPath": "/opt/cdap/master/system-app-config"
-              },
-              {
-                "mountPath": "/data",
-                "name": "cdap-test-metadata-data"
-              },
-              {
-                "name": "cdap-security",
-                "readOnly": true,
-                "mountPath": "/etc/cdap/security"
               },
               {
                 "name": "cdap-cm-vol-my-config-map-1",
@@ -253,26 +199,7 @@
         ]
       }
     },
-    "updateStrategy": {},
-    "volumeClaimTemplates": [
-      {
-        "metadata": {
-          "name": "cdap-test-metadata-data",
-          "creationTimestamp": null
-        },
-        "spec": {
-          "accessModes": [
-            "ReadWriteOnce"
-          ],
-          "resources": {
-            "requests": {
-              "storage": "200Gi"
-            }
-          }
-        },
-        "status": {}
-      }
-    ]
+    "updateStrategy": {}
   },
   "status": {
     "availableReplicas": 1,
