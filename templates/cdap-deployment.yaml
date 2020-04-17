@@ -103,7 +103,7 @@ spec:
               readOnly: true
             {{end}}
             {{range $k,$v := $.Base.ConfigMapVolumes}}
-            - name: cdap-config-map-volumes-{{$k}}
+            - name: cdap-cm-vol-{{$k}}
               mountPath: {{$v}}
             {{end}}
       {{end}}
@@ -132,7 +132,7 @@ spec:
             secretName: {{.Base.SecuritySecret}}
         {{end}}
         {{range $k,$v := $.Base.ConfigMapVolumes}}
-        - name: cdap-config-map-volumes-{{$k}}
+        - name: cdap-cm-vol-{{$k}}
           configMap:
             name: {{$k}}
         {{end}}
