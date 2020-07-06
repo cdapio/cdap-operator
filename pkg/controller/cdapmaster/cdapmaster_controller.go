@@ -41,7 +41,7 @@ const (
 	containerLabel = "cdap.container"
 	// Heap memory related constants
 	javaMinHeapRatio     = float64(0.6)
-	javaReservedNonHeap  = int64(768 * 1024 * 1024)
+	javaReservedNonHeap  = int64(1024 * 1024 * 1024)
 	templateDir          = "templates/"
 	deploymentTemplate   = "cdap-deployment.yaml"
 	uiDeploymentTemplate = "cdap-ui-deployment.yaml"
