@@ -85,7 +85,7 @@ const (
 
 	// Java heap size
 	javaMinHeapRatio          = float64(0.6)
-	javaReservedNonHeap       = int64(768 * 1024 * 1024)
+	javaReservedNonHeap       = int64(1024 * 1024 * 1024)
 	javaMaxHeapSizeEnvVarName = "JAVA_HEAPMAX"
 
 	Bytes     = int64(1)
