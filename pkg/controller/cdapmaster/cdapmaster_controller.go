@@ -58,7 +58,7 @@ const (
 	upgradeJobFinishedMessage = "Upgrade job finished."
 	upgradeJobSkippedMessage  = "Upgrade job skipped."
 	upgradeResetMessage       = "Upgrade spec reset."
-	upgradeFailureLimit       = 4
+	upgradeFailureLimit       = 10
 
 	latestVersion = "latest"
 )
