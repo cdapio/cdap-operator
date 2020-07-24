@@ -73,5 +73,8 @@ spec:
       {{end}}
       restartPolicy: Never
   backoffLimit: {{.Job.BackoffLimit}}
-  activeDeadlineSeconds: 600
+  # Set job deadline to 6h as pre/post upgrade job can take a lot of time to complete in scenarios like instance with
+  # many jobs, streaming jobs running etc. pre/post upgrade job should finish way before in most scenarios with their
+  # retries.
+  activeDeadlineSeconds: 21600
   ttlSecondsAfterFinished: 1200
