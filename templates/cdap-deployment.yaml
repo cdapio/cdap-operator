@@ -117,6 +117,9 @@ spec:
               - path: "pod.name"
                 fieldRef:
                   fieldPath: metadata.name
+              - path: "pod.uid"
+                fieldRef:
+                  fieldPath: metadata.uid
         - name: cdap-conf
           configMap:
             name: {{.Base.CConf}}
