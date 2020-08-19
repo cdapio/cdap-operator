@@ -197,6 +197,13 @@
                     "fieldPath": "metadata.name"
                   },
                   "path": "pod.name"
+                },
+                {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "metadata.uid"
+                  },
+                  "path": "pod.uid"
                 }
               ]
             },
