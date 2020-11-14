@@ -120,19 +120,20 @@ func (s *ContainerSpec) setResources(resources *corev1.ResourceRequirements) *Co
 
 // BaseSpec contains command fields for both StatefulSet and Deployment
 type BaseSpec struct {
-	Name               string            `json:"name,omitempty"`
-	Namespace          string            `json:"namespace,omitempty"`
-	Labels             map[string]string `json:"labels,omitempty"`
-	ServiceAccountName string            `json:"serviceAccountName,omitempty"`
-	Replicas           int32             `json:"replicas,omitempty"`
-	NodeSelector       map[string]string `json:"nodeSelector,omitempty"`
-	RuntimeClassName   string            `json:"runtimeClassName,omitempty"`
-	PriorityClassName  string            `json:"priorityClassName,omitempty"`
-	SecuritySecret     string            `json:"securitySecret,omitempty"`
-	CConf              string            `json:"cdapConf,omitempty"`
-	HConf              string            `json:"hadoopConf,omitempty"`
-	SysAppConf         string            `json:"sysAppConf,omitempty"`
-	ConfigMapVolumes   map[string]string `json:"configMapVolumes,omitempty"`
+	Name               string                        `json:"name,omitempty"`
+	Namespace          string                        `json:"namespace,omitempty"`
+	Labels             map[string]string             `json:"labels,omitempty"`
+	ServiceAccountName string                        `json:"serviceAccountName,omitempty"`
+	ImagePullSecrets   []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	Replicas           int32                         `json:"replicas,omitempty"`
+	NodeSelector       map[string]string             `json:"nodeSelector,omitempty"`
+	RuntimeClassName   string                        `json:"runtimeClassName,omitempty"`
+	PriorityClassName  string                        `json:"priorityClassName,omitempty"`
+	SecuritySecret     string                        `json:"securitySecret,omitempty"`
+	CConf              string                        `json:"cdapConf,omitempty"`
+	HConf              string                        `json:"hadoopConf,omitempty"`
+	SysAppConf         string                        `json:"sysAppConf,omitempty"`
+	ConfigMapVolumes   map[string]string             `json:"configMapVolumes,omitempty"`
 }
 
 func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf, sysappconf string) *BaseSpec {
@@ -140,6 +141,7 @@ func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]str
 	s.Name = name
 	s.Namespace = master.Namespace
 	s.Labels = labels
+	s.ImagePullSecrets = master.Spec.ImagePullSecrets
 	s.ServiceAccountName = ""
 	s.Replicas = 1
 	s.RuntimeClassName = ""
@@ -245,10 +247,11 @@ func newStorageSpec(storageClassName string, storageSize string) *StorageSpec {
 
 // For StatefulSet
 type StatefulSpec struct {
-	Base           *BaseSpec        `json:"Base,inline"`
-	InitContainers []*ContainerSpec `json:"initContainer,omitempty"`
-	Containers     []*ContainerSpec `json:"containers,omitempty"`
-	Storage        *StorageSpec     `json:"storage,omitempty"`
+	Base             *BaseSpec                     `json:"Base,inline"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	InitContainers   []*ContainerSpec              `json:"initContainer,omitempty"`
+	Containers       []*ContainerSpec              `json:"containers,omitempty"`
+	Storage          *StorageSpec                  `json:"storage,omitempty"`
 }
 
 func newStatefulSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf, sysappconf string) *StatefulSpec {
