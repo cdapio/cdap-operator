@@ -36,6 +36,12 @@ spec:
         {{$k}}: "{{$v}}"
         {{end}}
     spec:
+      {{if .Base.ImagePullSecrets}}
+      imagePullSecrets:
+      {{range $k, $v := .Base.ImagePullSecrets}}
+          - name: {{$v.Name}}
+      {{end}}
+      {{end}}
       {{if .Base.ServiceAccountName}}
       serviceAccountName: {{.Base.ServiceAccountName}}
       {{end}}
