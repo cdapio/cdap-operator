@@ -42,12 +42,13 @@ func (d *DeploymentPlan) Init() {
 	// Default: each service runs in its own Pod
 	d.planMap[0] = ServiceGroups{
 		stateful: map[ServiceGroupName]ServiceGroup{
-			"logs":      {serviceLogs},
-			"messaging": {serviceMessaging},
-			"metrics":   {serviceMetrics},
-			"preview":   {servicePreview},
-			"appfabric": {serviceAppFabric},
-			"runtime":   {serviceRuntime},
+			"logs":           {serviceLogs},
+			"messaging":      {serviceMessaging},
+			"metrics":        {serviceMetrics},
+			"preview":        {servicePreview},
+			"appfabric":      {serviceAppFabric},
+			"runtime":        {serviceRuntime},
+			"authentication": {serviceAuthentication},
 		},
 		deployment: map[ServiceGroupName]ServiceGroup{
 			"metadata":      {serviceMetadata},
@@ -94,6 +95,7 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 	spec := newDeploymentPlanSpec()
 	// Build statefulsets
 	for k, v := range serviceGroups.stateful {
+
 		name := k
 		services := v
 		stateful, err := buildStatefulSets(master, name, services, labels, cconf, hconf, sysappconf, dataDir)
@@ -107,6 +109,7 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 		}
 		spec = spec.withStateful(stateful)
 	}
+
 	// Build deployment
 	for k, v := range serviceGroups.deployment {
 		name := k

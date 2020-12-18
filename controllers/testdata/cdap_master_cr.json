@@ -43,7 +43,9 @@
       "metadata.elasticsearch.cluster.hosts": "elasticsearch-master",
       "metadata.storage.implementation": "elastic",
       "router.bind.port": "11015",
-      "router.server.address": "cdap-test-router"
+      "router.server.address": "cdap-test-router",
+      "security.authentication.handlerClassName":	"io.cdap.cdap.security.server.BasicAuthenticationHandler",
+      "security.authentication.basic.realmfile": "/opt/cdap/basicauth/basicrealm"
     },
     "configMapVolumes": {
       "my-config-map-1": "/my/config/map/1",

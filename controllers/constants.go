@@ -28,6 +28,10 @@ const (
 	// This is an optional serivce which may or may not be deployed depending on the setting of customer resource.
 	serviceRuntime ServiceName = "Runtime"
 
+	// serviceAuth defines the service type for Auth service.
+	// This is an optional serivce which may or may not be deployed depending on the setting of customer resource.
+	serviceAuthentication ServiceName = "Authentication"
+
 	// serviceRouter defines the service type for the router
 	serviceRouter ServiceName = "Router"
 
@@ -50,7 +54,7 @@ const (
 	confUserInterfaceBindPort = "dashboard.bind.port"
 
 	// default values
-	defaultImage             = "gcr.io/cdapio/cdap:latest"
+	defaultImage             = "cdap_google:0.0.4"
 	defaultRouterPort        = 11015
 	defaultUserInterfacePort = 11011
 	defaultStorageSize       = "200Gi"
