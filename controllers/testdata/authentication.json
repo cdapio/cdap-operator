@@ -6,16 +6,16 @@
       "deployment.kubernetes.io/revision": "8"
     },
     "creationTimestamp": null,
-    "generation": 538,
+    "generation": 537,
     "labels": {
-      "cdap.container.Router": "test",
+      "cdap.container.Authentication": "test",
       "cdap.instance": "test",
       "custom-resource": "v1alpha1.CDAPMaster",
       "custom-resource-name": "test",
       "custom-resource-namespace": "default",
       "using": "controllers.ServiceHandler"
     },
-    "name": "cdap-test-router",
+    "name": "cdap-test-authentication",
     "namespace": "default",
     "ownerReferences": [
       {
@@ -27,17 +27,17 @@
         "uid": "7aeaad53-4afe-11ea-8611-42010a800022"
       }
     ],
-    "resourceVersion": "1912761",
-    "selfLink": "/apis/extensions/v1beta1/namespaces/default/deployments/cdap-test-router",
-    "uid": "7b58a4ca-4afe-11ea-8611-42010a800022"
+    "resourceVersion": "1912646",
+    "selfLink": "/apis/extensions/v1beta1/namespaces/default/deployments/cdap-test-authentication",
+    "uid": "7b7d687b-4afe-11ea-8611-42010a800022"
   },
   "spec": {
     "progressDeadlineSeconds": 600,
-    "replicas": 2,
+    "replicas": 1,
     "revisionHistoryLimit": 10,
     "selector": {
       "matchLabels": {
-        "cdap.container.Router": "test",
+        "cdap.container.Authentication": "test",
         "cdap.instance": "test",
         "custom-resource": "v1alpha1.CDAPMaster",
         "custom-resource-name": "test",
@@ -45,6 +45,7 @@
         "using": "controllers.ServiceHandler"
       }
     },
+    "serviceName": "cdap-test-authentication",
     "strategy": {
       "rollingUpdate": {
         "maxSurge": "25%",
@@ -56,7 +57,7 @@
       "metadata": {
         "creationTimestamp": null,
         "labels": {
-          "cdap.container.Router": "test",
+          "cdap.container.Authentication": "test",
           "cdap.instance": "test",
           "custom-resource": "v1alpha1.CDAPMaster",
           "custom-resource-name": "test",
@@ -68,7 +69,7 @@
         "containers": [
           {
             "args": [
-              "io.cdap.cdap.master.environment.k8s.RouterServiceMain",
+              "io.cdap.cdap.master.environment.k8s.AuthenticationServiceMain",
               "--env=k8s"
             ],
             "env": [
@@ -79,7 +80,7 @@
             ],
             "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
             "imagePullPolicy": "IfNotPresent",
-            "name": "router",
+            "name": "authentication",
             "resources": {
               "requests": {
                 "cpu": "100m",
@@ -115,12 +116,12 @@
                 "readOnly": true
               },
               {
-                "mountPath": "/my/config/map/1",
-                "name": "cdap-cm-vol-my-config-map-1"
+                "name": "cdap-cm-vol-my-config-map-1",
+                "mountPath": "/my/config/map/1"
               },
               {
-                "name": "cdap-cm-vol-my-config-map-2",
-                "mountPath": "/my/config/map/2"
+                "mountPath": "/my/config/map/2",
+                "name": "cdap-cm-vol-my-config-map-2"
               }
             ]
           }
@@ -197,17 +198,18 @@
             }
           },
           {
-            "name": "cdap-cm-vol-my-config-map-2",
             "configMap": {
               "name": "my-config-map-2"
-            }
+            },
+            "name": "cdap-cm-vol-my-config-map-2"
           }
         ]
       }
-    }
+    },
+    "updateStrategy": {}
   },
   "status": {
-    "availableReplicas": 2,
+    "availableReplicas": 1,
     "conditions": [
       {
         "lastTransitionTime": "2020-02-09T05:39:22Z",
@@ -220,15 +222,15 @@
       {
         "lastTransitionTime": "2020-02-09T05:39:04Z",
         "lastUpdateTime": "2020-02-09T08:58:27Z",
-        "message": "ReplicaSet \"cdap-test-router-79f988f6d7\" has successfully progressed.",
+        "message": "ReplicaSet \"cdap-test-authentication-646964686c\" has successfully progressed.",
         "reason": "NewReplicaSetAvailable",
         "status": "True",
         "type": "Progressing"
       }
     ],
-    "observedGeneration": 538,
-    "readyReplicas": 2,
-    "replicas": 2,
-    "updatedReplicas": 2
+    "observedGeneration": 537,
+    "readyReplicas": 1,
+    "replicas": 0,
+    "updatedReplicas": 1
   }
 }

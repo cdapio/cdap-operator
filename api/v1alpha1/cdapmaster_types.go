@@ -77,6 +77,11 @@ type CDAPMasterSpec struct {
 	// To disable this service: either omit or set the field to nil
 	// To enable this service: set it to a pointer to a RuntimeSpec struct (can be an empty struct)
 	Runtime *RuntimeSpec `json:"runtime,omitempty"`
+	// Auth is specification for the CDAP Auth service.
+	// This is an optional service and may not be required for CDAP to be operational.
+	// To disable this service: either omit or set the field to nil
+	// To enable this service: set it to a pointer to a AuthenticationSpec struct (can be an empty struct)
+	Authentication *AuthenticationSpec `json:"authentication,omitempty"`
 }
 
 // CDAPServiceSpec defines the base set of specifications applicable to all master services.
@@ -146,7 +151,7 @@ type MessagingSpec struct {
 
 // MetadataSpec defines the specification for the Metadata service
 type MetadataSpec struct {
-	CDAPStatefulServiceSpec `json:",inline"`
+	CDAPScalableServiceSpec `json:",inline"`
 }
 
 // MetricsSpec defines the specification for the Metrics service.
@@ -162,6 +167,11 @@ type PreviewSpec struct {
 // RuntimeSpec defines the specification for the Runtime service.
 type RuntimeSpec struct {
 	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+// AuthenticationSpec defines the specification for the Authentication service.
+type AuthenticationSpec struct {
+	CDAPScalableServiceSpec `json:",inline"`
 }
 
 // RouterSpec defines the specification for the Router service.

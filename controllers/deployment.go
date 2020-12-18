@@ -50,9 +50,10 @@ func (d *DeploymentPlan) Init() {
 			"runtime":   {serviceRuntime},
 		},
 		deployment: map[ServiceGroupName]ServiceGroup{
-			"metadata":      {serviceMetadata},
-			"router":        {serviceRouter},
-			"userinterface": {serviceUserInterface},
+			"authentication": {serviceAuthentication},
+			"metadata":       {serviceMetadata},
+			"router":         {serviceRouter},
+			"userinterface":  {serviceUserInterface},
 		},
 		networkService: map[NetworkServiceName]ServiceName{
 			"router":        serviceRouter,
@@ -94,6 +95,7 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 	spec := newDeploymentPlanSpec()
 	// Build statefulsets
 	for k, v := range serviceGroups.stateful {
+
 		name := k
 		services := v
 		stateful, err := buildStatefulSets(master, name, services, labels, cconf, hconf, sysappconf, dataDir)
@@ -107,6 +109,7 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 		}
 		spec = spec.withStateful(stateful)
 	}
+
 	// Build deployment
 	for k, v := range serviceGroups.deployment {
 		name := k
@@ -222,11 +225,17 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 	if err != nil {
 		return nil, err
 	}
+	replicas, err := getReplicas(master, services)
+	if err != nil {
+		return nil, err
+	}
+
 	spec := newDeploymentSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
 		setNodeSelector(nodeSelector).
 		setRuntimeClassName(runtimeClass).
-		setPriorityClassName(priorityClass)
+		setPriorityClassName(priorityClass).
+		setReplicas(replicas)
 	// Add each service as a container
 	for _, s := range services {
 		ss, err := getCDAPServiceSpec(master, s)
@@ -428,6 +437,30 @@ func getServiceAccount(master *v1alpha1.CDAPMaster, services ServiceGroup) (stri
 		return "", nil
 	}
 	return serviceAccount, nil
+}
+
+// getReplicas returns the Replicas if all supplied services have the same setting, otherwise return an error
+func getReplicas(master *v1alpha1.CDAPMaster, services ServiceGroup) (int32, error) {
+	replicas := int32(0)
+	for _, service := range services {
+		if spec, err := getCDAPScalableServiceSpec(master, service); err != nil {
+			return 0, nil
+		} else if spec != nil {
+			if spec.Replicas == nil {
+				continue
+			}
+			if replicas == 0 {
+				replicas = *spec.Replicas
+			} else if replicas != *spec.Replicas {
+				return 0, fmt.Errorf("value of field Replicas not the same across (%s)", strings.Join(services, ","))
+			}
+		}
+	}
+
+	if replicas == 0 {
+		return 1, nil
+	}
+	return replicas, nil
 }
 
 // Use reflection to extract the string value of supplied field name across all service specs. Return the value only

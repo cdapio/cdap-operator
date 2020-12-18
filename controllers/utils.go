@@ -57,6 +57,35 @@ func getCDAPServiceSpec(master *v1alpha1.CDAPMaster, service ServiceName) (*v1al
 	return ret, nil
 }
 
+// Return pointer to CDAPScalableServiceSpec for the given service (using reflect) if it contains one, otherwise nil
+// Fail if any of the following occurs
+// - unable to find the field for the service
+// - unable to cast to CDAPScalableServiceSpec type
+func getCDAPScalableServiceSpec(master *v1alpha1.CDAPMaster, service ServiceName) (*v1alpha1.CDAPScalableServiceSpec, error) {
+	val := reflect.Indirect(reflect.ValueOf(&master.Spec)).FieldByName(service)
+	if !val.IsValid() {
+		return nil, fmt.Errorf("failed to find field %v in %v", service, reflect.TypeOf(master.Spec).Name())
+	}
+	// For optional service, its service field is a pointer to spec
+	if val.Kind() == reflect.Ptr {
+		// Return nil if optional service is disabled (e.g. service field is nil)
+		if val.IsNil() {
+			return nil, nil
+		}
+	} else {
+		val = val.Addr()
+	}
+	val = reflect.Indirect(reflect.ValueOf(val.Interface())).FieldByName(fieldNameCDAPScalableServiceSpec)
+	if !val.IsValid() {
+		return nil, nil
+	}
+	ret, ok := val.Addr().Interface().(*v1alpha1.CDAPScalableServiceSpec)
+	if !ok {
+		return nil, fmt.Errorf("failed to cast to poiter to %v for %v", fieldNameCDAPScalableServiceSpec, service)
+	}
+	return ret, nil
+}
+
 // Return pointer to CDAPStatefulServiceSpec for the given service (using reflect) if it contains one, otherwise nil
 // Fail if any of the following occurs
 // - unable to find the field for the service
