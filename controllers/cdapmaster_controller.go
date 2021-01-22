@@ -16,13 +16,14 @@ limitations under the License.
 package controllers
 
 import (
-	"cdap.io/cdap-operator/controllers/cdapmaster"
 	"fmt"
-	batchv1 "k8s.io/api/batch/v1"
-	"sigs.k8s.io/controller-reconciler/pkg/finalizer"
 	"strconv"
 	"strings"
 	"text/template"
+
+	"cdap.io/cdap-operator/controllers/cdapmaster"
+	batchv1 "k8s.io/api/batch/v1"
+	"sigs.k8s.io/controller-reconciler/pkg/finalizer"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -255,6 +256,9 @@ func (h *ServiceHandler) Objects(rsrc interface{}, rsrclabels map[string]string,
 
 	// Copy NodePort from observed to ensure k8s services' nodePorts stay the same across reconciling iterators
 	CopyNodePortIfAny(expected, observed)
+
+	// Update status section of CR with status of CDAP service readiness.
+	updateServiceStatus(m)
 
 	return expected, nil
 }
