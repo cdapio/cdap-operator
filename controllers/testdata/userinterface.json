@@ -131,7 +131,7 @@
               },
               {
                 "mountPath": "/my/secret/1",
-                "name": "cdap-secret-my-secret-1"
+                "name": "cdap-secret-vol-my-secret-1"
               }
             ],
             "workingDir": "/opt/cdap/ui"
@@ -215,7 +215,7 @@
             }
           },
           {
-            "name": "cdap-secret-my-secret-1",
+            "name": "cdap-secret-vol-my-secret-1",
             "secret": {
               "defaultMode": 420,
               "secretName": "my-secret-1"

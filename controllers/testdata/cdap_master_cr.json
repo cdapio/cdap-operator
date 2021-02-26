@@ -31,6 +31,17 @@
         }
       }
     },
+    "authentication": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "100Mi"
+        }
+      }
+    },
     "config": {
       "dashboard.bind.port": "11011",
       "data.storage.implementation": "postgresql",
