@@ -116,6 +116,10 @@
               {
                 "name": "cdap-cm-vol-my-config-map-2",
                 "mountPath": "/my/config/map/2"
+              },
+              {
+                "mountPath": "/my/secret/1",
+                "name": "cdap-secret-my-secret-1"
               }
             ]
           }
@@ -169,6 +173,10 @@
               {
                 "name": "cdap-cm-vol-my-config-map-2",
                 "mountPath": "/my/config/map/2"
+              },
+              {
+                "mountPath": "/my/secret/1",
+                "name": "cdap-secret-my-secret-1"
               }
             ]
           }
@@ -247,6 +255,13 @@
             "name": "cdap-cm-vol-my-config-map-2",
             "configMap": {
               "name": "my-config-map-2"
+            }
+          },
+          {
+            "name": "cdap-secret-my-secret-1",
+            "secret": {
+              "defaultMode": 420,
+              "secretName": "my-secret-1"
             }
           }
         ]

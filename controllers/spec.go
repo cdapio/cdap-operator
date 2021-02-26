@@ -133,6 +133,7 @@ type BaseSpec struct {
 	HConf              string            `json:"hadoopConf,omitempty"`
 	SysAppConf         string            `json:"sysAppConf,omitempty"`
 	ConfigMapVolumes   map[string]string `json:"configMapVolumes,omitempty"`
+	SecretVolumes      map[string]string `json:"secretVolumes,omitempty"`
 }
 
 func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf, sysappconf string) *BaseSpec {
@@ -149,6 +150,7 @@ func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]str
 	s.HConf = hconf
 	s.SysAppConf = sysappconf
 	s.ConfigMapVolumes = master.Spec.ConfigMapVolumes
+	s.SecretVolumes = master.Spec.SecretVolumes
 	return s
 }
 
