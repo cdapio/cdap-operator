@@ -1,11 +1,12 @@
 package controllers
 
 import (
-	"cdap.io/cdap-operator/api/v1alpha1"
 	"fmt"
 	"reflect"
-	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	"strings"
+
+	"cdap.io/cdap-operator/api/v1alpha1"
+	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 )
 
 type Pair struct {
@@ -19,6 +20,15 @@ func int32Ptr(value int32) *int32 {
 
 func getObjName(master *v1alpha1.CDAPMaster, name string) string {
 	return fmt.Sprintf("%s%s-%s", objectNamePrefix, master.Name, strings.ToLower(name))
+}
+
+// cloneMap creates a clone of the given source map.
+func cloneMap(source map[string]string) map[string]string {
+	result := make(map[string]string)
+	for k, v := range source {
+		result[k] = v
+	}
+	return result
 }
 
 func mergeMaps(current, added map[string]string) map[string]string {

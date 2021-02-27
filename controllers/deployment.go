@@ -95,7 +95,6 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 	spec := newDeploymentPlanSpec()
 	// Build statefulsets
 	for k, v := range serviceGroups.stateful {
-
 		name := k
 		services := v
 		stateful, err := buildStatefulSets(master, name, services, labels, cconf, hconf, sysappconf, dataDir)
@@ -185,6 +184,14 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		spec = spec.withContainer(c)
 		// Adding a label to allow NodePort service selector to find the pod
 		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
+
+		// Mount extra volumes from ConfigMap and Secret
+		if _, err := spec.addConfigMapVolumes(ss.ConfigMapVolumes); err != nil {
+			return nil, err
+		}
+		if _, err := spec.addSecretVolumes(ss.SecretVolumes); err != nil {
+			return nil, err
+		}
 	}
 
 	// All services are optional services and are disabled in CR.
@@ -236,6 +243,7 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		setRuntimeClassName(runtimeClass).
 		setPriorityClassName(priorityClass).
 		setReplicas(replicas)
+
 	// Add each service as a container
 	for _, s := range services {
 		ss, err := getCDAPServiceSpec(master, s)
@@ -256,6 +264,14 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 
 		// Adding a label to allow k8s service selector to easily find the pod
 		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
+
+		// Mount extra volumes from ConfigMap and Secret
+		if _, err := spec.addConfigMapVolumes(ss.ConfigMapVolumes); err != nil {
+			return nil, err
+		}
+		if _, err := spec.addSecretVolumes(ss.SecretVolumes); err != nil {
+			return nil, err
+		}
 	}
 	// All services are optional services and are disabled in CR.
 	// Return nil to indicate no deployment is built.

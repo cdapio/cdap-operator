@@ -50,6 +50,10 @@ type CDAPMasterSpec struct {
 	// Key is the configmap object name. Value is the mount path.
 	// This adds ConfigMap data to the directory specified by the volume mount path.
 	ConfigMapVolumes map[string]string `json:"configMapVolumes,omitempty"`
+	// SecretVolumes defines a map from Secret names to volume mount path.
+	// Key is the secret object name. Value is the mount path.
+	// This adds Secret data to the directory specified by the volume mount path.
+	SecretVolumes map[string]string `json:"secretVolumes,omitempty"`
 	// SystemAppConfigs specifies configs used by CDAP to run system apps
 	// dynamically. Each entry is of format <filename, json app config> which will
 	// create a separate system config file with entry value as file content.
@@ -103,6 +107,14 @@ type CDAPServiceSpec struct {
 	PriorityClassName *string `json:"priorityClassName,omitempty"`
 	// Env is a list of environment variables for the master service container.
 	Env []corev1.EnvVar `json:"env,omitempty"`
+	// ConfigMapVolumes defines a map from ConfigMap names to volume mount path for this service
+	// Key is the configmap object name. Value is the mount path.
+	// This adds ConfigMap data to the directory specified by the volume mount path.
+	ConfigMapVolumes map[string]string `json:"configMapVolumes,omitempty"`
+	// SecretVolumes defines a map from Secret names to volume mount path for this service
+	// Key is the secret object name. Value is the mount path.
+	// This adds Secret data to the directory specified by the volume mount path.
+	SecretVolumes map[string]string `json:"secretVolumes,omitempty"`
 }
 
 // CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance.

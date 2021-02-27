@@ -40,6 +40,9 @@
           "cpu": "100m",
           "memory": "100Mi"
         }
+      },
+      "secretVolumes": {
+        "secret-key": "/my/secret/key"
       }
     },
     "config": {
@@ -61,6 +64,9 @@
     "configMapVolumes": {
       "my-config-map-1": "/my/config/map/1",
       "my-config-map-2": "/my/config/map/2"
+    },
+    "secretVolumes": {
+      "my-secret-1": "/my/secret/1"
     },
     "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
     "locationURI": "hdfs://hadoop:9000",
@@ -143,6 +149,9 @@
           "cpu": "100m",
           "memory": "100Mi"
         }
+      },
+      "secretVolumes": {
+        "secret-key": "/my/secret/key"
       },
       "replicas": 2,
       "servicePort": 11015

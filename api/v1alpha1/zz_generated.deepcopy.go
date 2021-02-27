@@ -158,6 +158,13 @@ func (in *CDAPMasterSpec) DeepCopyInto(out *CDAPMasterSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.SecretVolumes != nil {
+		in, out := &in.SecretVolumes, &out.SecretVolumes
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.SystemAppConfigs != nil {
 		in, out := &in.SystemAppConfigs, &out.SystemAppConfigs
 		*out = make(map[string]string, len(*in))
@@ -271,6 +278,20 @@ func (in *CDAPServiceSpec) DeepCopyInto(out *CDAPServiceSpec) {
 		*out = make([]v1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.ConfigMapVolumes != nil {
+		in, out := &in.ConfigMapVolumes, &out.ConfigMapVolumes
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.SecretVolumes != nil {
+		in, out := &in.SecretVolumes, &out.SecretVolumes
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
 		}
 	}
 }

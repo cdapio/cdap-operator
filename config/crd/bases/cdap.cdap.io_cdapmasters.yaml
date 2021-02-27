@@ -43,6 +43,14 @@ spec:
             appFabric:
               description: AppFabric is specification for the CDAP app-fabric service.
               properties:
+                configMapVolumes:
+                  additionalProperties:
+                    type: string
+                  description: ConfigMapVolumes defines a map from ConfigMap names
+                    to volume mount path for this service Key is the configmap object
+                    name. Value is the mount path. This adds ConfigMap data to the
+                    directory specified by the volume mount path.
+                  type: object
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -183,6 +191,14 @@ spec:
                     service. If no RuntimeClass resource matches the named class,
                     pods will not be running.
                   type: string
+                secretVolumes:
+                  additionalProperties:
+                    type: string
+                  description: SecretVolumes defines a map from Secret names to volume
+                    mount path for this service Key is the secret object name. Value
+                    is the mount path. This adds Secret data to the directory specified
+                    by the volume mount path.
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -203,6 +219,14 @@ spec:
                 this service: set it to a pointer to a AuthenticationSpec struct (can
                 be an empty struct)'
               properties:
+                configMapVolumes:
+                  additionalProperties:
+                    type: string
+                  description: ConfigMapVolumes defines a map from ConfigMap names
+                    to volume mount path for this service Key is the configmap object
+                    name. Value is the mount path. This adds ConfigMap data to the
+                    directory specified by the volume mount path.
+                  type: object
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -347,6 +371,14 @@ spec:
                     service. If no RuntimeClass resource matches the named class,
                     pods will not be running.
                   type: string
+                secretVolumes:
+                  additionalProperties:
+                    type: string
+                  description: SecretVolumes defines a map from Secret names to volume
+                    mount path for this service Key is the secret object name. Value
+                    is the mount path. This adds Secret data to the directory specified
+                    by the volume mount path.
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -384,6 +416,14 @@ spec:
             logs:
               description: Logs is specification for the CDAP logging service.
               properties:
+                configMapVolumes:
+                  additionalProperties:
+                    type: string
+                  description: ConfigMapVolumes defines a map from ConfigMap names
+                    to volume mount path for this service Key is the configmap object
+                    name. Value is the mount path. This adds ConfigMap data to the
+                    directory specified by the volume mount path.
+                  type: object
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -524,6 +564,14 @@ spec:
                     service. If no RuntimeClass resource matches the named class,
                     pods will not be running.
                   type: string
+                secretVolumes:
+                  additionalProperties:
+                    type: string
+                  description: SecretVolumes defines a map from Secret names to volume
+                    mount path for this service Key is the secret object name. Value
+                    is the mount path. This adds Secret data to the directory specified
+                    by the volume mount path.
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -540,6 +588,14 @@ spec:
             messaging:
               description: Messaging is specification for the CDAP messaging service.
               properties:
+                configMapVolumes:
+                  additionalProperties:
+                    type: string
+                  description: ConfigMapVolumes defines a map from ConfigMap names
+                    to volume mount path for this service Key is the configmap object
+                    name. Value is the mount path. This adds ConfigMap data to the
+                    directory specified by the volume mount path.
+                  type: object
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -680,6 +736,14 @@ spec:
                     service. If no RuntimeClass resource matches the named class,
                     pods will not be running.
                   type: string
+                secretVolumes:
+                  additionalProperties:
+                    type: string
+                  description: SecretVolumes defines a map from Secret names to volume
+                    mount path for this service Key is the secret object name. Value
+                    is the mount path. This adds Secret data to the directory specified
+                    by the volume mount path.
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -696,6 +760,14 @@ spec:
             metadata:
               description: Metadata is specification for the CDAP metadata service.
               properties:
+                configMapVolumes:
+                  additionalProperties:
+                    type: string
+                  description: ConfigMapVolumes defines a map from ConfigMap names
+                    to volume mount path for this service Key is the configmap object
+                    name. Value is the mount path. This adds ConfigMap data to the
+                    directory specified by the volume mount path.
+                  type: object
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -840,6 +912,14 @@ spec:
                     service. If no RuntimeClass resource matches the named class,
                     pods will not be running.
                   type: string
+                secretVolumes:
+                  additionalProperties:
+                    type: string
+                  description: SecretVolumes defines a map from Secret names to volume
+                    mount path for this service Key is the secret object name. Value
+                    is the mount path. This adds Secret data to the directory specified
+                    by the volume mount path.
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -848,6 +928,14 @@ spec:
             metrics:
               description: Metrics is specification for the CDAP metrics service.
               properties:
+                configMapVolumes:
+                  additionalProperties:
+                    type: string
+                  description: ConfigMapVolumes defines a map from ConfigMap names
+                    to volume mount path for this service Key is the configmap object
+                    name. Value is the mount path. This adds ConfigMap data to the
+                    directory specified by the volume mount path.
+                  type: object
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -988,6 +1076,14 @@ spec:
                     service. If no RuntimeClass resource matches the named class,
                     pods will not be running.
                   type: string
+                secretVolumes:
+                  additionalProperties:
+                    type: string
+                  description: SecretVolumes defines a map from Secret names to volume
+                    mount path for this service Key is the secret object name. Value
+                    is the mount path. This adds Secret data to the directory specified
+                    by the volume mount path.
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -1004,6 +1100,14 @@ spec:
             preview:
               description: Preview is specification for the CDAP preview service.
               properties:
+                configMapVolumes:
+                  additionalProperties:
+                    type: string
+                  description: ConfigMapVolumes defines a map from ConfigMap names
+                    to volume mount path for this service Key is the configmap object
+                    name. Value is the mount path. This adds ConfigMap data to the
+                    directory specified by the volume mount path.
+                  type: object
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -1144,6 +1248,14 @@ spec:
                     service. If no RuntimeClass resource matches the named class,
                     pods will not be running.
                   type: string
+                secretVolumes:
+                  additionalProperties:
+                    type: string
+                  description: SecretVolumes defines a map from Secret names to volume
+                    mount path for this service Key is the secret object name. Value
+                    is the mount path. This adds Secret data to the directory specified
+                    by the volume mount path.
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -1160,6 +1272,14 @@ spec:
             router:
               description: Router is specification for the CDAP router service.
               properties:
+                configMapVolumes:
+                  additionalProperties:
+                    type: string
+                  description: ConfigMapVolumes defines a map from ConfigMap names
+                    to volume mount path for this service Key is the configmap object
+                    name. Value is the mount path. This adds ConfigMap data to the
+                    directory specified by the volume mount path.
+                  type: object
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -1304,6 +1424,14 @@ spec:
                     service. If no RuntimeClass resource matches the named class,
                     pods will not be running.
                   type: string
+                secretVolumes:
+                  additionalProperties:
+                    type: string
+                  description: SecretVolumes defines a map from Secret names to volume
+                    mount path for this service Key is the secret object name. Value
+                    is the mount path. This adds Secret data to the directory specified
+                    by the volume mount path.
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -1324,6 +1452,14 @@ spec:
                 to nil To enable this service: set it to a pointer to a RuntimeSpec
                 struct (can be an empty struct)'
               properties:
+                configMapVolumes:
+                  additionalProperties:
+                    type: string
+                  description: ConfigMapVolumes defines a map from ConfigMap names
+                    to volume mount path for this service Key is the configmap object
+                    name. Value is the mount path. This adds ConfigMap data to the
+                    directory specified by the volume mount path.
+                  type: object
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -1464,6 +1600,14 @@ spec:
                     service. If no RuntimeClass resource matches the named class,
                     pods will not be running.
                   type: string
+                secretVolumes:
+                  additionalProperties:
+                    type: string
+                  description: SecretVolumes defines a map from Secret names to volume
+                    mount path for this service Key is the secret object name. Value
+                    is the mount path. This adds Secret data to the directory specified
+                    by the volume mount path.
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -1476,6 +1620,14 @@ spec:
                   description: StorageSize is specification for the persistent volume
                     size used by the service.
                   type: string
+              type: object
+            secretVolumes:
+              additionalProperties:
+                type: string
+              description: SecretVolumes defines a map from Secret names to volume
+                mount path. Key is the secret object name. Value is the mount path.
+                This adds Secret data to the directory specified by the volume mount
+                path.
               type: object
             securitySecret:
               description: SecuritySecret is secret that contains security related
@@ -1496,6 +1648,14 @@ spec:
             userInterface:
               description: UserInterface is specification for the CDAP UI service.
               properties:
+                configMapVolumes:
+                  additionalProperties:
+                    type: string
+                  description: ConfigMapVolumes defines a map from ConfigMap names
+                    to volume mount path for this service Key is the configmap object
+                    name. Value is the mount path. This adds ConfigMap data to the
+                    directory specified by the volume mount path.
+                  type: object
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -1640,6 +1800,14 @@ spec:
                     service. If no RuntimeClass resource matches the named class,
                     pods will not be running.
                   type: string
+                secretVolumes:
+                  additionalProperties:
+                    type: string
+                  description: SecretVolumes defines a map from Secret names to volume
+                    mount path for this service Key is the secret object name. Value
+                    is the mount path. This adds Secret data to the directory specified
+                    by the volume mount path.
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
