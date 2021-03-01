@@ -1,12 +1,14 @@
 package controllers
 
 import (
-	v1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
 	"encoding/json"
+	"fmt"
+	"strings"
+
+	v1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
-	"strings"
 )
 
 // For ConfigMap
@@ -133,13 +135,14 @@ type BaseSpec struct {
 	HConf              string            `json:"hadoopConf,omitempty"`
 	SysAppConf         string            `json:"sysAppConf,omitempty"`
 	ConfigMapVolumes   map[string]string `json:"configMapVolumes,omitempty"`
+	SecretVolumes      map[string]string `json:"secretVolumes,omitempty"`
 }
 
 func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf, sysappconf string) *BaseSpec {
 	s := new(BaseSpec)
 	s.Name = name
 	s.Namespace = master.Namespace
-	s.Labels = labels
+	s.Labels = cloneMap(labels)
 	s.ServiceAccountName = ""
 	s.Replicas = 1
 	s.RuntimeClassName = ""
@@ -148,7 +151,9 @@ func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]str
 	s.CConf = cconf
 	s.HConf = hconf
 	s.SysAppConf = sysappconf
-	s.ConfigMapVolumes = master.Spec.ConfigMapVolumes
+	s.ConfigMapVolumes = cloneMap(master.Spec.ConfigMapVolumes)
+	s.SecretVolumes = cloneMap(master.Spec.SecretVolumes)
+
 	return s
 }
 
@@ -181,6 +186,33 @@ func (s *BaseSpec) setRuntimeClassName(name string) *BaseSpec {
 func (s *BaseSpec) setPriorityClassName(name string) *BaseSpec {
 	s.PriorityClassName = name
 	return s
+}
+
+func (s *BaseSpec) addConfigMapVolumes(volumes map[string]string) (*BaseSpec, error) {
+	if err := addVolumes(s.ConfigMapVolumes, volumes, "ConfigMap"); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *BaseSpec) addSecretVolumes(volumes map[string]string) (*BaseSpec, error) {
+	if err := addVolumes(s.SecretVolumes, volumes, "Secret"); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func addVolumes(volumes, newVolumes map[string]string, typeName string) error {
+	for k, v := range newVolumes {
+		if val, exists := volumes[k]; exists {
+			if val != v {
+				return fmt.Errorf("failed to mount %s volume %v to %v due to already mounted to %v", typeName, k, v, val)
+			}
+		} else {
+			volumes[k] = v
+		}
+	}
+	return nil
 }
 
 // For Deployment
@@ -228,6 +260,20 @@ func (s *DeploymentSpec) addLabel(key, val string) *DeploymentSpec {
 func (s *DeploymentSpec) withContainer(containerSpec *ContainerSpec) *DeploymentSpec {
 	s.Containers = append(s.Containers, containerSpec)
 	return s
+}
+
+func (s *DeploymentSpec) addConfigMapVolumes(volumes map[string]string) (*DeploymentSpec, error) {
+	if _, err := s.Base.addConfigMapVolumes(volumes); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *DeploymentSpec) addSecretVolumes(volumes map[string]string) (*DeploymentSpec, error) {
+	if _, err := s.Base.addSecretVolumes(volumes); err != nil {
+		return nil, err
+	}
+	return s, nil
 }
 
 // For VolumnClaimTemplate in Statefulset
@@ -300,6 +346,20 @@ func (s *StatefulSpec) withContainer(containerSpec *ContainerSpec) *StatefulSpec
 func (s *StatefulSpec) withStorage(storageClassName string, storageSize string) *StatefulSpec {
 	s.Storage = newStorageSpec(storageClassName, storageSize)
 	return s
+}
+
+func (s *StatefulSpec) addConfigMapVolumes(volumes map[string]string) (*StatefulSpec, error) {
+	if _, err := s.Base.addConfigMapVolumes(volumes); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *StatefulSpec) addSecretVolumes(volumes map[string]string) (*StatefulSpec, error) {
+	if _, err := s.Base.addSecretVolumes(volumes); err != nil {
+		return nil, err
+	}
+	return s, nil
 }
 
 type NetworkServiceSpec struct {

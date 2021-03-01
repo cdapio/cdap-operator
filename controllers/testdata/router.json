@@ -33,7 +33,7 @@
   },
   "spec": {
     "progressDeadlineSeconds": 600,
-    "replicas": 1,
+    "replicas": 2,
     "revisionHistoryLimit": 10,
     "selector": {
       "matchLabels": {
@@ -121,6 +121,14 @@
               {
                 "name": "cdap-cm-vol-my-config-map-2",
                 "mountPath": "/my/config/map/2"
+              },
+              {
+                "mountPath": "/my/secret/1",
+                "name": "cdap-se-vol-my-secret-1"
+              },
+              {
+                "mountPath": "/my/secret/key",
+                "name": "cdap-se-vol-secret-key"
               }
             ]
           }
@@ -201,13 +209,26 @@
             "configMap": {
               "name": "my-config-map-2"
             }
+          },
+          {
+            "name": "cdap-se-vol-my-secret-1",
+            "secret": {
+              "defaultMode": 420,
+              "secretName": "my-secret-1"
+            }
+          },
+          {
+            "name": "cdap-se-vol-secret-key",
+            "secret": {
+              "secretName": "secret-key"
+            }
           }
         ]
       }
     }
   },
   "status": {
-    "availableReplicas": 1,
+    "availableReplicas": 2,
     "conditions": [
       {
         "lastTransitionTime": "2020-02-09T05:39:22Z",
@@ -227,8 +248,8 @@
       }
     ],
     "observedGeneration": 538,
-    "readyReplicas": 1,
-    "replicas": 1,
-    "updatedReplicas": 1
+    "readyReplicas": 2,
+    "replicas": 2,
+    "updatedReplicas": 2
   }
 }

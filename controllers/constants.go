@@ -28,6 +28,10 @@ const (
 	// This is an optional serivce which may or may not be deployed depending on the setting of customer resource.
 	serviceRuntime ServiceName = "Runtime"
 
+	// serviceAuth defines the service type for Auth service.
+	// This is an optional serivce which may or may not be deployed depending on the setting of customer resource.
+	serviceAuthentication ServiceName = "Authentication"
+
 	// serviceRouter defines the service type for the router
 	serviceRouter ServiceName = "Router"
 
@@ -38,6 +42,7 @@ const (
 const (
 	// CRD field name (used by reflection)
 	fieldNameCDAPServiceSpec         = "CDAPServiceSpec"
+	fieldNameCDAPScalableServiceSpec = "CDAPScalableServiceSpec"
 	fieldNameCDAPStatefulServiceSpec = "CDAPStatefulServiceSpec"
 	fieldNameCDAPExternalServiceSpec = "CDAPExternalServiceSpec"
 

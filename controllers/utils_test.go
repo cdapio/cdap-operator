@@ -11,6 +11,7 @@ var _ = Describe("Controller Suite", func() {
 		var (
 			master                *v1alpha1.CDAPMaster
 			serviceToSpec         map[string]*v1alpha1.CDAPServiceSpec
+			serviceToScalableSpec map[string]*v1alpha1.CDAPScalableServiceSpec
 			serviceToStatefulSpec map[string]*v1alpha1.CDAPStatefulServiceSpec
 			serviceToExternalSpec map[string]*v1alpha1.CDAPExternalServiceSpec
 		)
@@ -26,13 +27,23 @@ var _ = Describe("Controller Suite", func() {
 				servicePreview:       &master.Spec.Preview.CDAPServiceSpec,
 				serviceUserInterface: &master.Spec.UserInterface.CDAPServiceSpec,
 			}
+			serviceToScalableSpec = map[string]*v1alpha1.CDAPScalableServiceSpec{
+				serviceLogs:          nil,
+				serviceAppFabric:     nil,
+				serviceMetrics:       nil,
+				serviceRouter:        &master.Spec.Router.CDAPScalableServiceSpec,
+				serviceMessaging:     nil,
+				serviceMetadata:      &master.Spec.Metadata.CDAPScalableServiceSpec,
+				servicePreview:       nil,
+				serviceUserInterface: &master.Spec.UserInterface.CDAPScalableServiceSpec,
+			}
 			serviceToStatefulSpec = map[string]*v1alpha1.CDAPStatefulServiceSpec{
 				serviceLogs:          &master.Spec.Logs.CDAPStatefulServiceSpec,
 				serviceAppFabric:     &master.Spec.Logs.CDAPStatefulServiceSpec,
 				serviceMetrics:       &master.Spec.Metrics.CDAPStatefulServiceSpec,
 				serviceRouter:        nil,
 				serviceMessaging:     &master.Spec.Messaging.CDAPStatefulServiceSpec,
-				serviceMetadata:      &master.Spec.Logs.CDAPStatefulServiceSpec,
+				serviceMetadata:      nil,
 				servicePreview:       &master.Spec.Preview.CDAPStatefulServiceSpec,
 				serviceUserInterface: nil,
 			}
@@ -57,6 +68,19 @@ var _ = Describe("Controller Suite", func() {
 		It("Failed get pointer to CDAPServiceSpec due to invalid field name", func() {
 			invalidService := "InvalidService"
 			spec, err := getCDAPServiceSpec(master, invalidService)
+			Expect(err).NotTo(BeNil())
+			Expect(spec).To(BeNil())
+		})
+		It("Successfully get pointer to CDAPScalableServiceSpec", func() {
+			for service, expectedSpec := range serviceToScalableSpec {
+				spec, err := getCDAPScalableServiceSpec(master, service)
+				Expect(err).To(BeNil())
+				Expect(spec).To(Equal(expectedSpec))
+			}
+		})
+		It("Failed get pointer to CDAPScalableServiceSpec due to invalid field name", func() {
+			invalidService := "InvalidService"
+			spec, err := getCDAPScalableServiceSpec(master, invalidService)
 			Expect(err).NotTo(BeNil())
 			Expect(spec).To(BeNil())
 		})

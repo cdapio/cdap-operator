@@ -50,6 +50,10 @@ type CDAPMasterSpec struct {
 	// Key is the configmap object name. Value is the mount path.
 	// This adds ConfigMap data to the directory specified by the volume mount path.
 	ConfigMapVolumes map[string]string `json:"configMapVolumes,omitempty"`
+	// SecretVolumes defines a map from Secret names to volume mount path.
+	// Key is the secret object name. Value is the mount path.
+	// This adds Secret data to the directory specified by the volume mount path.
+	SecretVolumes map[string]string `json:"secretVolumes,omitempty"`
 	// SystemAppConfigs specifies configs used by CDAP to run system apps
 	// dynamically. Each entry is of format <filename, json app config> which will
 	// create a separate system config file with entry value as file content.
@@ -77,6 +81,11 @@ type CDAPMasterSpec struct {
 	// To disable this service: either omit or set the field to nil
 	// To enable this service: set it to a pointer to a RuntimeSpec struct (can be an empty struct)
 	Runtime *RuntimeSpec `json:"runtime,omitempty"`
+	// Auth is specification for the CDAP Auth service.
+	// This is an optional service and may not be required for CDAP to be operational.
+	// To disable this service: either omit or set the field to nil
+	// To enable this service: set it to a pointer to a AuthenticationSpec struct (can be an empty struct)
+	Authentication *AuthenticationSpec `json:"authentication,omitempty"`
 }
 
 // CDAPServiceSpec defines the base set of specifications applicable to all master services.
@@ -98,6 +107,14 @@ type CDAPServiceSpec struct {
 	PriorityClassName *string `json:"priorityClassName,omitempty"`
 	// Env is a list of environment variables for the master service container.
 	Env []corev1.EnvVar `json:"env,omitempty"`
+	// ConfigMapVolumes defines a map from ConfigMap names to volume mount path for this service
+	// Key is the configmap object name. Value is the mount path.
+	// This adds ConfigMap data to the directory specified by the volume mount path.
+	ConfigMapVolumes map[string]string `json:"configMapVolumes,omitempty"`
+	// SecretVolumes defines a map from Secret names to volume mount path for this service
+	// Key is the secret object name. Value is the mount path.
+	// This adds Secret data to the directory specified by the volume mount path.
+	SecretVolumes map[string]string `json:"secretVolumes,omitempty"`
 }
 
 // CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance.
@@ -146,7 +163,7 @@ type MessagingSpec struct {
 
 // MetadataSpec defines the specification for the Metadata service
 type MetadataSpec struct {
-	CDAPStatefulServiceSpec `json:",inline"`
+	CDAPScalableServiceSpec `json:",inline"`
 }
 
 // MetricsSpec defines the specification for the Metrics service.
@@ -162,6 +179,11 @@ type PreviewSpec struct {
 // RuntimeSpec defines the specification for the Runtime service.
 type RuntimeSpec struct {
 	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+// AuthenticationSpec defines the specification for the Authentication service.
+type AuthenticationSpec struct {
+	CDAPScalableServiceSpec `json:",inline"`
 }
 
 // RouterSpec defines the specification for the Router service.
