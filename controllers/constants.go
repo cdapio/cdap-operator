@@ -54,7 +54,7 @@ const (
 	confUserInterfaceBindPort = "dashboard.bind.port"
 
 	// default values
-	defaultImage             = "cdap_google:0.0.4"
+	defaultImage             = "gcr.io/cdapio/cdap:latest"
 	defaultRouterPort        = 11015
 	defaultUserInterfacePort = 11011
 	defaultStorageSize       = "200Gi"

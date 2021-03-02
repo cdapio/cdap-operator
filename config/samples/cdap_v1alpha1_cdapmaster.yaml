@@ -15,6 +15,6 @@ spec:
     metadata.elasticsearch.cluster.hosts: elasticsearch-master
     hdfs.user: root
     security.enabled: "true"
-    security.auth.server.announce.address: ""
+    security.auth.server.announce.urls: ""
     security.auth.server.bind.address: "0.0.0.0"
     security.auth.server.bind.port: "10009"
