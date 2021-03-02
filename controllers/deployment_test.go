@@ -59,7 +59,6 @@ var _ = Describe("Controller Suite", func() {
 			for _, obj := range objs {
 				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.StatefulSet); ok {
 					for k, _ := range serviceGroupMap.stateful {
-						fmt.Println("ss " + k)
 						if o.Name == getObjName(master, k) {
 							actual, err := json.Marshal(o)
 							Expect(err).To(BeNil())
