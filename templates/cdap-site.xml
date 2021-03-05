@@ -15,10 +15,12 @@
   the License.
   -->
 <configuration>
-{{range $k,$v := .Master.Spec.Config}}
+{{range $k,$v := .Master.Spec.Config -}}
+  {{if not (hasPrefix $k "hadoop:")}}
   <property>
     <name>{{html $k}}</name>
     <value>{{html $v}}</value>
   </property>
-{{end}}
+  {{end}}
+{{- end}}
 </configuration>

@@ -16,13 +16,14 @@ limitations under the License.
 package controllers
 
 import (
-	"cdap.io/cdap-operator/controllers/cdapmaster"
 	"fmt"
-	batchv1 "k8s.io/api/batch/v1"
-	"sigs.k8s.io/controller-reconciler/pkg/finalizer"
 	"strconv"
 	"strings"
 	"text/template"
+
+	"cdap.io/cdap-operator/controllers/cdapmaster"
+	batchv1 "k8s.io/api/batch/v1"
+	"sigs.k8s.io/controller-reconciler/pkg/finalizer"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -165,12 +166,19 @@ func (h *ConfigMapHandler) Objects(rsrc interface{}, rsrclabels map[string]strin
 	}
 
 	fillTemplate := func(templateFile string) (string, error) {
-		template, err := template.New(templateFile).ParseFiles(templateDir + templateFile)
+		tmpl, err := template.New(templateFile).Funcs(template.FuncMap{
+			"hasPrefix": func(str, prefix string) bool {
+				return strings.HasPrefix(str, prefix)
+			},
+			"trimPrefix": func(str, prefix string) string {
+				return strings.TrimPrefix(str, prefix)
+			},
+		}).ParseFiles(templateDir + templateFile)
 		if err != nil {
 			return "", err
 		}
 		var output strings.Builder
-		if err := template.Execute(&output, templateData); err != nil {
+		if err := tmpl.Execute(&output, templateData); err != nil {
 			return "", err
 		}
 		return output.String(), nil
