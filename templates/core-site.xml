@@ -19,4 +19,12 @@
     <name>fs.defaultFS</name>
     <value>{{html .Master.Spec.LocationURI}}</value>
   </property>
+{{range $k,$v := .Master.Spec.Config -}}
+  {{if hasPrefix $k "hadoop:"}}
+  <property>
+    <name>{{html (trimPrefix $k "hadoop:")}}</name>
+    <value>{{html $v}}</value>
+  </property>
+  {{end}}
+{{- end}}
 </configuration>
