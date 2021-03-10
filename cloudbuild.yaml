@@ -1,0 +1,12 @@
+steps:
+- name: 'gcr.io/kaniko-project/executor:latest'
+  timeout: 3600s
+  args:
+  - --destination=${_REGISTRY_CDAP_OPERATOR}:${_VERSION_CDAP_OPERATOR}
+  - --cache=true
+  - --cache-ttl=12h
+  - --insecure
+  - --skip-tls-verify
+options:
+  machineType: 'N1_HIGHCPU_32'
+timeout: 3600s
