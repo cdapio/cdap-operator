@@ -6,7 +6,7 @@ Define global variables:
 
 ```
 export BUILD_PROJECT_ID=liveramp-eng-data-ops-dev
-export REGISTRY_CDAP_OPERATOR=http://eu.gcr.io/liveramp-eng-data-ops-dev/cdap-controller
+export REGISTRY_CDAP_OPERATOR=eu.gcr.io/liveramp-eng-data-ops-dev/cdap-controller
 export VERSION_CDAP_OPERATOR=latest
 ```
 
