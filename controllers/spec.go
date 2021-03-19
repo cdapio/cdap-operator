@@ -45,6 +45,7 @@ type ContainerSpec struct {
 	ResourceRequests map[string]*resource.Quantity `json:"resourceRequests,omitempty"`
 	ResourceLimits   map[string]*resource.Quantity `json:"resourceLimits,omitempty"`
 	DataDir          string                        `json:"dataDir,omitempty"`
+	VolumeMounts     corev1.VolumeMount            `json:"volumeMounts,omitempty"`
 }
 
 func newContainerSpec(master *v1alpha1.CDAPMaster, name, dataDir string) *ContainerSpec {
@@ -117,6 +118,13 @@ func (s *ContainerSpec) setResources(resources *corev1.ResourceRequirements) *Co
 			s.ResourceLimits[string(name)] = q
 		}
 	}
+	return s
+}
+
+func (s *ContainerSpec) setVolumeMounts(name string, mountPath string, readOnly bool) *ContainerSpec {
+	s.VolumeMounts.Name = name
+	s.VolumeMounts.MountPath = mountPath
+	s.VolumeMounts.ReadOnly = readOnly
 	return s
 }
 

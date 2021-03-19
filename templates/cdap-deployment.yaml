@@ -50,8 +50,8 @@ spec:
       priorityClassName: {{.Base.PriorityClassName}}
       {{end}}
       terminationGracePeriodSeconds: 120
-      {{range $c := .Containers}}
       containers:
+        {{range $c := .Containers}}
         - name: {{$c.Name}}
           image: {{$c.Image}}
           workingDir: {{$c.WorkingDir}}

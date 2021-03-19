@@ -1,15 +1,16 @@
 package controllers
 
 import (
-	v1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
 	"fmt"
+	"reflect"
+	"strings"
+
+	v1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"reflect"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
-	"strings"
 )
 
 var deploymentPlanner *DeploymentPlan
@@ -260,8 +261,21 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		if s == serviceUserInterface {
 			c = updateSpecForUserInterface(master, c)
 		}
-		spec = spec.withContainer(c)
 
+		if s == serviceRouter {
+			//adding additional container for the ATG sidecar
+			//TODO: Make the additons of Containers more generic and OSS Ready //Tracked by DOP-470
+			accessTokenContainer := newContainerSpec(master, "access-token-getter", dataDir).
+				setResources(ss.Resources).
+				setEnv(env)
+			accessTokenContainer = addAccessTokenGetterContainer(master, accessTokenContainer)
+			secretVolumeMap := make(map[string]string)
+			secretVolumeMap["liveramp-service-account"] = "/secrets/liveramp-service-account"
+			spec.addSecretVolumes(secretVolumeMap)
+			spec.withContainer(accessTokenContainer)
+		}
+
+		spec.withContainer(c)
 		// Adding a label to allow k8s service selector to easily find the pod
 		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
 
@@ -552,6 +566,14 @@ func updateSpecForUserInterface(master *v1alpha1.CDAPMaster, spec *ContainerSpec
 		setCommand("bin/node").
 		setArgs("index.js", "start").
 		addEnv("NODE_ENV", "production")
+}
+
+//TODO: Make this more generic // Tracked by DOP-470
+func addAccessTokenGetterContainer(master *v1alpha1.CDAPMaster, spec *ContainerSpec) *ContainerSpec {
+	return spec.
+		setImage("gcr.io/liveramp-eng/nexus/access-token-getter:0.4").
+		setArgs("--creds-file-path", "/secrets/liveramp-service-account/credentials.json").
+		setVolumeMounts("cdap-se-vol-liveramp-service-account", "/secrets/liveramp-service-account", true)
 }
 
 // Derive from memory resource requirements and add java max heap size to the supplied env var array if not present
