@@ -86,6 +86,8 @@ type CDAPMasterSpec struct {
 	// To disable this service: either omit or set the field to nil
 	// To enable this service: set it to a pointer to a AuthenticationSpec struct (can be an empty struct)
 	Authentication *AuthenticationSpec `json:"authentication,omitempty"`
+
+	TaskDispatcher *TaskDispatcher `json:"taskDispatcher,omitempty"`
 }
 
 // CDAPServiceSpec defines the base set of specifications applicable to all master services.
@@ -178,6 +180,10 @@ type PreviewSpec struct {
 
 // RuntimeSpec defines the specification for the Runtime service.
 type RuntimeSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+type TaskDispatcher struct {
 	CDAPStatefulServiceSpec `json:",inline"`
 }
 

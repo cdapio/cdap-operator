@@ -42,12 +42,13 @@ func (d *DeploymentPlan) Init() {
 	// Default: each service runs in its own Pod
 	d.planMap[0] = ServiceGroups{
 		stateful: map[ServiceGroupName]ServiceGroup{
-			"logs":      {serviceLogs},
-			"messaging": {serviceMessaging},
-			"metrics":   {serviceMetrics},
-			"preview":   {servicePreview},
-			"appfabric": {serviceAppFabric},
-			"runtime":   {serviceRuntime},
+			"logs":           {serviceLogs},
+			"messaging":      {serviceMessaging},
+			"metrics":        {serviceMetrics},
+			"preview":        {servicePreview},
+			"appfabric":      {serviceAppFabric},
+			"runtime":        {serviceRuntime},
+			"taskdispatcher": {serviceTaskDispatcher},
 		},
 		deployment: map[ServiceGroupName]ServiceGroup{
 			"authentication": {serviceAuthentication},

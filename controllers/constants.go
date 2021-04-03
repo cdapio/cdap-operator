@@ -32,6 +32,8 @@ const (
 	// This is an optional serivce which may or may not be deployed depending on the setting of customer resource.
 	serviceAuthentication ServiceName = "Authentication"
 
+	serviceTaskDispatcher ServiceName = "TaskDispatcher"
+
 	// serviceRouter defines the service type for the router
 	serviceRouter ServiceName = "Router"
 
