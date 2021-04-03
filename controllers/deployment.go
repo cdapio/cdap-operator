@@ -48,7 +48,7 @@ func (d *DeploymentPlan) Init() {
 			"preview":        {servicePreview},
 			"appfabric":      {serviceAppFabric},
 			"runtime":        {serviceRuntime},
-			"taskdispatcher": {serviceTaskDispatcher},
+			"task-dispatcher": {serviceTaskDispatcher},
 		},
 		deployment: map[ServiceGroupName]ServiceGroup{
 			"authentication": {serviceAuthentication},
