@@ -122,6 +122,10 @@ type CDAPScalableServiceSpec struct {
 	CDAPServiceSpec `json:",inline"`
 	// Replicas is number of replicas for the service.
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Containers define any additional containers a service has
+	// This is a list of containers and can be left blank
+	// A typical use is to add sidecars for a deployment
+	Containers []*corev1.Container `json:"containers,omitempty"`
 }
 
 // CDAPExternalServiceSpec defines the base specification for master services that expose to outside of the cluster.

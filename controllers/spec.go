@@ -45,7 +45,27 @@ type ContainerSpec struct {
 	ResourceRequests map[string]*resource.Quantity `json:"resourceRequests,omitempty"`
 	ResourceLimits   map[string]*resource.Quantity `json:"resourceLimits,omitempty"`
 	DataDir          string                        `json:"dataDir,omitempty"`
-	VolumeMounts     corev1.VolumeMount            `json:"volumeMounts,omitempty"`
+	VolumeMounts     []corev1.VolumeMount          `json:"volumeMounts,omitempty" patchStrategy:"merge" patchMergeKey:"mountPath" protobuf:"bytes,9,rep,name=volumeMounts"`
+	Ports            []corev1.ContainerPort        `json:"ports,omitempty" patchStrategy:"merge" patchMergeKey:"containerPort" protobuf:"bytes,6,rep,name=ports"`
+	LivenessProbe    *corev1.Probe                 `json:"livenessProbe,omitempty" protobuf:"bytes,10,opt,name=livenessProbe"`
+	ReadinessProbe   *corev1.Probe                 `json:"readinessProbe,omitempty" protobuf:"bytes,11,opt,name=readinessProbe"`
+}
+
+func containerSpecFromContainer(container *corev1.Container, dataDir string) *ContainerSpec {
+	additionalContainer := new(ContainerSpec)
+	additionalContainer.Name = strings.ToLower(container.Name)
+	additionalContainer.Image = container.Image
+	additionalContainer.ImagePullPolicy = container.ImagePullPolicy
+	additionalContainer.WorkingDir = container.WorkingDir
+	additionalContainer.Args = container.Args
+	additionalContainer.Env = container.Env
+	additionalContainer.DataDir = dataDir
+	additionalContainer.VolumeMounts = container.VolumeMounts
+	additionalContainer.LivenessProbe = container.LivenessProbe
+	additionalContainer.ReadinessProbe = container.ReadinessProbe
+	additionalContainer.Ports = container.Ports
+
+	return additionalContainer
 }
 
 func newContainerSpec(master *v1alpha1.CDAPMaster, name, dataDir string) *ContainerSpec {
@@ -61,6 +81,10 @@ func newContainerSpec(master *v1alpha1.CDAPMaster, name, dataDir string) *Contai
 }
 func (s *ContainerSpec) setImage(image string) *ContainerSpec {
 	s.Image = image
+	return s
+}
+func (s *ContainerSpec) setImagePullPolicy(pullPolicy string) *ContainerSpec {
+	s.ImagePullPolicy = corev1.PullPolicy(pullPolicy)
 	return s
 }
 func (s *ContainerSpec) setWorkingDir(workingDir string) *ContainerSpec {
@@ -118,13 +142,6 @@ func (s *ContainerSpec) setResources(resources *corev1.ResourceRequirements) *Co
 			s.ResourceLimits[string(name)] = q
 		}
 	}
-	return s
-}
-
-func (s *ContainerSpec) setVolumeMounts(name string, mountPath string, readOnly bool) *ContainerSpec {
-	s.VolumeMounts.Name = name
-	s.VolumeMounts.MountPath = mountPath
-	s.VolumeMounts.ReadOnly = readOnly
 	return s
 }
 

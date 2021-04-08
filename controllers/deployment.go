@@ -257,22 +257,26 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 			continue
 		}
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
-		if s == serviceUserInterface {
-			c = updateSpecForUserInterface(master, c)
+		c := newContainerSpec(master, s, dataDir).
+			setResources(ss.Resources).
+			setEnv(env)
+
+		es, err := getCDAPScalableServiceSpec(master, s)
+		if err != nil || es == nil {
+			continue
+		} else {
+			if es.Containers != nil {
+
+				for _, container := range es.Containers {
+
+					additionalContainer := containerSpecFromContainer(container, dataDir)
+					spec.withContainer(additionalContainer)
+				}
+			}
 		}
 
-		if s == serviceRouter {
-			//adding additional container for the ATG sidecar
-			//TODO: Make the additons of Containers more generic and OSS Ready //Tracked by DOP-470
-			accessTokenContainer := newContainerSpec(master, "access-token-getter", dataDir).
-				setResources(ss.Resources).
-				setEnv(env)
-			accessTokenContainer = addAccessTokenGetterContainer(master, accessTokenContainer)
-			secretVolumeMap := make(map[string]string)
-			secretVolumeMap["liveramp-service-account"] = "/secrets/liveramp-service-account"
-			spec.addSecretVolumes(secretVolumeMap)
-			spec.withContainer(accessTokenContainer)
+		if s == serviceUserInterface {
+			c = updateSpecForUserInterface(master, c)
 		}
 
 		spec.withContainer(c)
@@ -566,14 +570,6 @@ func updateSpecForUserInterface(master *v1alpha1.CDAPMaster, spec *ContainerSpec
 		setCommand("bin/node").
 		setArgs("index.js", "start").
 		addEnv("NODE_ENV", "production")
-}
-
-//TODO: Make this more generic // Tracked by DOP-470
-func addAccessTokenGetterContainer(master *v1alpha1.CDAPMaster, spec *ContainerSpec) *ContainerSpec {
-	return spec.
-		setImage("gcr.io/liveramp-eng/nexus/access-token-getter:0.4").
-		setArgs("--creds-file-path", "/secrets/liveramp-service-account/credentials.json").
-		setVolumeMounts("cdap-se-vol-liveramp-service-account", "/secrets/liveramp-service-account", true)
 }
 
 // Derive from memory resource requirements and add java max heap size to the supplied env var array if not present

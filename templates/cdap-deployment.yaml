@@ -69,7 +69,17 @@ spec:
           env:
           {{range $e := $c.Env }}
           - name: "{{$e.Name}}"
-            value: "{{$e.Value}}"
+            {{if $e.Value}}
+            value: "{{$e.Value}}"  
+            {{end}}
+            {{if $e.ValueFrom}}
+            valueFrom:
+              {{if $e.ValueFrom.SecretKeyRef}}
+              secretKeyRef:
+                name: {{$e.ValueFrom.SecretKeyRef.LocalObjectReference.Name}}
+                key: {{$e.ValueFrom.SecretKeyRef.Key}}
+              {{end}}
+            {{end}}
           {{end}}
           resources:
             {{if $c.ResourceRequests}}
@@ -84,6 +94,140 @@ spec:
               {{$k}}: {{$v.String}}
               {{end}}
             {{end}}
+
+          {{if $c.LivenessProbe}}
+          livenessProbe:
+            {{if $c.LivenessProbe.InitialDelaySeconds }}
+            initialDelaySeconds: {{$c.LivenessProbe.InitialDelaySeconds }}
+            {{end}}
+            {{if $c.LivenessProbe.TimeoutSeconds }}
+            timeoutSeconds: {{$c.LivenessProbe.TimeoutSeconds }}
+            {{end}}
+            {{if $c.LivenessProbe.PeriodSeconds }}
+            periodSeconds: {{$c.LivenessProbe.PeriodSeconds }}
+            {{end}}
+            {{if $c.LivenessProbe.SuccessThreshold }}
+            successThreshold: {{$c.LivenessProbe.SuccessThreshold }}
+            {{end}}
+            {{if $c.LivenessProbe.FailureThreshold }}
+            failureThreshold: {{$c.LivenessProbe.FailureThreshold }}
+            {{end}}
+            
+            {{if $c.LivenessProbe.Handler}}
+
+            {{if $c.LivenessProbe.Handler.HTTPGet}}
+            httpGet:
+              {{if $c.LivenessProbe.Handler.HTTPGet.Path}}
+              path: {{$c.LivenessProbe.Handler.HTTPGet.Path}} 
+              {{end}}
+              port: {{$c.LivenessProbe.Handler.HTTPGet.Port}}
+              {{if $c.LivenessProbe.Handler.HTTPGet.Scheme}}
+              scheme: {{$c.LivenessProbe.Handler.HTTPGet.Scheme}}
+              {{end}}
+              {{if $c.LivenessProbe.Handler.HTTPGet.Host}}
+              host: {{$c.LivenessProbe.Handler.HTTPGet.Host}}
+              {{end}}
+              {{if $c.LivenessProbe.Handler.HTTPGet.HTTPHeaders}}
+              httpHeaders:
+                {{range $h := $c.LivenessProbe.Handler.HTTPGet.HTTPHeaders }}
+              - name: {{$h.Name}}
+                value: {{$h.Value}}
+                {{end}}
+              {{end}}
+            {{end}}
+
+            {{if $c.LivenessProbe.Handler.Exec}}
+            exec:
+              command:
+              {{range $v := $c.LivenessProbe.Handler.Exec.Command }}
+              - {{$v}}
+              {{end}}
+            {{end}}
+
+            {{if $c.LivenessProbe.Handler.TCPSocket}}
+            tcpSocket:
+              port: {{$c.LivenessProbe.Handler.TCPSocket.Port}}
+            {{end}}
+
+            {{end}}
+
+          {{end}}
+
+          {{if $c.ReadinessProbe}}
+          readinessProbe:
+            {{if $c.ReadinessProbe.InitialDelaySeconds }}
+            initialDelaySeconds: {{$c.ReadinessProbe.InitialDelaySeconds }}
+            {{end}}
+            {{if $c.ReadinessProbe.TimeoutSeconds }}
+            timeoutSeconds: {{$c.ReadinessProbe.TimeoutSeconds }}
+            {{end}}
+            {{if $c.ReadinessProbe.PeriodSeconds }}
+            periodSeconds: {{$c.ReadinessProbe.PeriodSeconds }}
+            {{end}}
+            {{if $c.ReadinessProbe.SuccessThreshold }}
+            successThreshold: {{$c.ReadinessProbe.SuccessThreshold }}
+            {{end}}
+            {{if $c.ReadinessProbe.FailureThreshold }}
+            failureThreshold: {{$c.ReadinessProbe.FailureThreshold }}
+            {{end}}
+            {{if $c.ReadinessProbe.Handler}}
+
+            {{if $c.ReadinessProbe.Handler.HTTPGet}}
+            httpGet:
+              {{if $c.ReadinessProbe.Handler.HTTPGet.Path}}
+              path: {{$c.ReadinessProbe.Handler.HTTPGet.Path}} 
+              {{end}}
+              port: {{$c.ReadinessProbe.Handler.HTTPGet.Port}}
+              {{if $c.ReadinessProbe.Handler.HTTPGet.Scheme}}
+              scheme: {{$c.ReadinessProbe.Handler.HTTPGet.Scheme}}
+              {{end}}
+              {{if $c.ReadinessProbe.Handler.HTTPGet.Host}}
+              host: {{$c.ReadinessProbe.Handler.HTTPGet.Host}}
+              {{end}}
+              {{if $c.ReadinessProbe.Handler.HTTPGet.HTTPHeaders}}
+              httpHeaders:
+                {{range $h := $c.ReadinessProbe.Handler.HTTPGet.HTTPHeaders }}
+              - name: {{$h.Name}}
+                value: {{$h.Value}}
+                {{end}}
+              {{end}}
+            {{end}}
+            
+            {{if $c.ReadinessProbe.Handler.Exec}}
+            exec:
+              command:
+              {{range $v := $c.ReadinessProbe.Handler.Exec.Command }}
+              - {{$v}}
+              {{end}}
+            {{end}}
+
+            {{if $c.ReadinessProbe.Handler.TCPSocket}}
+            tcpSocket:
+              port: {{$c.ReadinessProbe.Handler.TCPSocket.Port}}
+            {{end}}
+
+            {{end}}
+
+          {{end}}
+
+          {{if $c.Ports}}
+          ports:
+            {{range $cp := $c.Ports}}
+          - containerPort: {{$cp.ContainerPort}}
+            {{if $cp.Name}}
+            name: {{$cp.Name}}
+            {{end}}
+            {{if $cp.Protocol}}
+            protocol: {{$cp.Protocol}}
+            {{end}}
+            {{if $cp.HostPort}}
+            hostPort: {{$cp.HostPort}}
+            {{end}}
+            {{if $cp.HostIP}}
+            hostIP: {{$cp.HostIP}}
+            {{end}}
+            {{end}}
+          {{end}}
           volumeMounts:
             - name: podinfo
               mountPath: /etc/podinfo
@@ -110,6 +254,17 @@ spec:
             - name: cdap-se-vol-{{$k}}
               mountPath: {{$v}}
             {{end}}
+          
+            {{if $c.VolumeMounts}}
+            {{range $vm := $c.VolumeMounts}}
+            - name: {{$vm.Name}}
+              mountPath: {{$vm.MountPath}}
+              {{if $vm.ReadOnly }}
+              readOnly: {{$vm.ReadOnly}}
+              {{end}}
+            {{end}}
+            {{end}}
+
       {{end}}
       volumes:
         - name: podinfo

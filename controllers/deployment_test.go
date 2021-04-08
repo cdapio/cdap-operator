@@ -1,13 +1,14 @@
 package controllers
 
 import (
-	"cdap.io/cdap-operator/api/v1alpha1"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+
+	"cdap.io/cdap-operator/api/v1alpha1"
 	"github.com/nsf/jsondiff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"io/ioutil"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -249,6 +250,50 @@ var _ = Describe("Controller Suite", func() {
 			for _, field := range []string{"ServiceAccountName", "RuntimeClassName", "PriorityClassName"} {
 				_, err := getFieldValueIfUnique(invalidMaster, services, field)
 				Expect(err).NotTo(BeNil())
+			}
+		})
+	})
+
+	Describe("Add additional generic container to a deployment", func() {
+		var (
+			master *v1alpha1.CDAPMaster
+		)
+		BeforeEach(func() {
+			master = &v1alpha1.CDAPMaster{}
+			err := fromJson("testdata/cdap_master_cr_multi_container.json", master)
+			Expect(err).To(BeNil())
+		})
+		readExpectedJson := func(fileName string) []byte {
+			json, err := ioutil.ReadFile("testdata/" + fileName)
+			Expect(err).To(BeNil())
+			return json
+		}
+		diffJson := func(expected, actual []byte) {
+			opts := jsondiff.DefaultConsoleOptions()
+			diff, text := jsondiff.Compare(expected, actual, &opts)
+			Expect(diff.String()).To(Equal(jsondiff.SupersetMatch.String()), text)
+		}
+		It("Addtional container for Router", func() {
+			emptyLabels := make(map[string]string)
+			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
+			Expect(err).To(BeNil())
+			objs, err := buildObjectsForDeploymentPlan(spec)
+			Expect(err).To(BeNil())
+
+			var strategyHandler DeploymentPlan
+			strategyHandler.Init()
+
+			for _, obj := range objs {
+				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.Deployment); ok {
+
+					if o.Name == getObjName(master, "router") {
+						actual, err := json.Marshal(o)
+						Expect(err).To(BeNil())
+						expected := readExpectedJson("router_multi_container" + ".json")
+						diffJson(expected, actual)
+					}
+
+				}
 			}
 		})
 	})

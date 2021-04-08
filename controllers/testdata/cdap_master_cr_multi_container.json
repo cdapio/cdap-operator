@@ -1,0 +1,283 @@
+{
+  "apiVersion": "cdap.cdap.io/v1alpha1",
+  "kind": "CDAPMaster",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"cdap.cdap.io/v1alpha1\",\"kind\":\"CDAPMaster\",\"metadata\":{\"annotations\":{},\"name\":\"test\",\"namespace\":\"default\"},\"spec\":{\"appFabric\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}},\"config\":{\"data.storage.implementation\":\"postgresql\",\"data.storage.sql.jdbc.connection.url\":\"jdbc:postgresql://postgres-postgresql:5432/cdap\",\"data.storage.sql.jdbc.driver.name\":\"org.postgresql.Driver\",\"enable.preview\":\"true\",\"hdfs.user\":\"root\",\"metadata.elasticsearch.cluster.hosts\":\"elasticsearch-master\",\"metadata.storage.implementation\":\"elastic\"},\"image\":\"gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.0\",\"locationURI\":\"hdfs://hadoop:9000\",\"logs\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}},\"storageSize\":\"100Gi\"},\"messaging\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}},\"storageSize\":\"100Gi\"},\"metadata\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}},\"metrics\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}},\"storageSize\":\"100Gi\"},\"numPods\":0,\"preview\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}},\"storageSize\":\"100Gi\"},\"router\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}},\"securitySecret\":\"cdap-secret\",\"serviceAccountName\":\"cdap\",\"userInterface\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}},\"userInterfaceImage\":\"gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.1.0.0\"}}\n"
+    },
+    "creationTimestamp": "2020-02-09T05:39:03Z",
+    "finalizers": [
+      "sigapps.k8s.io/cleanup"
+    ],
+    "generation": 39,
+    "labels": {
+      "cdap.instance": "test"
+    },
+    "name": "test",
+    "namespace": "default",
+    "resourceVersion": "1897645",
+    "selfLink": "/apis/cdap.cdap.io/v1alpha1/namespaces/default/cdapmasters/test",
+    "uid": "7aeaad53-4afe-11ea-8611-42010a800022"
+  },
+  "spec": {
+    "appFabric": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "100Mi"
+        }
+      }
+    },
+    "authentication": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "100Mi"
+        }
+      },
+      "secretVolumes": {
+        "secret-key": "/my/secret/key"
+      }
+    },
+    "config": {
+      "dashboard.bind.port": "11011",
+      "data.storage.implementation": "postgresql",
+      "data.storage.sql.jdbc.connection.url": "jdbc:postgresql://postgres-postgresql:5432/cdap",
+      "data.storage.sql.jdbc.driver.name": "org.postgresql.Driver",
+      "enable.preview": "true",
+      "explore.enabled": "false",
+      "hdfs.user": "root",
+      "local.data.dir": "/data",
+      "metadata.elasticsearch.cluster.hosts": "elasticsearch-master",
+      "metadata.storage.implementation": "elastic",
+      "router.bind.port": "11015",
+      "router.server.address": "cdap-test-router",
+      "security.authentication.handlerClassName":	"io.cdap.cdap.security.server.BasicAuthenticationHandler",
+      "security.authentication.basic.realmfile": "/opt/cdap/basicauth/basicrealm"
+    },
+    "configMapVolumes": {
+      "my-config-map-1": "/my/config/map/1",
+      "my-config-map-2": "/my/config/map/2"
+    },
+    "secretVolumes": {
+      "my-secret-1": "/my/secret/1"
+    },
+    "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
+    "locationURI": "hdfs://hadoop:9000",
+    "logs": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "100Mi"
+        }
+      },
+      "storageSize": "100Gi"
+    },
+    "messaging": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "100Mi"
+        }
+      },
+      "storageSize": "100Gi"
+    },
+    "metadata": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "100Mi"
+        }
+      }
+    },
+    "metrics": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "100Mi"
+        }
+      },
+      "storageSize": "100Gi"
+    },
+    "preview": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "100Mi"
+        }
+      },
+      "storageSize": "100Gi"
+    },
+    "runtime": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "100Mi"
+        }
+      }
+    },
+    "router": {
+      "containers": [
+        {
+          "name": "test-hello",
+          "image": "gcr.io/google-samples/hello-app:2.0",
+          "readinessProbe": {
+            "exec": {
+              "command": [
+                "ls"
+              ]
+            }
+          },
+          "env": [
+            {
+              "name": "PORT",
+              "value": "8070"
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "100Mi"
+        }
+      },
+      "secretVolumes": {
+        "secret-key": "/my/secret/key"
+      },
+      "replicas": 2,
+      "servicePort": 11015
+    },
+    "securitySecret": "cdap-secret",
+    "serviceAccountName": "cdap",
+    "userInterface": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "100Mi"
+        }
+      },
+      "servicePort": 11011
+    },
+    "userInterfaceImage": "gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.1.0.5"
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastTransitionTime": "2020-02-09T05:39:03Z",
+        "lastUpdateTime": "2020-02-09T05:39:03Z",
+        "message": "Not Observed",
+        "reason": "Init",
+        "status": "Unknown",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2020-02-09T05:39:03Z",
+        "lastUpdateTime": "2020-02-09T05:39:03Z",
+        "message": "Not Observed",
+        "reason": "Init",
+        "status": "Unknown",
+        "type": "Settled"
+      },
+      {
+        "lastTransitionTime": "2020-02-09T07:27:06Z",
+        "lastUpdateTime": "2020-02-09T07:27:06Z",
+        "message": "Operation cannot be fulfilled on statefulsets.apps \"cdap-test-messaging\": the object has been modified; please apply your changes to the latest version and try again",
+        "reason": "ErrorSeen",
+        "status": "True",
+        "type": "Error"
+      },
+      {
+        "lastTransitionTime": "2020-02-09T08:59:55Z",
+        "lastUpdateTime": "2020-02-09T08:59:55Z",
+        "message": "Version update is inprogress",
+        "reason": "Start",
+        "status": "False",
+        "type": "VersionUpdateInprogress"
+      },
+      {
+        "lastTransitionTime": "2020-02-09T08:58:22Z",
+        "lastUpdateTime": "2020-02-09T08:58:22Z",
+        "message": "Version to be used has been updated ",
+        "reason": "Start",
+        "status": "True",
+        "type": "VersionUpdated"
+      },
+      {
+        "lastTransitionTime": "2020-02-09T08:58:21Z",
+        "lastUpdateTime": "2020-02-09T08:58:21Z",
+        "message": "Version pre-upgrade job is done",
+        "reason": "Start",
+        "status": "True",
+        "type": "VersionPreUpgradeJobDone"
+      },
+      {
+        "lastTransitionTime": "2020-02-09T08:59:54Z",
+        "lastUpdateTime": "2020-02-09T08:59:54Z",
+        "message": "Version post-upgrade job done",
+        "reason": "Start",
+        "status": "True",
+        "type": "VersionPostUpgradeJobDone"
+      },
+      {
+        "lastTransitionTime": "2020-02-09T08:59:55Z",
+        "lastUpdateTime": "2020-02-09T08:59:55Z",
+        "message": "Version upgrade has completed successfully",
+        "reason": "Start",
+        "status": "True",
+        "type": "VersionUpgradeSucceeded"
+      },
+      {
+        "lastTransitionTime": "2020-02-09T05:50:04Z",
+        "lastUpdateTime": "2020-02-09T05:50:04Z",
+        "message": "Version upgrade has failed",
+        "reason": "Start",
+        "status": "False",
+        "type": "VersionUpgradeFailed"
+      },
+      {
+        "lastTransitionTime": "2020-02-09T08:57:49Z",
+        "lastUpdateTime": "2020-02-09T08:57:49Z",
+        "message": "Version downgrade has succeeded",
+        "reason": "Start",
+        "status": "False",
+        "type": "VersionDowngradeSucceeded"
+      }
+    ],
+    "downgradeStartTimeMillis": 1581238652382,
+    "imageToUse": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
+    "upgradeStartTimeMillis": 1581238669880,
+    "userInterfaceImageToUse": "gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.1.0.5"
+  }
+}
+
