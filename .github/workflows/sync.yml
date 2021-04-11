@@ -1,0 +1,30 @@
+name: liveramp/cdap-operator and cdapio/cdap-operator sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */24 * * *" # every 24 hours
+
+jobs:
+  update-tags:
+    name: Fetch tags
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: fetch tags
+      run: |
+        git remote add upstream https://github.com/cdapio/cdap
+        git fetch upstream
+        git push --tags
+  develop-sync:
+    name: Sync Develop Branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: repo-sync/github-sync@v2
+        name: Sync repo to branch
+        with:
+          source_repo: cdapio/cdap-operator
+          source_branch: develop
+          destination_branch: develop
+          github_token: ${{ secrets.REPO_SYNC }}
