@@ -12,9 +12,44 @@ The CDAP Operator is still under active development and has not been extensively
 
 ## Quick Start
 
+### Repository Setup
+
+The core of this codebase has contributors both in `LiveRamp` and `cdapio` Github organisations so we have customised the Git setup to enable LiveRamp devs to pull request against an internal production branch called `lr-main` whereas `develop` tracks an upstream branch, namely `cdapio/cdap-operator/tree/develop`. This is enabled through a Github action that runs sync upstream tags and the `remote` branch every night. 
+
+### Local Git Setup
+
+Given the repository setup we reccomend the following local git setup: 
+
+```
+origin	git@github.com:LiveRamp/cdap-operator.git (fetch)
+origin	git@github.com:LiveRamp/cdap-operator.git (push)
+upstream	https://github.com/cdapio/cdap-operator (fetch)
+upstream	DISABLE (push)
+```
+
+This enables a developer to develop and PR against the LiveRamp "fork" as the `origin` while the `upstream` managed by the Google CDAP team can be pulled in at any time as well. Although not strictly necessary the following can be achieved by cloning this repo and then running
+
+`git remote add upstream https://github.com/cdapio/cdap-operator.git`
+
+`git fetch upstream`
+
+`git remote --push upstream no-pushing`
+
+### CI
+
+Automated CI for this project runs for PR and Branch commits against `lr-main` as the base branch. CI is enabled through Google Cloud Build. Images are currently pushed to `eu.gcr.io/liveramp-eng-data-ops-dev/cdap-controller` , a container registry managed by the DataOps team. Builds off of `lr-main` are pushed with a `latest` tag whereas builds from PRs are pushed with tag `{pr_number}`. It is reccomended for production deploys a purpose built tag be used. Please see `cloudbuild.yaml` and the [cloud build triggers](https://console.cloud.google.com/cloud-build/triggers?project=liveramp-eng-data-ops-dev) config for more details on the build configuration.
+
+### CD
+
+CD for this repo is managed seperately through the `LiveRamp/dop-infra` repository. This is so that we can have both the `cdap-operator` and `cdap` deployments managed through a single helm configuration. They are usually deployed in conjunction. 
+
+In the future we may look to change the CI process to use a LiveRamp build tool like Jenkins but at the moment this does not add any additional value for us as the `cdap-operator` codebase does not depend on any LiveRamp artifacts.
+
+For any PR against `lr-main` you may manually trigger a one off build by typing `/gcbrun` as a comment.
+
 ### Build and Run Locally
 
-You can checkout the CDAP Operator source code, build and run locally. To build the CDAP Operator, you need to setup your environment for the [Go](https://golang.org/doc/install) language. Also, you should have a Kubernetes cluster 
+You can checkout the CDAP Operator source code, build and run locally. To build the CDAP Operator, you need to setup your environment for the [Go](https://golang.org/doc/install) language. Also, you should have a Kubernetes cluster running and accessible in your current `kubectl` context. This could be either a Kubernetes cluster hosted on a cloud platform like GCP GKE or on a local Minikube instance.
 
 1. Checkout CDAP Operator source
    ```
@@ -40,7 +75,7 @@ You can checkout the CDAP Operator source code, build and run locally. To build 
    kubectl apply -f config/samples/cdap_v1alpha1_cdapmaster.yaml
    ```
    
-### Build Controller Docker Image and Deploy in Kubernetes
+### Build Controller Docker Image and Deploy in Kubernetes Manually
 
 You can also build a docker image containing the CDAP controller and deploy it to Kubernetes.
 
