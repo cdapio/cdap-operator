@@ -11,7 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.REPO_SYNC }}
     - name: fetch tags
+      continue-on-error: true
       run: |
         git remote add upstream https://github.com/cdapio/cdap
         git fetch upstream
