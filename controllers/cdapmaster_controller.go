@@ -126,9 +126,17 @@ func ApplyDefaults(resource interface{}) {
 	spec.Config[confLocalDataDirKey] = confLocalDataDirVal
 
 	// Set the configMapCConf entry for the router and UI service and ports
-	spec.Config[confRouterServerAddress] = fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(string(serviceRouter)))
-	spec.Config[confRouterBindPort] = strconv.Itoa(int(*spec.Router.ServicePort))
-	spec.Config[confUserInterfaceBindPort] = strconv.Itoa(int(*spec.UserInterface.ServicePort))
+	if spec.Config[confRouterServerAddress] == "" {
+		spec.Config[confRouterServerAddress] = fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(string(serviceRouter)))
+	}
+
+	if spec.Config[confRouterBindPort] == "" {
+		spec.Config[confRouterBindPort] = strconv.Itoa(int(*spec.Router.ServicePort))
+	}
+
+	if spec.Config[confUserInterfaceBindPort] == "" {
+		spec.Config[confUserInterfaceBindPort] = strconv.Itoa(int(*spec.UserInterface.ServicePort))
+	}
 
 	// Disable explore
 	spec.Config[confExploreEnabled] = "false"
