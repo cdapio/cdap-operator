@@ -148,6 +148,10 @@ type CDAPStatefulServiceSpec struct {
 	StorageSize string `json:"storageSize,omitempty"`
 	// StorageClassName is the name of the StorageClass for the persistent volume used by the service.
 	StorageClassName *string `json:"storageClassName,omitempty"`
+	// Containers define any additional containers a service has
+	// This is a list of containers and can be left blank
+	// A typical use is to add sidecars for a stateful set
+	Containers []*corev1.Container `json:"containers,omitempty"`
 }
 
 // AppFabricSpec defines the specification for the AppFabric service.

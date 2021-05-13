@@ -1,0 +1,395 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+      "annotations": {
+          "deployment.kubernetes.io/revision": "8"
+      },
+      "creationTimestamp": null,
+      "generation": 535,
+      "labels": {
+          "cdap.container.AppFabric": "test",
+          "cdap.instance": "test",
+          "custom-resource": "v1alpha1.CDAPMaster",
+          "custom-resource-name": "test",
+          "custom-resource-namespace": "default",
+          "using": "controllers.ServiceHandler"
+      },
+      "name": "cdap-test-appfabric",
+      "namespace": "default",
+      "ownerReferences": [
+          {
+              "controller": true,
+              "kind": "*v1alpha1.CDAPMaster",
+              "name": "test",
+              "uid": "7aeaad53-4afe-11ea-8611-42010a800022",
+              "apiVersion": "cdap.cdap.io/v1alpha1",
+              "blockOwnerDeletion": true
+          }
+      ],
+      "resourceVersion": "1912414",
+      "selfLink": "/apis/extensions/v1beta1/namespaces/default/deployments/cdap-test-appfabric",
+      "uid": "7b7154a1-4afe-11ea-8611-42010a800022"
+  },
+  "spec": {
+      "progressDeadlineSeconds": 600,
+      "replicas": 1,
+      "revisionHistoryLimit": 10,
+      "selector": {
+          "matchLabels": {
+              "cdap.container.AppFabric": "test",
+              "cdap.instance": "test",
+              "custom-resource": "v1alpha1.CDAPMaster",
+              "custom-resource-name": "test",
+              "custom-resource-namespace": "default",
+              "using": "controllers.ServiceHandler"
+          }
+      },
+      "serviceName": "cdap-test-appfabric",
+      "strategy": {
+          "rollingUpdate": {
+              "maxSurge": "25%",
+              "maxUnavailable": "25%"
+          },
+          "type": "RollingUpdate"
+      },
+      "template": {
+          "metadata": {
+              "creationTimestamp": null,
+              "labels": {
+                  "cdap.container.AppFabric": "test",
+                  "cdap.instance": "test",
+                  "custom-resource": "v1alpha1.CDAPMaster",
+                  "custom-resource-name": "test",
+                  "custom-resource-namespace": "default",
+                  "using": "controllers.ServiceHandler"
+              }
+          },
+          "spec": {
+              "containers": [
+                  {
+                      "args": [
+                          "io.cdap.cdap.master.environment.k8s.AppFabricServiceMain",
+                          "--env=k8s"
+                      ],
+                      "env": [
+                          {
+                              "name": "JAVA_HEAPMAX",
+                              "value": "-Xmx62914560"
+                          }
+                      ],
+                      "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
+                      "imagePullPolicy": "IfNotPresent",
+                      "name": "appfabric",
+                      "resources": {
+                          "requests": {
+                              "cpu": "100m",
+                              "memory": "100Mi"
+                          }
+                      },
+                      "terminationMessagePath": "/dev/termination-log",
+                      "terminationMessagePolicy": "File",
+                      "volumeMounts": [
+                          {
+                              "mountPath": "/etc/podinfo",
+                              "name": "podinfo",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/etc/cdap/conf",
+                              "name": "cdap-conf",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/etc/hadoop/conf",
+                              "name": "hadoop-conf",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/opt/cdap/master/system-app-config",
+                              "name": "cdap-sysappconf",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/data",
+                              "name": "cdap-test-appfabric-data",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/etc/cdap/security",
+                              "name": "cdap-security",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/my/config/map/1",
+                              "name": "cdap-cm-vol-my-config-map-1"
+                          },
+                          {
+                              "mountPath": "/my/config/map/2",
+                              "name": "cdap-cm-vol-my-config-map-2"
+                          },
+                          {
+                              "mountPath": "/my/secret/1",
+                              "name": "cdap-se-vol-my-secret-1"
+                          }
+                      ]
+                  },
+                  {
+                      "env": [
+                          {
+                              "name": "PORT",
+                              "value": "8070"
+                          }
+                      ],
+                      "image": "gcr.io/google-samples/hello-app:2.0",
+                      "imagePullPolicy": "IfNotPresent",
+                      "name": "test-hello",
+                      "readinessProbe": {
+                          "timeoutSeconds": 1,
+                          "exec": {
+                              "command": [
+                                  "ls"
+                              ]
+                          },
+                          "failureThreshold": 3,
+                          "periodSeconds": 10,
+                          "successThreshold": 1
+                      },
+                      "resources": {},
+                      "terminationMessagePath": "/dev/termination-log",
+                      "terminationMessagePolicy": "File",
+                      "volumeMounts": [
+                          {
+                              "mountPath": "/etc/podinfo",
+                              "name": "podinfo",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/etc/cdap/conf",
+                              "name": "cdap-conf",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/etc/hadoop/conf",
+                              "name": "hadoop-conf",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/opt/cdap/master/system-app-config",
+                              "name": "cdap-sysappconf",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/data",
+                              "name": "cdap-test-appfabric-data",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/etc/cdap/security",
+                              "name": "cdap-security",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/my/config/map/1",
+                              "name": "cdap-cm-vol-my-config-map-1"
+                          },
+                          {
+                              "mountPath": "/my/config/map/2",
+                              "name": "cdap-cm-vol-my-config-map-2"
+                          },
+                          {
+                              "mountPath": "/my/secret/1",
+                              "name": "cdap-se-vol-my-secret-1"
+                          }
+                      ]
+                  }
+              ],
+              "dnsPolicy": "ClusterFirst",
+              "initContainers": [
+                  {
+                      "args": [
+                          "io.cdap.cdap.master.environment.k8s.StorageMain"
+                      ],
+                      "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
+                      "name": "storageinit",
+                      "resources": {},
+                      "volumeMounts": [
+                          {
+                              "mountPath": "/etc/podinfo",
+                              "name": "podinfo",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/etc/cdap/conf",
+                              "name": "cdap-conf",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/etc/hadoop/conf",
+                              "name": "hadoop-conf",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/opt/cdap/master/system-app-config",
+                              "name": "cdap-sysappconf",
+                              "readOnly": true
+                          },
+                          {
+                              "mountPath": "/data",
+                              "name": "cdap-test-appfabric-data"
+                          },
+                          {
+                              "mountPath": "/etc/cdap/security",
+                              "name": "cdap-security",
+                              "readOnly": true
+                          },
+                          {
+                              "name": "cdap-cm-vol-my-config-map-1",
+                              "mountPath": "/my/config/map/1"
+                          },
+                          {
+                              "mountPath": "/my/config/map/2",
+                              "name": "cdap-cm-vol-my-config-map-2"
+                          },
+                          {
+                              "mountPath": "/my/secret/1",
+                              "name": "cdap-se-vol-my-secret-1"
+                          }
+                      ]
+                  }
+              ],
+              "restartPolicy": "Always",
+              "schedulerName": "default-scheduler",
+              "securityContext": {},
+              "serviceAccount": "cdap",
+              "serviceAccountName": "cdap",
+              "terminationGracePeriodSeconds": 120,
+              "volumes": [
+                  {
+                      "downwardAPI": {
+                          "defaultMode": 420,
+                          "items": [
+                              {
+                                  "fieldRef": {
+                                      "apiVersion": "v1",
+                                      "fieldPath": "metadata.labels"
+                                  },
+                                  "path": "pod.labels.properties"
+                              },
+                              {
+                                  "fieldRef": {
+                                      "apiVersion": "v1",
+                                      "fieldPath": "metadata.name"
+                                  },
+                                  "path": "pod.name"
+                              },
+                              {
+                                  "fieldRef": {
+                                      "apiVersion": "v1",
+                                      "fieldPath": "metadata.uid"
+                                  },
+                                  "path": "pod.uid"
+                              }
+                          ]
+                      },
+                      "name": "podinfo"
+                  },
+                  {
+                      "configMap": {
+                          "defaultMode": 420,
+                          "name": "cdap-test-cconf"
+                      },
+                      "name": "cdap-conf"
+                  },
+                  {
+                      "configMap": {
+                          "defaultMode": 420,
+                          "name": "cdap-test-hconf"
+                      },
+                      "name": "hadoop-conf"
+                  },
+                  {
+                      "configMap": {
+                          "defaultMode": 420,
+                          "name": "cdap-test-sysappconf"
+                      },
+                      "name": "cdap-sysappconf"
+                  },
+                  {
+                      "name": "cdap-security",
+                      "secret": {
+                          "defaultMode": 420,
+                          "secretName": "cdap-secret"
+                      }
+                  },
+                  {
+                      "configMap": {
+                          "defaultMode": 420,
+                          "name": "my-config-map-1"
+                      },
+                      "name": "cdap-cm-vol-my-config-map-1"
+                  },
+                  {
+                      "configMap": {
+                          "defaultMode": 420,
+                          "name": "my-config-map-2"
+                      },
+                      "name": "cdap-cm-vol-my-config-map-2"
+                  },
+                  {
+                      "name": "cdap-se-vol-my-secret-1",
+                      "secret": {
+                          "defaultMode": 420,
+                          "secretName": "my-secret-1"
+                      }
+                  }
+              ]
+          }
+      },
+      "updateStrategy": {},
+      "volumeClaimTemplates": [
+          {
+              "metadata": {
+                  "creationTimestamp": null,
+                  "name": "cdap-test-appfabric-data"
+              },
+              "spec": {
+                  "accessModes": [
+                      "ReadWriteOnce"
+                  ],
+                  "resources": {
+                      "requests": {
+                          "storage": "200Gi"
+                      }
+                  }
+              },
+              "status": {}
+          }
+      ]
+  },
+  "status": {
+      "availableReplicas": 1,
+      "conditions": [
+          {
+              "message": "Deployment has minimum availability.",
+              "reason": "MinimumReplicasAvailable",
+              "status": "True",
+              "type": "Available",
+              "lastTransitionTime": "2020-02-09T05:39:28Z",
+              "lastUpdateTime": "2020-02-09T05:39:28Z"
+          },
+          {
+              "lastTransitionTime": "2020-02-09T05:39:04Z",
+              "lastUpdateTime": "2020-02-09T08:58:40Z",
+              "message": "ReplicaSet \"cdap-test-appfabric-5fdddcfcb4\" has successfully progressed.",
+              "reason": "NewReplicaSetAvailable",
+              "status": "True",
+              "type": "Progressing"
+          }
+      ],
+      "observedGeneration": 535,
+      "readyReplicas": 1,
+      "replicas": 0,
+      "updatedReplicas": 1
+  }
+}

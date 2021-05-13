@@ -182,7 +182,21 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		if s == serviceUserInterface {
 			c = updateSpecForUserInterface(master, c)
 		}
+
 		spec = spec.withContainer(c)
+
+		statefulSet, err := getCDAPStatefulServiceSpec(master, s)
+		if err != nil || statefulSet == nil {
+			continue
+		} else {
+			if statefulSet.Containers != nil {
+				for _, container := range statefulSet.Containers {
+					additionalContainer := containerSpecFromContainer(container, dataDir)
+					spec.withContainer(additionalContainer)
+				}
+			}
+		}
+
 		// Adding a label to allow NodePort service selector to find the pod
 		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
 

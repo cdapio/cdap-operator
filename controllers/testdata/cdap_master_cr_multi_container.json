@@ -21,6 +21,25 @@
   },
   "spec": {
     "appFabric": {
+      "containers": [
+        {
+          "name": "test-hello",
+          "image": "gcr.io/google-samples/hello-app:2.0",
+          "readinessProbe": {
+            "exec": {
+              "command": [
+                "ls"
+              ]
+            }
+          },
+          "env": [
+            {
+              "name": "PORT",
+              "value": "8070"
+            }
+          ]
+        }
+      ],
       "metadata": {
         "creationTimestamp": null
       },

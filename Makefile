@@ -27,7 +27,7 @@ run: generate fmt vet manifests
 
 # Install CRDs into a cluster
 install: manifests
-	kustomize build config/crd | kubectl apply -f -
+	(kustomize build config/crd | kubectl replace -f -) || (kustomize build config/crd | kubectl create -f -)
 
 # Uninstall CRDs from a cluster
 uninstall: manifests

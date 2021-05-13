@@ -254,7 +254,7 @@ var _ = Describe("Controller Suite", func() {
 		})
 	})
 
-	Describe("Add additional generic container to a deployment", func() {
+	Describe("Add additional generic container", func() {
 		var (
 			master *v1alpha1.CDAPMaster
 		)
@@ -290,6 +290,29 @@ var _ = Describe("Controller Suite", func() {
 						actual, err := json.Marshal(o)
 						Expect(err).To(BeNil())
 						expected := readExpectedJson("router_multi_container" + ".json")
+						diffJson(expected, actual)
+					}
+
+				}
+			}
+		})
+		It("Addtional container for AppFabric", func() {
+			emptyLabels := make(map[string]string)
+			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
+			Expect(err).To(BeNil())
+			objs, err := buildObjectsForDeploymentPlan(spec)
+			Expect(err).To(BeNil())
+
+			var strategyHandler DeploymentPlan
+			strategyHandler.Init()
+
+			for _, obj := range objs {
+				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.StatefulSet); ok {
+
+					if o.Name == getObjName(master, "appfabric") {
+						actual, err := json.Marshal(o)
+						Expect(err).To(BeNil())
+						expected := readExpectedJson("appfabric_multi_container" + ".json")
 						diffJson(expected, actual)
 					}
 
