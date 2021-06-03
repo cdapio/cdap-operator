@@ -199,6 +199,48 @@ spec:
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
                   type: object
+                securityContext:
+                  description: SecurityContext overrides the security context for
+                    the service pods.
+                  properties:
+                    allowPrivilegeEscalation:
+                      description: AllowPrivilegeEscalation prevents the container
+                        process from running SUID binaries. It is applied at the container
+                        level.
+                      type: boolean
+                    fsGroup:
+                      description: FSGroup mounts volumes as the specified group ID
+                        and gives the primary user access to that group. It is applied
+                        at the pod level.
+                      format: int64
+                      type: integer
+                    privileged:
+                      description: Privileged runs container in privileged mode. It
+                        is applied at the container level. Processes in privileged
+                        containers are essentially equivalent to root on the host.
+                      type: boolean
+                    readOnlyRootFilesystem:
+                      description: ReadOnlyRootFilesystem specifies whether the container's
+                        root filesystem is read-only. It is applied at the container
+                        level.
+                      type: boolean
+                    runAsGroup:
+                      description: RunAsGroup runs the pod as the specified group
+                        ID. It is applied at the pod level.
+                      format: int64
+                      type: integer
+                    runAsNonRoot:
+                      description: RunAsNonRoot indicates that the container must
+                        run as a non-root user. If true, the Kubelet will validate
+                        the image at runtime to ensure that it does not run as UID
+                        0 (root) and fail to start the container if it does.
+                      type: boolean
+                    runAsUser:
+                      description: RunAsUser runs the pod as the specified user ID.
+                        It is applied at the pod level.
+                      format: int64
+                      type: integer
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -378,6 +420,48 @@ spec:
                     mount path for this service Key is the secret object name. Value
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
+                  type: object
+                securityContext:
+                  description: SecurityContext overrides the security context for
+                    the service pods.
+                  properties:
+                    allowPrivilegeEscalation:
+                      description: AllowPrivilegeEscalation prevents the container
+                        process from running SUID binaries. It is applied at the container
+                        level.
+                      type: boolean
+                    fsGroup:
+                      description: FSGroup mounts volumes as the specified group ID
+                        and gives the primary user access to that group. It is applied
+                        at the pod level.
+                      format: int64
+                      type: integer
+                    privileged:
+                      description: Privileged runs container in privileged mode. It
+                        is applied at the container level. Processes in privileged
+                        containers are essentially equivalent to root on the host.
+                      type: boolean
+                    readOnlyRootFilesystem:
+                      description: ReadOnlyRootFilesystem specifies whether the container's
+                        root filesystem is read-only. It is applied at the container
+                        level.
+                      type: boolean
+                    runAsGroup:
+                      description: RunAsGroup runs the pod as the specified group
+                        ID. It is applied at the pod level.
+                      format: int64
+                      type: integer
+                    runAsNonRoot:
+                      description: RunAsNonRoot indicates that the container must
+                        run as a non-root user. If true, the Kubelet will validate
+                        the image at runtime to ensure that it does not run as UID
+                        0 (root) and fail to start the container if it does.
+                      type: boolean
+                    runAsUser:
+                      description: RunAsUser runs the pod as the specified user ID.
+                        It is applied at the pod level.
+                      format: int64
+                      type: integer
                   type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
@@ -572,6 +656,48 @@ spec:
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
                   type: object
+                securityContext:
+                  description: SecurityContext overrides the security context for
+                    the service pods.
+                  properties:
+                    allowPrivilegeEscalation:
+                      description: AllowPrivilegeEscalation prevents the container
+                        process from running SUID binaries. It is applied at the container
+                        level.
+                      type: boolean
+                    fsGroup:
+                      description: FSGroup mounts volumes as the specified group ID
+                        and gives the primary user access to that group. It is applied
+                        at the pod level.
+                      format: int64
+                      type: integer
+                    privileged:
+                      description: Privileged runs container in privileged mode. It
+                        is applied at the container level. Processes in privileged
+                        containers are essentially equivalent to root on the host.
+                      type: boolean
+                    readOnlyRootFilesystem:
+                      description: ReadOnlyRootFilesystem specifies whether the container's
+                        root filesystem is read-only. It is applied at the container
+                        level.
+                      type: boolean
+                    runAsGroup:
+                      description: RunAsGroup runs the pod as the specified group
+                        ID. It is applied at the pod level.
+                      format: int64
+                      type: integer
+                    runAsNonRoot:
+                      description: RunAsNonRoot indicates that the container must
+                        run as a non-root user. If true, the Kubelet will validate
+                        the image at runtime to ensure that it does not run as UID
+                        0 (root) and fail to start the container if it does.
+                      type: boolean
+                    runAsUser:
+                      description: RunAsUser runs the pod as the specified user ID.
+                        It is applied at the pod level.
+                      format: int64
+                      type: integer
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -743,6 +869,48 @@ spec:
                     mount path for this service Key is the secret object name. Value
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
+                  type: object
+                securityContext:
+                  description: SecurityContext overrides the security context for
+                    the service pods.
+                  properties:
+                    allowPrivilegeEscalation:
+                      description: AllowPrivilegeEscalation prevents the container
+                        process from running SUID binaries. It is applied at the container
+                        level.
+                      type: boolean
+                    fsGroup:
+                      description: FSGroup mounts volumes as the specified group ID
+                        and gives the primary user access to that group. It is applied
+                        at the pod level.
+                      format: int64
+                      type: integer
+                    privileged:
+                      description: Privileged runs container in privileged mode. It
+                        is applied at the container level. Processes in privileged
+                        containers are essentially equivalent to root on the host.
+                      type: boolean
+                    readOnlyRootFilesystem:
+                      description: ReadOnlyRootFilesystem specifies whether the container's
+                        root filesystem is read-only. It is applied at the container
+                        level.
+                      type: boolean
+                    runAsGroup:
+                      description: RunAsGroup runs the pod as the specified group
+                        ID. It is applied at the pod level.
+                      format: int64
+                      type: integer
+                    runAsNonRoot:
+                      description: RunAsNonRoot indicates that the container must
+                        run as a non-root user. If true, the Kubelet will validate
+                        the image at runtime to ensure that it does not run as UID
+                        0 (root) and fail to start the container if it does.
+                      type: boolean
+                    runAsUser:
+                      description: RunAsUser runs the pod as the specified user ID.
+                        It is applied at the pod level.
+                      format: int64
+                      type: integer
                   type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
@@ -920,6 +1088,48 @@ spec:
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
                   type: object
+                securityContext:
+                  description: SecurityContext overrides the security context for
+                    the service pods.
+                  properties:
+                    allowPrivilegeEscalation:
+                      description: AllowPrivilegeEscalation prevents the container
+                        process from running SUID binaries. It is applied at the container
+                        level.
+                      type: boolean
+                    fsGroup:
+                      description: FSGroup mounts volumes as the specified group ID
+                        and gives the primary user access to that group. It is applied
+                        at the pod level.
+                      format: int64
+                      type: integer
+                    privileged:
+                      description: Privileged runs container in privileged mode. It
+                        is applied at the container level. Processes in privileged
+                        containers are essentially equivalent to root on the host.
+                      type: boolean
+                    readOnlyRootFilesystem:
+                      description: ReadOnlyRootFilesystem specifies whether the container's
+                        root filesystem is read-only. It is applied at the container
+                        level.
+                      type: boolean
+                    runAsGroup:
+                      description: RunAsGroup runs the pod as the specified group
+                        ID. It is applied at the pod level.
+                      format: int64
+                      type: integer
+                    runAsNonRoot:
+                      description: RunAsNonRoot indicates that the container must
+                        run as a non-root user. If true, the Kubelet will validate
+                        the image at runtime to ensure that it does not run as UID
+                        0 (root) and fail to start the container if it does.
+                      type: boolean
+                    runAsUser:
+                      description: RunAsUser runs the pod as the specified user ID.
+                        It is applied at the pod level.
+                      format: int64
+                      type: integer
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -1083,6 +1293,48 @@ spec:
                     mount path for this service Key is the secret object name. Value
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
+                  type: object
+                securityContext:
+                  description: SecurityContext overrides the security context for
+                    the service pods.
+                  properties:
+                    allowPrivilegeEscalation:
+                      description: AllowPrivilegeEscalation prevents the container
+                        process from running SUID binaries. It is applied at the container
+                        level.
+                      type: boolean
+                    fsGroup:
+                      description: FSGroup mounts volumes as the specified group ID
+                        and gives the primary user access to that group. It is applied
+                        at the pod level.
+                      format: int64
+                      type: integer
+                    privileged:
+                      description: Privileged runs container in privileged mode. It
+                        is applied at the container level. Processes in privileged
+                        containers are essentially equivalent to root on the host.
+                      type: boolean
+                    readOnlyRootFilesystem:
+                      description: ReadOnlyRootFilesystem specifies whether the container's
+                        root filesystem is read-only. It is applied at the container
+                        level.
+                      type: boolean
+                    runAsGroup:
+                      description: RunAsGroup runs the pod as the specified group
+                        ID. It is applied at the pod level.
+                      format: int64
+                      type: integer
+                    runAsNonRoot:
+                      description: RunAsNonRoot indicates that the container must
+                        run as a non-root user. If true, the Kubelet will validate
+                        the image at runtime to ensure that it does not run as UID
+                        0 (root) and fail to start the container if it does.
+                      type: boolean
+                    runAsUser:
+                      description: RunAsUser runs the pod as the specified user ID.
+                        It is applied at the pod level.
+                      format: int64
+                      type: integer
                   type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
@@ -1255,6 +1507,48 @@ spec:
                     mount path for this service Key is the secret object name. Value
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
+                  type: object
+                securityContext:
+                  description: SecurityContext overrides the security context for
+                    the service pods.
+                  properties:
+                    allowPrivilegeEscalation:
+                      description: AllowPrivilegeEscalation prevents the container
+                        process from running SUID binaries. It is applied at the container
+                        level.
+                      type: boolean
+                    fsGroup:
+                      description: FSGroup mounts volumes as the specified group ID
+                        and gives the primary user access to that group. It is applied
+                        at the pod level.
+                      format: int64
+                      type: integer
+                    privileged:
+                      description: Privileged runs container in privileged mode. It
+                        is applied at the container level. Processes in privileged
+                        containers are essentially equivalent to root on the host.
+                      type: boolean
+                    readOnlyRootFilesystem:
+                      description: ReadOnlyRootFilesystem specifies whether the container's
+                        root filesystem is read-only. It is applied at the container
+                        level.
+                      type: boolean
+                    runAsGroup:
+                      description: RunAsGroup runs the pod as the specified group
+                        ID. It is applied at the pod level.
+                      format: int64
+                      type: integer
+                    runAsNonRoot:
+                      description: RunAsNonRoot indicates that the container must
+                        run as a non-root user. If true, the Kubelet will validate
+                        the image at runtime to ensure that it does not run as UID
+                        0 (root) and fail to start the container if it does.
+                      type: boolean
+                    runAsUser:
+                      description: RunAsUser runs the pod as the specified user ID.
+                        It is applied at the pod level.
+                      format: int64
+                      type: integer
                   type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
@@ -1432,6 +1726,48 @@ spec:
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
                   type: object
+                securityContext:
+                  description: SecurityContext overrides the security context for
+                    the service pods.
+                  properties:
+                    allowPrivilegeEscalation:
+                      description: AllowPrivilegeEscalation prevents the container
+                        process from running SUID binaries. It is applied at the container
+                        level.
+                      type: boolean
+                    fsGroup:
+                      description: FSGroup mounts volumes as the specified group ID
+                        and gives the primary user access to that group. It is applied
+                        at the pod level.
+                      format: int64
+                      type: integer
+                    privileged:
+                      description: Privileged runs container in privileged mode. It
+                        is applied at the container level. Processes in privileged
+                        containers are essentially equivalent to root on the host.
+                      type: boolean
+                    readOnlyRootFilesystem:
+                      description: ReadOnlyRootFilesystem specifies whether the container's
+                        root filesystem is read-only. It is applied at the container
+                        level.
+                      type: boolean
+                    runAsGroup:
+                      description: RunAsGroup runs the pod as the specified group
+                        ID. It is applied at the pod level.
+                      format: int64
+                      type: integer
+                    runAsNonRoot:
+                      description: RunAsNonRoot indicates that the container must
+                        run as a non-root user. If true, the Kubelet will validate
+                        the image at runtime to ensure that it does not run as UID
+                        0 (root) and fail to start the container if it does.
+                      type: boolean
+                    runAsUser:
+                      description: RunAsUser runs the pod as the specified user ID.
+                        It is applied at the pod level.
+                      format: int64
+                      type: integer
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -1608,6 +1944,48 @@ spec:
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
                   type: object
+                securityContext:
+                  description: SecurityContext overrides the security context for
+                    the service pods.
+                  properties:
+                    allowPrivilegeEscalation:
+                      description: AllowPrivilegeEscalation prevents the container
+                        process from running SUID binaries. It is applied at the container
+                        level.
+                      type: boolean
+                    fsGroup:
+                      description: FSGroup mounts volumes as the specified group ID
+                        and gives the primary user access to that group. It is applied
+                        at the pod level.
+                      format: int64
+                      type: integer
+                    privileged:
+                      description: Privileged runs container in privileged mode. It
+                        is applied at the container level. Processes in privileged
+                        containers are essentially equivalent to root on the host.
+                      type: boolean
+                    readOnlyRootFilesystem:
+                      description: ReadOnlyRootFilesystem specifies whether the container's
+                        root filesystem is read-only. It is applied at the container
+                        level.
+                      type: boolean
+                    runAsGroup:
+                      description: RunAsGroup runs the pod as the specified group
+                        ID. It is applied at the pod level.
+                      format: int64
+                      type: integer
+                    runAsNonRoot:
+                      description: RunAsNonRoot indicates that the container must
+                        run as a non-root user. If true, the Kubelet will validate
+                        the image at runtime to ensure that it does not run as UID
+                        0 (root) and fail to start the container if it does.
+                      type: boolean
+                    runAsUser:
+                      description: RunAsUser runs the pod as the specified user ID.
+                        It is applied at the pod level.
+                      format: int64
+                      type: integer
+                  type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for
                     the service pods.
@@ -1628,6 +2006,46 @@ spec:
                 mount path. Key is the secret object name. Value is the mount path.
                 This adds Secret data to the directory specified by the volume mount
                 path.
+              type: object
+            securityContext:
+              description: SecurityContext defines the security context for all pods
+                for all services.
+              properties:
+                allowPrivilegeEscalation:
+                  description: AllowPrivilegeEscalation prevents the container process
+                    from running SUID binaries. It is applied at the container level.
+                  type: boolean
+                fsGroup:
+                  description: FSGroup mounts volumes as the specified group ID and
+                    gives the primary user access to that group. It is applied at
+                    the pod level.
+                  format: int64
+                  type: integer
+                privileged:
+                  description: Privileged runs container in privileged mode. It is
+                    applied at the container level. Processes in privileged containers
+                    are essentially equivalent to root on the host.
+                  type: boolean
+                readOnlyRootFilesystem:
+                  description: ReadOnlyRootFilesystem specifies whether the container's
+                    root filesystem is read-only. It is applied at the container level.
+                  type: boolean
+                runAsGroup:
+                  description: RunAsGroup runs the pod as the specified group ID.
+                    It is applied at the pod level.
+                  format: int64
+                  type: integer
+                runAsNonRoot:
+                  description: RunAsNonRoot indicates that the container must run
+                    as a non-root user. If true, the Kubelet will validate the image
+                    at runtime to ensure that it does not run as UID 0 (root) and
+                    fail to start the container if it does.
+                  type: boolean
+                runAsUser:
+                  description: RunAsUser runs the pod as the specified user ID. It
+                    is applied at the pod level.
+                  format: int64
+                  type: integer
               type: object
             securitySecret:
               description: SecuritySecret is secret that contains security related
@@ -1807,6 +2225,48 @@ spec:
                     mount path for this service Key is the secret object name. Value
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
+                  type: object
+                securityContext:
+                  description: SecurityContext overrides the security context for
+                    the service pods.
+                  properties:
+                    allowPrivilegeEscalation:
+                      description: AllowPrivilegeEscalation prevents the container
+                        process from running SUID binaries. It is applied at the container
+                        level.
+                      type: boolean
+                    fsGroup:
+                      description: FSGroup mounts volumes as the specified group ID
+                        and gives the primary user access to that group. It is applied
+                        at the pod level.
+                      format: int64
+                      type: integer
+                    privileged:
+                      description: Privileged runs container in privileged mode. It
+                        is applied at the container level. Processes in privileged
+                        containers are essentially equivalent to root on the host.
+                      type: boolean
+                    readOnlyRootFilesystem:
+                      description: ReadOnlyRootFilesystem specifies whether the container's
+                        root filesystem is read-only. It is applied at the container
+                        level.
+                      type: boolean
+                    runAsGroup:
+                      description: RunAsGroup runs the pod as the specified group
+                        ID. It is applied at the pod level.
+                      format: int64
+                      type: integer
+                    runAsNonRoot:
+                      description: RunAsNonRoot indicates that the container must
+                        run as a non-root user. If true, the Kubelet will validate
+                        the image at runtime to ensure that it does not run as UID
+                        0 (root) and fail to start the container if it does.
+                      type: boolean
+                    runAsUser:
+                      description: RunAsUser runs the pod as the specified user ID.
+                        It is applied at the pod level.
+                      format: int64
+                      type: integer
                   type: object
                 serviceAccountName:
                   description: ServiceAccountName overrides the service account for

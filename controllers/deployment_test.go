@@ -1,13 +1,14 @@
 package controllers
 
 import (
-	"cdap.io/cdap-operator/api/v1alpha1"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+
+	"cdap.io/cdap-operator/api/v1alpha1"
 	"github.com/nsf/jsondiff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"io/ioutil"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

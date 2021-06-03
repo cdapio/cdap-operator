@@ -36,6 +36,21 @@ spec:
         {{$k}}: "{{$v}}"
         {{end}}
     spec:
+      {{if .Base.SecurityContext}}
+      securityContext:
+        # For non-boolean pointers, it is reasonable to set this value only if it is non-zero.
+        {{if .Base.SecurityContext.RunAsUser}}
+        runAsUser: {{.Base.SecurityContext.RunAsUser}}
+        {{end}}
+        {{if .Base.SecurityContext.RunAsGroup}}
+        runAsGroup: {{.Base.SecurityContext.RunAsGroup}}
+        {{end}}
+        {{if .Base.SecurityContext.FSGroup}}
+        fsGroup: {{.Base.SecurityContext.FSGroup}}
+        {{end}}
+        # For boolean pointers, we always set the value and ensure there is a default set for nil values.
+        runAsNonRoot: {{.Base.SecurityContext.RunAsNonRoot}}
+      {{end}}
       {{if .Base.ServiceAccountName}}
       serviceAccountName: {{.Base.ServiceAccountName}}
       {{end}}
@@ -55,6 +70,13 @@ spec:
         - name: {{$c.Name}}
           image: {{$c.Image}}
           workingDir: {{$c.WorkingDir}}
+          {{if $.Base.SecurityContext}}
+          securityContext:
+            # For boolean pointers, we always set the value and ensure there is a default set for nil values.
+            privileged: {{$.Base.SecurityContext.Privileged}}
+            allowPrivilegeEscalation: {{$.Base.SecurityContext.AllowPrivilegeEscalation}}
+            readOnlyRootFilesystem: {{$.Base.SecurityContext.ReadOnlyRootFilesystem}}
+          {{end}}
           command:
           {{range $v := $c.Command }}
             - {{$v}}

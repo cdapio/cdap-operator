@@ -1,15 +1,16 @@
 package controllers
 
 import (
-	v1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
 	"fmt"
+	"reflect"
+	"strings"
+
+	"cdap.io/cdap-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"reflect"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
-	"strings"
 )
 
 var deploymentPlanner *DeploymentPlan
@@ -90,7 +91,7 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 	cconf := getObjName(master, configMapCConf)
 	hconf := getObjName(master, configMapHConf)
 	sysappconf := getObjName(master, configMapSysAppConf)
-	dataDir := confLocalDataDirVal
+	dataDir := master.Spec.Config[confLocalDataDirKey]
 
 	spec := newDeploymentPlanSpec()
 	// Build statefulsets
@@ -154,12 +155,17 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	if err != nil {
 		return nil, err
 	}
+	securityContext, err := getSecurityContext(master, services)
+	if err != nil {
+		return nil, err
+	}
 
 	spec := newStatefulSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
 		setNodeSelector(nodeSelector).
 		setRuntimeClassName(runtimeClass).
-		setPriorityClassName(priorityClass)
+		setPriorityClassName(priorityClass).
+		setSecurityContext(securityContext)
 
 	// Add init container
 	spec = spec.withInitContainer(
@@ -236,13 +242,18 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 	if err != nil {
 		return nil, err
 	}
+	securityContext, err := getSecurityContext(master, services)
+	if err != nil {
+		return nil, err
+	}
 
 	spec := newDeploymentSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
 		setNodeSelector(nodeSelector).
 		setRuntimeClassName(runtimeClass).
 		setPriorityClassName(priorityClass).
-		setReplicas(replicas)
+		setReplicas(replicas).
+		setSecurityContext(securityContext)
 
 	// Add each service as a container
 	for _, s := range services {
@@ -450,9 +461,22 @@ func getRuntimeClass(master *v1alpha1.CDAPMaster, services ServiceGroup) (string
 func getServiceAccount(master *v1alpha1.CDAPMaster, services ServiceGroup) (string, error) {
 	serviceAccount := master.Spec.ServiceAccountName
 	if err := getStringFieldValue(master, services, "ServiceAccountName", &serviceAccount); err != nil {
-		return "", nil
+		return "", err
 	}
 	return serviceAccount, nil
+}
+
+// Return default SecurityContext in CDAPMaster.Spec or the overridden security context.
+func getSecurityContext(master *v1alpha1.CDAPMaster, services ServiceGroup) (*v1alpha1.SecurityContext, error) {
+	securityContext := master.Spec.SecurityContext
+	val, err := getFieldValueIfUnique(master, services, "SecurityContext")
+	if err != nil {
+		return nil, err
+	}
+	if overriddenSecurityContext, ok := val.(v1alpha1.SecurityContext); ok {
+		return &overriddenSecurityContext, nil
+	}
+	return securityContext, nil
 }
 
 // getReplicas returns the Replicas if all supplied services have the same setting, otherwise return an error
@@ -526,7 +550,7 @@ func getFieldValueIfUnique(master *v1alpha1.CDAPMaster, services ServiceGroup, f
 			fieldVal = fieldVal.Elem()
 		}
 		// Skip if empty
-		if fieldVal.Len() == 0 {
+		if fieldVal.Kind() == reflect.String && fieldVal.Len() == 0 {
 			continue
 		}
 		values = append(values, fieldVal.Interface())

@@ -122,13 +122,16 @@ func ApplyDefaults(resource interface{}) {
 	if spec.Config == nil {
 		spec.Config = make(map[string]string)
 	}
-	// Set the local data directory
-	spec.Config[confLocalDataDirKey] = confLocalDataDirVal
 
 	// Set the configMapCConf entry for the router and UI service and ports
 	spec.Config[confRouterServerAddress] = fmt.Sprintf("cdap-%s-%s", r.Name, strings.ToLower(string(serviceRouter)))
 	spec.Config[confRouterBindPort] = strconv.Itoa(int(*spec.Router.ServicePort))
 	spec.Config[confUserInterfaceBindPort] = strconv.Itoa(int(*spec.UserInterface.ServicePort))
+
+	// Set the default local data directory if it is not set in cdap-cr.
+	if _, ok := spec.Config[confLocalDataDirKey]; !ok {
+		spec.Config[confLocalDataDirKey] = spec.Config[confLocalDataDirVal]
+	}
 
 	// Disable explore
 	spec.Config[confExploreEnabled] = "false"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	v1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
+	"cdap.io/cdap-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
@@ -122,20 +122,21 @@ func (s *ContainerSpec) setResources(resources *corev1.ResourceRequirements) *Co
 
 // BaseSpec contains command fields for both StatefulSet and Deployment
 type BaseSpec struct {
-	Name               string            `json:"name,omitempty"`
-	Namespace          string            `json:"namespace,omitempty"`
-	Labels             map[string]string `json:"labels,omitempty"`
-	ServiceAccountName string            `json:"serviceAccountName,omitempty"`
-	Replicas           int32             `json:"replicas,omitempty"`
-	NodeSelector       map[string]string `json:"nodeSelector,omitempty"`
-	RuntimeClassName   string            `json:"runtimeClassName,omitempty"`
-	PriorityClassName  string            `json:"priorityClassName,omitempty"`
-	SecuritySecret     string            `json:"securitySecret,omitempty"`
-	CConf              string            `json:"cdapConf,omitempty"`
-	HConf              string            `json:"hadoopConf,omitempty"`
-	SysAppConf         string            `json:"sysAppConf,omitempty"`
-	ConfigMapVolumes   map[string]string `json:"configMapVolumes,omitempty"`
-	SecretVolumes      map[string]string `json:"secretVolumes,omitempty"`
+	Name               string                    `json:"name,omitempty"`
+	Namespace          string                    `json:"namespace,omitempty"`
+	Labels             map[string]string         `json:"labels,omitempty"`
+	ServiceAccountName string                    `json:"serviceAccountName,omitempty"`
+	Replicas           int32                     `json:"replicas,omitempty"`
+	NodeSelector       map[string]string         `json:"nodeSelector,omitempty"`
+	RuntimeClassName   string                    `json:"runtimeClassName,omitempty"`
+	PriorityClassName  string                    `json:"priorityClassName,omitempty"`
+	SecuritySecret     string                    `json:"securitySecret,omitempty"`
+	CConf              string                    `json:"cdapConf,omitempty"`
+	HConf              string                    `json:"hadoopConf,omitempty"`
+	SysAppConf         string                    `json:"sysAppConf,omitempty"`
+	ConfigMapVolumes   map[string]string         `json:"configMapVolumes,omitempty"`
+	SecretVolumes      map[string]string         `json:"secretVolumes,omitempty"`
+	SecurityContext    *v1alpha1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf, sysappconf string) *BaseSpec {
@@ -215,6 +216,33 @@ func addVolumes(volumes, newVolumes map[string]string, typeName string) error {
 	return nil
 }
 
+func (s *BaseSpec) setSecurityContext(securityContext *v1alpha1.SecurityContext) *BaseSpec {
+	s.SecurityContext = securityContext
+	if securityContext != nil {
+		// For non-boolean pointers, it is reasonable to set this value only if it is non-zero. Thus, we
+		// do not need to set a default for the int64 pointers.
+		// For boolean pointers, we always set the value and ensure there is a default set for nil values.
+		// All defaults are least-restrictive and pulled from corev1.SecurityContext preserve backwards compatibility.
+		if s.SecurityContext.RunAsNonRoot == nil {
+			s.SecurityContext.RunAsNonRoot = new(bool)
+			*s.SecurityContext.RunAsNonRoot = false
+		}
+		if s.SecurityContext.Privileged == nil {
+			s.SecurityContext.Privileged = new(bool)
+			*s.SecurityContext.Privileged = false
+		}
+		if s.SecurityContext.AllowPrivilegeEscalation == nil {
+			s.SecurityContext.AllowPrivilegeEscalation = new(bool)
+			*s.SecurityContext.AllowPrivilegeEscalation = true
+		}
+		if s.SecurityContext.ReadOnlyRootFilesystem == nil {
+			s.SecurityContext.ReadOnlyRootFilesystem = new(bool)
+			*s.SecurityContext.ReadOnlyRootFilesystem = false
+		}
+	}
+	return s
+}
+
 // For Deployment
 type DeploymentSpec struct {
 	Base       *BaseSpec        `json:"base,inline"`
@@ -274,6 +302,11 @@ func (s *DeploymentSpec) addSecretVolumes(volumes map[string]string) (*Deploymen
 		return nil, err
 	}
 	return s, nil
+}
+
+func (s *DeploymentSpec) setSecurityContext(securityContext *v1alpha1.SecurityContext) *DeploymentSpec {
+	s.Base.setSecurityContext(securityContext)
+	return s
 }
 
 // For VolumnClaimTemplate in Statefulset
@@ -360,6 +393,11 @@ func (s *StatefulSpec) addSecretVolumes(volumes map[string]string) (*StatefulSpe
 		return nil, err
 	}
 	return s, nil
+}
+
+func (s *StatefulSpec) setSecurityContext(securityContext *v1alpha1.SecurityContext) *StatefulSpec {
+	s.Base.setSecurityContext(securityContext)
+	return s
 }
 
 type NetworkServiceSpec struct {
