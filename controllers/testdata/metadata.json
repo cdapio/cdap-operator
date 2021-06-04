@@ -87,6 +87,11 @@
                 "memory": "100Mi"
               }
             },
+            "securityContext": {
+              "privileged": false,
+              "readOnlyRootFilesystem": false,
+              "allowPrivilegeEscalation": false
+            },
             "terminationMessagePath": "/dev/termination-log",
             "terminationMessagePolicy": "File",
             "volumeMounts": [
@@ -133,7 +138,12 @@
         "dnsPolicy": "ClusterFirst",
         "restartPolicy": "Always",
         "schedulerName": "default-scheduler",
-        "securityContext": {},
+        "securityContext": {
+          "fsGroup": 2000,
+          "runAsGroup": 1000,
+          "runAsUser": 1000,
+          "runAsNonRoot": true
+        },
         "serviceAccount": "cdap",
         "serviceAccountName": "cdap",
         "terminationGracePeriodSeconds": 120,

@@ -64,6 +64,11 @@ const (
 	labelInstanceKey        = "cdap.instance"
 	labelContainerKeyPrefix = "cdap.container."
 
+	// kubernetes security context
+	defaultSecurityContextUID   = 1000
+	defaultSecurityContextGID   = 1000
+	defaultSecurityContextFSGID = 2000
+
 	// kubernetes object name related
 	objectNamePrefix    = "cdap-"
 	configMapCConf      = "cconf"

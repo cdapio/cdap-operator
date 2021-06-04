@@ -86,6 +86,8 @@ type CDAPMasterSpec struct {
 	// To disable this service: either omit or set the field to nil
 	// To enable this service: set it to a pointer to a AuthenticationSpec struct (can be an empty struct)
 	Authentication *AuthenticationSpec `json:"authentication,omitempty"`
+	// SecurityContext defines the security context for all pods for all services.
+	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
 }
 
 // CDAPServiceSpec defines the base set of specifications applicable to all master services.
@@ -115,6 +117,8 @@ type CDAPServiceSpec struct {
 	// Key is the secret object name. Value is the mount path.
 	// This adds Secret data to the directory specified by the volume mount path.
 	SecretVolumes map[string]string `json:"secretVolumes,omitempty"`
+	// SecurityContext overrides the security context for the service pods.
+	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
 }
 
 // CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance.
@@ -228,6 +232,32 @@ type CDAPMasterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []CDAPMaster `json:"items"`
+}
+
+// SecurityContext defines fields for setting corev1.SecurityContext for containers and
+// corev1.PodSecurityContext for pods.
+// For additional information, see https://kubernetes.io/docs/tasks/configure-pod-container/security-context/.
+type SecurityContext struct {
+	// RunAsUser runs the pod as the specified user ID. It is applied at the pod level.
+	RunAsUser *int64 `json:"runAsUser,omitempty"`
+	// RunAsGroup runs the pod as the specified group ID. It is applied at the pod level.
+	RunAsGroup *int64 `json:"runAsGroup,omitempty"`
+	// FSGroup mounts volumes as the specified group ID and gives the primary user access
+	// to that group. It is applied at the pod level.
+	FSGroup *int64 `json:"fsGroup,omitempty"`
+	// AllowPrivilegeEscalation prevents the container process from running SUID binaries.
+	// It is applied at the container level.
+	AllowPrivilegeEscalation *bool `json:"allowPrivilegeEscalation,omitempty"`
+	// RunAsNonRoot indicates that the container must run as a non-root user.
+	// If true, the Kubelet will validate the image at runtime to ensure that it
+	// does not run as UID 0 (root) and fail to start the container if it does.
+	RunAsNonRoot *bool `json:"runAsNonRoot,omitempty"`
+	// Privileged runs container in privileged mode. It is applied at the container level.
+	// Processes in privileged containers are essentially equivalent to root on the host.
+	Privileged *bool `json:"privileged,omitempty"`
+	// ReadOnlyRootFilesystem specifies whether the container's root filesystem is read-only.
+	// It is applied at the container level.
+	ReadOnlyRootFilesystem *bool `json:"readOnlyRootFilesystem,omitempty"`
 }
 
 func init() {
