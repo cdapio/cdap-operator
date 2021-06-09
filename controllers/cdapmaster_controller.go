@@ -130,7 +130,7 @@ func ApplyDefaults(resource interface{}) {
 
 	// Set the default local data directory if it is not set in cdap-cr.
 	if _, ok := spec.Config[confLocalDataDirKey]; !ok {
-		spec.Config[confLocalDataDirKey] = spec.Config[confLocalDataDirVal]
+		spec.Config[confLocalDataDirKey] = confLocalDataDirVal
 	}
 
 	// Disable explore
