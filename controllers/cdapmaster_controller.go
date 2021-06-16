@@ -133,6 +133,11 @@ func ApplyDefaults(resource interface{}) {
 		spec.Config[confLocalDataDirKey] = confLocalDataDirVal
 	}
 
+	// Set twill.security.secret.disk.name to be consistent with securitySecret if not overwritten.
+	if _, ok := spec.Config[confTwillSecuritySecretDiskName]; !ok {
+		spec.Config[confTwillSecuritySecretDiskName] = spec.SecuritySecret
+	}
+
 	// Disable explore
 	spec.Config[confExploreEnabled] = "false"
 

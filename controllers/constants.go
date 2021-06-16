@@ -47,12 +47,13 @@ const (
 	fieldNameCDAPExternalServiceSpec = "CDAPExternalServiceSpec"
 
 	// cconf and hconf
-	confExploreEnabled        = "explore.enabled"
-	confLocalDataDirKey       = "local.data.dir"
-	confLocalDataDirVal       = "/data"
-	confRouterServerAddress   = "router.server.address"
-	confRouterBindPort        = "router.bind.port"
-	confUserInterfaceBindPort = "dashboard.bind.port"
+	confExploreEnabled              = "explore.enabled"
+	confLocalDataDirKey             = "local.data.dir"
+	confLocalDataDirVal             = "/data"
+	confRouterServerAddress         = "router.server.address"
+	confRouterBindPort              = "router.bind.port"
+	confUserInterfaceBindPort       = "dashboard.bind.port"
+	confTwillSecuritySecretDiskName = "twill.security.secret.disk.name"
 
 	// default values
 	defaultImage             = "gcr.io/cdapio/cdap:latest"
