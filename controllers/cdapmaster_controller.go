@@ -133,9 +133,20 @@ func ApplyDefaults(resource interface{}) {
 		spec.Config[confLocalDataDirKey] = confLocalDataDirVal
 	}
 
-	// Set twill.security.secret.disk.name to be consistent with securitySecret if not overwritten.
-	if _, ok := spec.Config[confTwillSecuritySecretDiskName]; !ok {
-		spec.Config[confTwillSecuritySecretDiskName] = spec.SecuritySecret
+	// Set security secret disk names to be consistent with securitySecret if not overwritten.
+	if _, ok := spec.Config[confTwillSecurityMasterSecretDiskName]; !ok && spec.SecuritySecret != "" {
+		spec.Config[confTwillSecurityMasterSecretDiskName] = spec.SecuritySecret
+	}
+	if _, ok := spec.Config[confTwillSecurityMasterSecretDiskPath]; !ok && spec.SecuritySecret != "" {
+		spec.Config[confTwillSecurityMasterSecretDiskPath] = defaultSecuritySecretPath
+	}
+	// This configuration makes the default securitySecret available to the workers by default.
+	// TODO: Add support for secure-by-default configurations.
+	if _, ok := spec.Config[confTwillSecurityWorkerSecretDiskName]; !ok && spec.SecuritySecret != "" {
+		spec.Config[confTwillSecurityWorkerSecretDiskName] = spec.SecuritySecret
+	}
+	if _, ok := spec.Config[confTwillSecurityWorkerSecretDiskPath]; !ok && spec.SecuritySecret != "" {
+		spec.Config[confTwillSecurityWorkerSecretDiskPath] = defaultSecuritySecretPath
 	}
 
 	// Disable explore
