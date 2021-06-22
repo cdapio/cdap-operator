@@ -47,18 +47,23 @@ const (
 	fieldNameCDAPExternalServiceSpec = "CDAPExternalServiceSpec"
 
 	// cconf and hconf
-	confExploreEnabled        = "explore.enabled"
-	confLocalDataDirKey       = "local.data.dir"
-	confLocalDataDirVal       = "/data"
-	confRouterServerAddress   = "router.server.address"
-	confRouterBindPort        = "router.bind.port"
-	confUserInterfaceBindPort = "dashboard.bind.port"
+	confExploreEnabled                    = "explore.enabled"
+	confLocalDataDirKey                   = "local.data.dir"
+	confLocalDataDirVal                   = "/data"
+	confRouterServerAddress               = "router.server.address"
+	confRouterBindPort                    = "router.bind.port"
+	confUserInterfaceBindPort             = "dashboard.bind.port"
+	confTwillSecurityMasterSecretDiskName = "twill.security.master.secret.disk.name"
+	confTwillSecurityMasterSecretDiskPath = "twill.security.master.secret.disk.path"
+	confTwillSecurityWorkerSecretDiskName = "twill.security.worker.secret.disk.name"
+	confTwillSecurityWorkerSecretDiskPath = "twill.security.worker.secret.disk.path"
 
 	// default values
-	defaultImage             = "gcr.io/cdapio/cdap:latest"
-	defaultRouterPort        = 11015
-	defaultUserInterfacePort = 11011
-	defaultStorageSize       = "200Gi"
+	defaultImage              = "gcr.io/cdapio/cdap:latest"
+	defaultRouterPort         = 11015
+	defaultUserInterfacePort  = 11011
+	defaultStorageSize        = "200Gi"
+	defaultSecuritySecretPath = "/etc/cdap/security"
 
 	// kubernetes labels
 	labelInstanceKey        = "cdap.instance"

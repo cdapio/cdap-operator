@@ -121,7 +121,7 @@ spec:
               readOnly: true
             {{if $.Base.SecuritySecret}}
             - name: cdap-security
-              mountPath: /etc/cdap/security
+              mountPath: {{$.Base.SecuritySecretPath}}
               readOnly: true
             {{end}}
             {{range $k,$v := $.Base.ConfigMapVolumes}}

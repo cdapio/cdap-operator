@@ -131,6 +131,7 @@ type BaseSpec struct {
 	RuntimeClassName   string                    `json:"runtimeClassName,omitempty"`
 	PriorityClassName  string                    `json:"priorityClassName,omitempty"`
 	SecuritySecret     string                    `json:"securitySecret,omitempty"`
+	SecuritySecretPath string                    `json:"securitySecretPath,omitempty"`
 	CConf              string                    `json:"cdapConf,omitempty"`
 	HConf              string                    `json:"hadoopConf,omitempty"`
 	SysAppConf         string                    `json:"sysAppConf,omitempty"`
@@ -149,6 +150,7 @@ func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]str
 	s.RuntimeClassName = ""
 	s.PriorityClassName = ""
 	s.SecuritySecret = master.Spec.SecuritySecret
+	s.SecuritySecretPath = defaultSecuritySecretPath
 	s.CConf = cconf
 	s.HConf = hconf
 	s.SysAppConf = sysappconf
