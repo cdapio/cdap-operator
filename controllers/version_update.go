@@ -372,18 +372,19 @@ func parseImageString(imageString string) (*Version, error) {
 		return &Version{}, nil
 	}
 	splits := strings.Split(imageString, ":")
-	if len(splits) != 2 {
-		return nil, fmt.Errorf("failed to parse image string %s, not in expected format of xxx:xxx", imageString)
+	if len(splits) > 3 {
+		return nil, fmt.Errorf("failed to parse image string %s, not in expected format of <domain>:<tag> or <domain>:<port>:<tag>, accepted tag versions : latest or X.X.X format", imageString)
 	}
 
-	if splits[1] == imageVersionLatest {
+	versionString := splits[len(splits)-1]
+
+	if versionString == imageVersionLatest {
 		return &Version{
 			rawString: imageString,
 			latest:    true,
 		}, nil
 	}
 
-	versionString := splits[1]
 	splits = strings.Split(versionString, ".")
 
 	var components []int

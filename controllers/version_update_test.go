@@ -17,12 +17,27 @@ import (
 
 var _ = Describe("Controller Suite", func() {
 	Describe("Parsing image string", func() {
-		It("Parse empty image string", func() {
+		It("Parse empty image string with http port", func() {
 			image := ""
 			version, err := parseImageString(image)
 			Expect(err).To(BeNil())
 			Expect(image).To(Equal(version.rawString))
 			Expect(version.latest).To(BeFalse())
+		})
+		It("Parse image string with http port", func() {
+			image := "gcr.io:1337/cdapio/cdap:latest"
+			version, err := parseImageString(image)
+			Expect(err).To(BeNil())
+			Expect(image).To(Equal(version.rawString))
+			Expect(version.latest).To(BeTrue())
+		})
+		It("Parse image string with http port and not latest tag", func() {
+			image := "gcr.io:1337/cdapio/cdap:1.3.3.7"
+			version, err := parseImageString(image)
+			Expect(err).To(BeNil())
+			Expect(image).To(Equal(version.rawString))
+			Expect(version.latest).To(BeFalse())
+			Expect(version.components).To(Equal([]int{1, 3, 3, 7}))
 		})
 		It("Parse latest image string", func() {
 			image := "gcr.io/cdapio/cdap:latest"
