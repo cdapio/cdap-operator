@@ -137,6 +137,7 @@ type BaseSpec struct {
 	SysAppConf         string                    `json:"sysAppConf,omitempty"`
 	ConfigMapVolumes   map[string]string         `json:"configMapVolumes,omitempty"`
 	SecretVolumes      map[string]string         `json:"secretVolumes,omitempty"`
+	PVCVolumes   	   map[string]string         `json:"pvcVolumes,omitempty"`
 	SecurityContext    *v1alpha1.SecurityContext `json:"securityContext,omitempty"`
 }
 
@@ -156,6 +157,7 @@ func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]str
 	s.SysAppConf = sysappconf
 	s.ConfigMapVolumes = cloneMap(master.Spec.ConfigMapVolumes)
 	s.SecretVolumes = cloneMap(master.Spec.SecretVolumes)
+	s.PVCVolumes = cloneMap(master.Spec.PVCVolumes)
 
 	return s
 }
@@ -200,6 +202,13 @@ func (s *BaseSpec) addConfigMapVolumes(volumes map[string]string) (*BaseSpec, er
 
 func (s *BaseSpec) addSecretVolumes(volumes map[string]string) (*BaseSpec, error) {
 	if err := addVolumes(s.SecretVolumes, volumes, "Secret"); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *BaseSpec) addPVCVolumes(volumes map[string]string) (*BaseSpec, error) {
+	if err := addVolumes(s.PVCVolumes, volumes, "Persistent Volume Claim"); err != nil {
 		return nil, err
 	}
 	return s, nil
@@ -306,6 +315,13 @@ func (s *DeploymentSpec) addSecretVolumes(volumes map[string]string) (*Deploymen
 	return s, nil
 }
 
+func (s *DeploymentSpec) addPVCVolumes(volumes map[string]string) (*DeploymentSpec, error) {
+	if _, err := s.Base.addPVCVolumes(volumes); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
 func (s *DeploymentSpec) setSecurityContext(securityContext *v1alpha1.SecurityContext) *DeploymentSpec {
 	s.Base.setSecurityContext(securityContext)
 	return s
@@ -392,6 +408,13 @@ func (s *StatefulSpec) addConfigMapVolumes(volumes map[string]string) (*Stateful
 
 func (s *StatefulSpec) addSecretVolumes(volumes map[string]string) (*StatefulSpec, error) {
 	if _, err := s.Base.addSecretVolumes(volumes); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *StatefulSpec) addPVCVolumes(volumes map[string]string) (*StatefulSpec, error) {
+	if _, err := s.Base.addPVCVolumes(volumes); err != nil {
 		return nil, err
 	}
 	return s, nil

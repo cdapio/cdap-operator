@@ -199,6 +199,14 @@ spec:
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
                   type: object
+                pvcVolumes:
+                  additionalProperties:
+                    type: string
+                  description: PVCVolumes defines a map from Persistent Volume Claim
+                    names to volume mount path. Key is the PVC object name. Value is the
+                    mount path. This mounts PVC to the directory specified by the volume
+                    mount path.
+                  type: object
                 securityContext:
                   description: SecurityContext overrides the security context for
                     the service pods.
@@ -420,6 +428,14 @@ spec:
                     mount path for this service Key is the secret object name. Value
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
+                  type: object
+                pvcVolumes:
+                  additionalProperties:
+                    type: string
+                  description: PVCVolumes defines a map from Persistent Volume Claim
+                    names to volume mount path. Key is the PVC object name. Value is the
+                    mount path. This mounts PVC to the directory specified by the volume
+                    mount path.
                   type: object
                 securityContext:
                   description: SecurityContext overrides the security context for
@@ -656,6 +672,14 @@ spec:
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
                   type: object
+                pvcVolumes:
+                  additionalProperties:
+                    type: string
+                  description: PVCVolumes defines a map from Persistent Volume Claim
+                    names to volume mount path. Key is the PVC object name. Value is the
+                    mount path. This mounts PVC to the directory specified by the volume
+                    mount path.
+                  type: object
                 securityContext:
                   description: SecurityContext overrides the security context for
                     the service pods.
@@ -869,6 +893,14 @@ spec:
                     mount path for this service Key is the secret object name. Value
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
+                  type: object
+                pvcVolumes:
+                  additionalProperties:
+                    type: string
+                  description: PVCVolumes defines a map from Persistent Volume Claim
+                    names to volume mount path. Key is the PVC object name. Value is the
+                    mount path. This mounts PVC to the directory specified by the volume
+                    mount path.
                   type: object
                 securityContext:
                   description: SecurityContext overrides the security context for
@@ -1088,6 +1120,14 @@ spec:
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
                   type: object
+                pvcVolumes:
+                  additionalProperties:
+                    type: string
+                  description: PVCVolumes defines a map from Persistent Volume Claim
+                    names to volume mount path. Key is the PVC object name. Value is the
+                    mount path. This mounts PVC to the directory specified by the volume
+                    mount path.
+                  type: object
                 securityContext:
                   description: SecurityContext overrides the security context for
                     the service pods.
@@ -1293,6 +1333,14 @@ spec:
                     mount path for this service Key is the secret object name. Value
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
+                  type: object
+                pvcVolumes:
+                  additionalProperties:
+                    type: string
+                  description: PVCVolumes defines a map from Persistent Volume Claim
+                    names to volume mount path. Key is the PVC object name. Value is the
+                    mount path. This mounts PVC to the directory specified by the volume
+                    mount path.
                   type: object
                 securityContext:
                   description: SecurityContext overrides the security context for
@@ -1507,6 +1555,14 @@ spec:
                     mount path for this service Key is the secret object name. Value
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
+                  type: object
+                pvcVolumes:
+                  additionalProperties:
+                    type: string
+                  description: PVCVolumes defines a map from Persistent Volume Claim
+                    names to volume mount path. Key is the PVC object name. Value is the
+                    mount path. This mounts PVC to the directory specified by the volume
+                    mount path.
                   type: object
                 securityContext:
                   description: SecurityContext overrides the security context for
@@ -1726,6 +1782,14 @@ spec:
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
                   type: object
+                pvcVolumes:
+                  additionalProperties:
+                    type: string
+                  description: PVCVolumes defines a map from Persistent Volume Claim
+                    names to volume mount path. Key is the PVC object name. Value is the
+                    mount path. This mounts PVC to the directory specified by the volume
+                    mount path.
+                  type: object
                 securityContext:
                   description: SecurityContext overrides the security context for
                     the service pods.
@@ -1944,6 +2008,14 @@ spec:
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
                   type: object
+                pvcVolumes:
+                  additionalProperties:
+                    type: string
+                  description: PVCVolumes defines a map from Persistent Volume Claim
+                    names to volume mount path. Key is the PVC object name. Value is the
+                    mount path. This mounts PVC to the directory specified by the volume
+                    mount path.
+                  type: object
                 securityContext:
                   description: SecurityContext overrides the security context for
                     the service pods.
@@ -2006,6 +2078,14 @@ spec:
                 mount path. Key is the secret object name. Value is the mount path.
                 This adds Secret data to the directory specified by the volume mount
                 path.
+              type: object
+            pvcVolumes:
+              additionalProperties:
+                type: string
+              description: PVCVolumes defines a map from Persistent Volume Claim
+                names to volume mount path. Key is the PVC object name. Value is the
+                mount path. This mounts PVC to the directory specified by the volume
+                mount path.
               type: object
             securityContext:
               description: SecurityContext defines the security context for all pods
@@ -2225,6 +2305,14 @@ spec:
                     mount path for this service Key is the secret object name. Value
                     is the mount path. This adds Secret data to the directory specified
                     by the volume mount path.
+                  type: object
+                pvcVolumes:
+                  additionalProperties:
+                    type: string
+                  description: PVCVolumes defines a map from Persistent Volume Claim
+                    names to volume mount path. Key is the PVC object name. Value is the
+                    mount path. This mounts PVC to the directory specified by the volume
+                    mount path.
                   type: object
                 securityContext:
                   description: SecurityContext overrides the security context for
