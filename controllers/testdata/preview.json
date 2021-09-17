@@ -125,6 +125,10 @@
               {
                 "mountPath": "/my/secret/1",
                 "name": "cdap-se-vol-my-secret-1"
+              },
+              {
+                "mountPath": "/my/pvc/0",
+                "name": "cdap-vol-my-pvc-0"
               }
             ]
           }
@@ -182,6 +186,10 @@
               {
                 "mountPath": "/my/secret/1",
                 "name": "cdap-se-vol-my-secret-1"
+              },
+              {
+                "mountPath": "/my/pvc/0",
+                "name": "cdap-vol-my-pvc-0"
               }
             ]
           }
@@ -272,6 +280,12 @@
             "secret": {
               "defaultMode": 420,
               "secretName": "my-secret-1"
+            }
+          },
+          {
+            "name": "cdap-vol-my-pvc-0",
+            "persistentVolumeClaim": {
+              "claimName": "my-pvc-0"
             }
           }
         ]

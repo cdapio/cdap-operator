@@ -42,6 +42,9 @@
         "runAsGroup": 3000,
         "fsGroup": 4000,
         "runAsNonRoot": false
+      },
+      "pvcVolumes": {
+        "my-pvc-1": "/my/pvc/1"
       }
     },
     "authentication": {
@@ -80,6 +83,9 @@
     },
     "secretVolumes": {
       "my-secret-1": "/my/secret/1"
+    },
+    "pvcVolumes": {
+      "my-pvc-0": "/my/pvc/0"
     },
     "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
     "locationURI": "hdfs://hadoop:9000",
