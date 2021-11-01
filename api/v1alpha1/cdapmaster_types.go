@@ -76,6 +76,8 @@ type CDAPMasterSpec struct {
 	Router RouterSpec `json:"router,omitempty"`
 	// UserInterface is specification for the CDAP UI service.
 	UserInterface UserInterfaceSpec `json:"userInterface,omitempty"`
+	// SupportBundle is specification for the CDAP support-bundle service.
+	SupportBundle SupportBundleSpec `json:"supportBundle,omitempty"`
 	// Runtime is specification for the CDAP runtime service.
 	// This is an optional service and may not be required for CDAP to be operational.
 	// To disable this service: either omit or set the field to nil
@@ -198,6 +200,11 @@ type RouterSpec struct {
 // UserInterfaceSpec defines the specification for the UI service.
 type UserInterfaceSpec struct {
 	CDAPExternalServiceSpec `json:",inline"`
+}
+
+// SupportBundleSpec defines the specification for the SupportBundle service.
+type SupportBundleSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
 }
 
 // CDAPMasterStatus defines the observed state of CDAPMaster

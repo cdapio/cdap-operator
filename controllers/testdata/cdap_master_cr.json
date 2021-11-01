@@ -3,7 +3,7 @@
   "kind": "CDAPMaster",
   "metadata": {
     "annotations": {
-      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"cdap.cdap.io/v1alpha1\",\"kind\":\"CDAPMaster\",\"metadata\":{\"annotations\":{},\"name\":\"test\",\"namespace\":\"default\"},\"spec\":{\"appFabric\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}},\"config\":{\"data.storage.implementation\":\"postgresql\",\"data.storage.sql.jdbc.connection.url\":\"jdbc:postgresql://postgres-postgresql:5432/cdap\",\"data.storage.sql.jdbc.driver.name\":\"org.postgresql.Driver\",\"enable.preview\":\"true\",\"hdfs.user\":\"root\",\"metadata.elasticsearch.cluster.hosts\":\"elasticsearch-master\",\"metadata.storage.implementation\":\"elastic\"},\"image\":\"gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.0\",\"locationURI\":\"hdfs://hadoop:9000\",\"logs\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}},\"storageSize\":\"100Gi\"},\"messaging\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}},\"storageSize\":\"100Gi\"},\"metadata\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}},\"metrics\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}},\"storageSize\":\"100Gi\"},\"numPods\":0,\"preview\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}},\"storageSize\":\"100Gi\"},\"router\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}},\"securitySecret\":\"cdap-secret\",\"serviceAccountName\":\"cdap\",\"userInterface\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}},\"userInterfaceImage\":\"gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.1.0.0\"}}\n"
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"cdap.cdap.io/v1alpha1\",\"kind\":\"CDAPMaster\",\"metadata\":{\"annotations\":{},\"name\":\"test\",\"namespace\":\"default\"},\"spec\":{\"appFabric\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}},\"config\":{\"data.storage.implementation\":\"postgresql\",\"data.storage.sql.jdbc.connection.url\":\"jdbc:postgresql://postgres-postgresql:5432/cdap\",\"data.storage.sql.jdbc.driver.name\":\"org.postgresql.Driver\",\"enable.preview\":\"true\",\"hdfs.user\":\"root\",\"metadata.elasticsearch.cluster.hosts\":\"elasticsearch-master\",\"metadata.storage.implementation\":\"elastic\"},\"image\":\"gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.0\",\"locationURI\":\"hdfs://hadoop:9000\",\"logs\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}},\"storageSize\":\"100Gi\"},\"messaging\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}},\"storageSize\":\"100Gi\"},\"metadata\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}},\"metrics\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}},\"storageSize\":\"100Gi\"},\"numPods\":0,\"preview\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}},\"storageSize\":\"100Gi\"},\"router\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}},\"supportBundle\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"200Mi\"}},\"storageSize\":\"100Gi\"},\"securitySecret\":\"cdap-secret\",\"serviceAccountName\":\"cdap\",\"userInterface\":{\"resources\":{\"requests\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}},\"userInterfaceImage\":\"gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.1.0.0\"}}\n"
     },
     "creationTimestamp": "2020-02-09T05:39:03Z",
     "finalizers": [
@@ -168,6 +168,18 @@
       },
       "replicas": 2,
       "servicePort": 11015
+    },
+    "supportBundle": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "200Mi"
+        }
+      },
+      "storageSize": "100Gi"
     },
     "securitySecret": "cdap-secret",
     "serviceAccountName": "cdap",

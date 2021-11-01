@@ -35,6 +35,9 @@ const (
 	// serviceRouter defines the service type for the router
 	serviceRouter ServiceName = "Router"
 
+	// serviceSupportBundle defines the service type for the support-bundle
+	serviceSupportBundle ServiceName = "SupportBundle"
+
 	// serviceUserInterface defines the service type for user interface
 	serviceUserInterface ServiceName = "UserInterface"
 )
