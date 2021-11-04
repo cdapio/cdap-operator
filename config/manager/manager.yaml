@@ -27,7 +27,7 @@ spec:
         - /manager
         args:
         - --enable-leader-election
-        image: gcr.io/cdapio/cdap-controller:latest
+        image: controller:latest
         name: manager
         resources:
           limits:

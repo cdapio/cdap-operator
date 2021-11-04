@@ -228,7 +228,7 @@ var _ = Describe("Controller Suite", func() {
 			invalidMaster.Spec.Logs.CDAPServiceSpec.RuntimeClassName = &invalidFiledValue
 			invalidMaster.Spec.Logs.CDAPServiceSpec.PriorityClassName = &invalidFiledValue
 			// Adding AppFabric intentionally to test the case where fields are unset for one of the service
-			services = ServiceGroup{serviceLogs, serviceMetrics, serviceAppFabric, serviceSupportBundle}
+			services = ServiceGroup{serviceLogs, serviceMetrics, serviceAppFabric}
 		})
 		It("Extract empty field value", func() {
 			for _, field := range []string{"ServiceAccountName", "RuntimeClassName", "PriorityClassName"} {
