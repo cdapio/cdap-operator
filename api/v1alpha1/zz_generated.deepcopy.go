@@ -187,6 +187,11 @@ func (in *CDAPMasterSpec) DeepCopyInto(out *CDAPMasterSpec) {
 	in.Preview.DeepCopyInto(&out.Preview)
 	in.Router.DeepCopyInto(&out.Router)
 	in.UserInterface.DeepCopyInto(&out.UserInterface)
+	if in.SupportBundle != nil {
+		in, out := &in.SupportBundle, &out.SupportBundle
+		*out = new(SupportBundleSpec)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Runtime != nil {
 		in, out := &in.Runtime, &out.Runtime
 		*out = new(RuntimeSpec)

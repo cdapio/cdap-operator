@@ -2055,6 +2055,224 @@ spec:
               description: ServiceAccountName is the service account for all the service
                 pods.
               type: string
+            supportBundle:
+              description: 'SupportBundle is specification for the CDAP support-bundle
+                service. This is an optional service and may not be required for CDAP
+                to be operational. To disable this service: either omit or set the
+                field to nil To enable this service: set it to a pointer to a SupportBundleSpec
+                struct (can be an empty struct)'
+              properties:
+                configMapVolumes:
+                  additionalProperties:
+                    type: string
+                  description: ConfigMapVolumes defines a map from ConfigMap names
+                    to volume mount path for this service Key is the configmap object
+                    name. Value is the mount path. This adds ConfigMap data to the
+                    directory specified by the volume mount path.
+                  type: object
+                env:
+                  description: Env is a list of environment variables for the master
+                    service container.
+                  items:
+                    description: EnvVar represents an environment variable present
+                      in a Container.
+                    properties:
+                      name:
+                        description: Name of the environment variable. Must be a C_IDENTIFIER.
+                        type: string
+                      value:
+                        description: 'Variable references $(VAR_NAME) are expanded
+                          using the previous defined environment variables in the
+                          container and any service environment variables. If a variable
+                          cannot be resolved, the reference in the input string will
+                          be unchanged. The $(VAR_NAME) syntax can be escaped with
+                          a double $$, ie: $$(VAR_NAME). Escaped references will never
+                          be expanded, regardless of whether the variable exists or
+                          not. Defaults to "".'
+                        type: string
+                      valueFrom:
+                        description: Source for the environment variable's value.
+                          Cannot be used if value is not empty.
+                        properties:
+                          configMapKeyRef:
+                            description: Selects a key of a ConfigMap.
+                            properties:
+                              key:
+                                description: The key to select.
+                                type: string
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                              optional:
+                                description: Specify whether the ConfigMap or its
+                                  key must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                          fieldRef:
+                            description: 'Selects a field of the pod: supports metadata.name,
+                              metadata.namespace, metadata.labels, metadata.annotations,
+                              spec.nodeName, spec.serviceAccountName, status.hostIP,
+                              status.podIP, status.podIPs.'
+                            properties:
+                              apiVersion:
+                                description: Version of the schema the FieldPath is
+                                  written in terms of, defaults to "v1".
+                                type: string
+                              fieldPath:
+                                description: Path of the field to select in the specified
+                                  API version.
+                                type: string
+                            required:
+                            - fieldPath
+                            type: object
+                          resourceFieldRef:
+                            description: 'Selects a resource of the container: only
+                              resources limits and requests (limits.cpu, limits.memory,
+                              limits.ephemeral-storage, requests.cpu, requests.memory
+                              and requests.ephemeral-storage) are currently supported.'
+                            properties:
+                              containerName:
+                                description: 'Container name: required for volumes,
+                                  optional for env vars'
+                                type: string
+                              divisor:
+                                description: Specifies the output format of the exposed
+                                  resources, defaults to "1"
+                                type: string
+                              resource:
+                                description: 'Required: resource to select'
+                                type: string
+                            required:
+                            - resource
+                            type: object
+                          secretKeyRef:
+                            description: Selects a key of a secret in the pod's namespace
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  type: array
+                metadata:
+                  description: Metadata for the service.
+                  type: object
+                nodeSelector:
+                  additionalProperties:
+                    type: string
+                  description: NodeSelector is a selector which must be true for the
+                    pod to fit on a node.
+                  type: object
+                priorityClassName:
+                  description: PriorityClassName is to specify the priority of the
+                    pods for this service.
+                  type: string
+                resources:
+                  description: Resources are Compute resources required by the service.
+                  properties:
+                    limits:
+                      additionalProperties:
+                        type: string
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                    requests:
+                      additionalProperties:
+                        type: string
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                  type: object
+                runtimeClassName:
+                  description: RuntimeClassName refers to a RuntimeClass object in
+                    the node.k8s.io group, which should be used to run pods for this
+                    service. If no RuntimeClass resource matches the named class,
+                    pods will not be running.
+                  type: string
+                secretVolumes:
+                  additionalProperties:
+                    type: string
+                  description: SecretVolumes defines a map from Secret names to volume
+                    mount path for this service Key is the secret object name. Value
+                    is the mount path. This adds Secret data to the directory specified
+                    by the volume mount path.
+                  type: object
+                securityContext:
+                  description: SecurityContext overrides the security context for
+                    the service pods.
+                  properties:
+                    allowPrivilegeEscalation:
+                      description: AllowPrivilegeEscalation prevents the container
+                        process from running SUID binaries. It is applied at the container
+                        level.
+                      type: boolean
+                    fsGroup:
+                      description: FSGroup mounts volumes as the specified group ID
+                        and gives the primary user access to that group. It is applied
+                        at the pod level.
+                      format: int64
+                      type: integer
+                    privileged:
+                      description: Privileged runs container in privileged mode. It
+                        is applied at the container level. Processes in privileged
+                        containers are essentially equivalent to root on the host.
+                      type: boolean
+                    readOnlyRootFilesystem:
+                      description: ReadOnlyRootFilesystem specifies whether the container's
+                        root filesystem is read-only. It is applied at the container
+                        level.
+                      type: boolean
+                    runAsGroup:
+                      description: RunAsGroup runs the pod as the specified group
+                        ID. It is applied at the pod level.
+                      format: int64
+                      type: integer
+                    runAsNonRoot:
+                      description: RunAsNonRoot indicates that the container must
+                        run as a non-root user. If true, the Kubelet will validate
+                        the image at runtime to ensure that it does not run as UID
+                        0 (root) and fail to start the container if it does.
+                      type: boolean
+                    runAsUser:
+                      description: RunAsUser runs the pod as the specified user ID.
+                        It is applied at the pod level.
+                      format: int64
+                      type: integer
+                  type: object
+                serviceAccountName:
+                  description: ServiceAccountName overrides the service account for
+                    the service pods.
+                  type: string
+                storageClassName:
+                  description: StorageClassName is the name of the StorageClass for
+                    the persistent volume used by the service.
+                  type: string
+                storageSize:
+                  description: StorageSize is specification for the persistent volume
+                    size used by the service.
+                  type: string
+              type: object
             systemappconfigs:
               additionalProperties:
                 type: string
