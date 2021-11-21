@@ -66,6 +66,9 @@ type Router struct{}
 // UserInterface - interface to handle cdapmaster
 type UserInterface struct{}
 
+// SupportBundle - interface to handle cdapmaster
+type SupportBundle struct{}
+
 // Objects - handler Objects
 func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	return []reconciler.Object{}, nil
@@ -183,5 +186,18 @@ func (s *UserInterface) Observables(rsrc interface{}, labels map[string]string, 
 		WithLabels(labels).
 		For(&appsv1.DeploymentList{}).
 		For(&corev1.ServiceList{}).
+		Get()
+}
+
+// Objects for SupportBundle service
+func (s *SupportBundle) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
+	return []reconciler.Object{}, nil
+}
+
+// Observables for support-bundle
+func (s *SupportBundle) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
+	return k8s.NewObservables().
+		WithLabels(labels).
+		For(&appsv1.StatefulSetList{}).
 		Get()
 }
