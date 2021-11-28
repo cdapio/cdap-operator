@@ -33,7 +33,7 @@ You can checkout the CDAP Operator source code, build and run locally. To build 
    ```
 1. Deploy CDAP CRD to the cluster
    ```
-   kubectl apply -f config/crds
+   kubectl apply -k config/crd
    ```
 1. Edit the sample CDAP CR and deploy to the cluster
    ```

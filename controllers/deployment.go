@@ -49,6 +49,7 @@ func (d *DeploymentPlan) Init() {
 			"preview":   {servicePreview},
 			"appfabric": {serviceAppFabric},
 			"runtime":   {serviceRuntime},
+			"supportbundle":   {serviceSupportBundle},
 		},
 		deployment: map[ServiceGroupName]ServiceGroup{
 			"authentication": {serviceAuthentication},

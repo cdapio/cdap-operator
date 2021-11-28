@@ -26,6 +26,7 @@ var _ = Describe("Controller Suite", func() {
 				serviceMetadata:      &master.Spec.Metadata.CDAPServiceSpec,
 				servicePreview:       &master.Spec.Preview.CDAPServiceSpec,
 				serviceUserInterface: &master.Spec.UserInterface.CDAPServiceSpec,
+				serviceSupportBundle: &master.Spec.SupportBundle.CDAPServiceSpec,
 			}
 			serviceToScalableSpec = map[string]*v1alpha1.CDAPScalableServiceSpec{
 				serviceLogs:          nil,
@@ -36,16 +37,18 @@ var _ = Describe("Controller Suite", func() {
 				serviceMetadata:      &master.Spec.Metadata.CDAPScalableServiceSpec,
 				servicePreview:       nil,
 				serviceUserInterface: &master.Spec.UserInterface.CDAPScalableServiceSpec,
+				serviceSupportBundle: nil,
 			}
 			serviceToStatefulSpec = map[string]*v1alpha1.CDAPStatefulServiceSpec{
 				serviceLogs:          &master.Spec.Logs.CDAPStatefulServiceSpec,
-				serviceAppFabric:     &master.Spec.Logs.CDAPStatefulServiceSpec,
+				serviceAppFabric:     &master.Spec.AppFabric.CDAPStatefulServiceSpec,
 				serviceMetrics:       &master.Spec.Metrics.CDAPStatefulServiceSpec,
 				serviceRouter:        nil,
 				serviceMessaging:     &master.Spec.Messaging.CDAPStatefulServiceSpec,
 				serviceMetadata:      nil,
 				servicePreview:       &master.Spec.Preview.CDAPStatefulServiceSpec,
 				serviceUserInterface: nil,
+				serviceSupportBundle: &master.Spec.SupportBundle.CDAPStatefulServiceSpec,
 			}
 			serviceToExternalSpec = map[string]*v1alpha1.CDAPExternalServiceSpec{
 				serviceLogs:          nil,
@@ -56,6 +59,7 @@ var _ = Describe("Controller Suite", func() {
 				serviceMetadata:      nil,
 				servicePreview:       nil,
 				serviceUserInterface: &master.Spec.UserInterface.CDAPExternalServiceSpec,
+				serviceSupportBundle: nil,
 			}
 		})
 		It("Successfully get pointer to CDAPServiceSpec", func() {
