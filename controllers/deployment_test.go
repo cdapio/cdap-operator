@@ -41,7 +41,6 @@ var _ = Describe("Controller Suite", func() {
 		diffJson := func(expected, actual []byte) {
 			opts := jsondiff.DefaultConsoleOptions()
 			diff, text := jsondiff.Compare(expected, actual, &opts)
-			print("printout actual: ", string(actual))
 			Expect(diff.String()).To(Equal(jsondiff.SupersetMatch.String()), text)
 		}
 		It("k8s objs for all services including essential and optional", func() {
