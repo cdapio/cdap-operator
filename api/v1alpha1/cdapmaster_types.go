@@ -153,6 +153,10 @@ type CDAPStatefulServiceSpec struct {
 	StorageSize string `json:"storageSize,omitempty"`
 	// StorageClassName is the name of the StorageClass for the persistent volume used by the service.
 	StorageClassName *string `json:"storageClassName,omitempty"`
+	// EnableMetricsSidecar specifies whether to run a sidecar container in the pod to collect service metrics
+	EnableMetricsSidecar *bool `json:"enableMetricsSidecar,omitempty"`
+	// JMXServerPort specifies the port the main container will expose for metrics sidecar to collect metrics using JMX
+	JMXServerPort *int64 `json:"jmxServerPort,omitempty"`
 }
 
 // AppFabricSpec defines the specification for the AppFabric service.

@@ -51,6 +51,10 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                enableMetricsSidecar:
+                  description: EnableMetricsSidecar specifies whether to run a sidecar
+                    container in the pod to collect service metrics
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -154,6 +158,11 @@ spec:
                     - name
                     type: object
                   type: array
+                jmxServerPort:
+                  description: JMXServerPort specifies the port the main container
+                    will expose for metrics sidecar to collect metrics using JMX
+                  format: int64
+                  type: integer
                 metadata:
                   description: Metadata for the service.
                   type: object
@@ -508,6 +517,10 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                enableMetricsSidecar:
+                  description: EnableMetricsSidecar specifies whether to run a sidecar
+                    container in the pod to collect service metrics
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -611,6 +624,11 @@ spec:
                     - name
                     type: object
                   type: array
+                jmxServerPort:
+                  description: JMXServerPort specifies the port the main container
+                    will expose for metrics sidecar to collect metrics using JMX
+                  format: int64
+                  type: integer
                 metadata:
                   description: Metadata for the service.
                   type: object
@@ -722,6 +740,10 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                enableMetricsSidecar:
+                  description: EnableMetricsSidecar specifies whether to run a sidecar
+                    container in the pod to collect service metrics
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -825,6 +847,11 @@ spec:
                     - name
                     type: object
                   type: array
+                jmxServerPort:
+                  description: JMXServerPort specifies the port the main container
+                    will expose for metrics sidecar to collect metrics using JMX
+                  format: int64
+                  type: integer
                 metadata:
                   description: Metadata for the service.
                   type: object
@@ -1146,6 +1173,10 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                enableMetricsSidecar:
+                  description: EnableMetricsSidecar specifies whether to run a sidecar
+                    container in the pod to collect service metrics
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -1249,6 +1280,11 @@ spec:
                     - name
                     type: object
                   type: array
+                jmxServerPort:
+                  description: JMXServerPort specifies the port the main container
+                    will expose for metrics sidecar to collect metrics using JMX
+                  format: int64
+                  type: integer
                 metadata:
                   description: Metadata for the service.
                   type: object
@@ -1360,6 +1396,10 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                enableMetricsSidecar:
+                  description: EnableMetricsSidecar specifies whether to run a sidecar
+                    container in the pod to collect service metrics
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -1463,6 +1503,11 @@ spec:
                     - name
                     type: object
                   type: array
+                jmxServerPort:
+                  description: JMXServerPort specifies the port the main container
+                    will expose for metrics sidecar to collect metrics using JMX
+                  format: int64
+                  type: integer
                 metadata:
                   description: Metadata for the service.
                   type: object
@@ -1796,6 +1841,10 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                enableMetricsSidecar:
+                  description: EnableMetricsSidecar specifies whether to run a sidecar
+                    container in the pod to collect service metrics
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -1899,6 +1948,11 @@ spec:
                     - name
                     type: object
                   type: array
+                jmxServerPort:
+                  description: JMXServerPort specifies the port the main container
+                    will expose for metrics sidecar to collect metrics using JMX
+                  format: int64
+                  type: integer
                 metadata:
                   description: Metadata for the service.
                   type: object
@@ -2070,6 +2124,10 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                enableMetricsSidecar:
+                  description: EnableMetricsSidecar specifies whether to run a sidecar
+                    container in the pod to collect service metrics
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -2173,6 +2231,11 @@ spec:
                     - name
                     type: object
                   type: array
+                jmxServerPort:
+                  description: JMXServerPort specifies the port the main container
+                    will expose for metrics sidecar to collect metrics using JMX
+                  format: int64
+                  type: integer
                 metadata:
                   description: Metadata for the service.
                   type: object
