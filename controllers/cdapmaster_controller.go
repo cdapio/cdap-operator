@@ -150,11 +150,9 @@ func ApplyDefaults(resource interface{}) {
 		spec.Config[confTwillSecurityWorkerSecretDiskPath] = defaultSecuritySecretPath
 	}
 
-	// Set the default JMX server port for appfabric if not set and metrics sidecar is enabled
-	if enabled, ok1 := spec.Config[sidecarMetricsEnabled("appfabric")]; ok1 && enabled == "true" {
-		if _, ok2 := spec.Config[sidecarMetricsJMXPort("appfabric")]; !ok2 {
-			spec.Config[sidecarMetricsJMXPort("appfabric")] = strconv.Itoa(defaultJMXport)
-		}
+	// Set the default JMX server port if not set and metrics sidecar is enabled
+	if spec.MetricsSidecar != nil && spec.MetricsSidecar.JMXServerPort == nil {
+		spec.MetricsSidecar.JMXServerPort = int32Ptr(defaultJMXport)
 	}
 
 	// Disable explore

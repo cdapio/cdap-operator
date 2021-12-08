@@ -47,7 +47,7 @@ func (d *DeploymentPlan) Init() {
 			"messaging": {serviceMessaging},
 			"metrics":   {serviceMetrics},
 			"preview":   {servicePreview},
-			"appfabric": {serviceAppFabric},
+			"appfabric": {serviceAppFabric, serviceMetricsSidecar},
 			"runtime":   {serviceRuntime},
 		},
 		deployment: map[ServiceGroupName]ServiceGroup{
@@ -98,7 +98,6 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 	for k, v := range serviceGroups.stateful {
 		name := k
 		services := v
-		// add metrics sidecar service if required
 		stateful, err := buildStatefulSets(master, name, services, labels, cconf, hconf, sysappconf, dataDir)
 		if err != nil {
 			return nil, err
@@ -172,11 +171,12 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	spec = spec.withInitContainer(
 		newContainerSpec(master, "StorageInit", dataDir).setArgs(containerStorageMain))
 
-	metricsSidecarRequired, jmxPort := jmxServerPort(&master.Spec, name)
+	metricsSidecarRequired, _ := findInStringArray(services, serviceMetricsSidecar)
+	enableSidecar, jmxServerPort := jmxServerPort(&master.Spec)
+	addedJMXOpts := false
 
 	// Add each service as a container
-	for index, s := range services {
-		// TODO(arjansbal): Define this for JMXMetricsService
+	for _, s := range services {
 		ss, err := getCDAPServiceSpec(master, s)
 		if err != nil {
 			return nil, err
@@ -193,8 +193,14 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 
 		// Only one service in the pod should run a jmx server, else ports will collide
 		// sidecar will only listen to one port
-		if metricsSidecarRequired && index == 0 {
-			c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxPort))
+		if s != serviceMetricsSidecar && metricsSidecarRequired && enableSidecar && !addedJMXOpts {
+			c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxServerPort))
+			addedJMXOpts = true
+		}
+
+		if s == serviceMetricsSidecar {
+			c = c.addEnv("JMX_SERVER_PORT", fmt.Sprint(jmxServerPort)).
+				addEnv("SERVICE_NAME", name)
 		}
 
 		if s == serviceUserInterface {
@@ -217,17 +223,6 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	// Return nil to indicate no statefulset is built.
 	if len(spec.Containers) == 0 {
 		return nil, nil
-	}
-
-	// add sidecar cotainer for metrics if required
-	// TODO(arjansbal)
-	if metricsSidecarRequired {
-		c := newContainerSpec(master, "MetricsSidecar", dataDir).
-			setArgs(jmxMetricsCollectorServiceMain).
-			addEnv(javaMaxHeapSizeEnvVarName, fmt.Sprintf("-Xmx%v", xmx)).
-			// name should be lowercase as it's used to for the component tag in metrics context
-			addEnv("SERVICE_NAME", name)
-		spec = spec.withContainer(c)
 	}
 
 	// Get storage class and calculates total disk size required

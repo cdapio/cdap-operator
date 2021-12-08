@@ -159,20 +159,22 @@ func max(x, y int64) int64 {
 	return y
 }
 
-func sidecarMetricsEnabled(serviceName string) string {
-	return fmt.Sprintf(confSidecarMetricsEnableFormat, serviceName)
+// findInStringArray runs a linear search on an array to find a particular key
+// It returns true/false indicating whether the key was found.
+// If the key is found, it's frist index is also returned, otherwise false and a negative integer is returned
+func findInStringArray(arr []string, key string) (bool, int) {
+	for index, value := range arr {
+		if value == key {
+			return true, index
+		}
+	}
+	return false, -1
 }
 
-func sidecarMetricsJMXPort(serviceName string) string {
-	return fmt.Sprintf(confSidecarMetricsJMXPortFormat, serviceName)
-}
-
-// jmxServerPort returns whther a sidecar container is required for the given service and
-// the port at which the JMX server will be exposed.
-func jmxServerPort(masterSpec *v1alpha1.CDAPMasterSpec, serviceName string) (bool, string) {
-	if port, ok := masterSpec.Config[sidecarMetricsJMXPort(serviceName)]; !ok {
-		return false, ""
+func jmxServerPort(masterSpec *v1alpha1.CDAPMasterSpec) (bool, *int32) {
+	if masterSpec.MetricsSidecar != nil {
+		return true, masterSpec.MetricsSidecar.JMXServerPort
 	} else {
-		return true, port
+		return false, nil
 	}
 }
