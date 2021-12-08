@@ -98,6 +98,7 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 	for k, v := range serviceGroups.stateful {
 		name := k
 		services := v
+		// add metrics sidecar service if required
 		stateful, err := buildStatefulSets(master, name, services, labels, cconf, hconf, sysappconf, dataDir)
 		if err != nil {
 			return nil, err
@@ -171,8 +172,11 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	spec = spec.withInitContainer(
 		newContainerSpec(master, "StorageInit", dataDir).setArgs(containerStorageMain))
 
+	metricsSidecarRequired, jmxPort := jmxServerPort(&master.Spec, name)
+
 	// Add each service as a container
-	for _, s := range services {
+	for index, s := range services {
+		// TODO(arjansbal): Define this for JMXMetricsService
 		ss, err := getCDAPServiceSpec(master, s)
 		if err != nil {
 			return nil, err
@@ -183,7 +187,16 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 			continue
 		}
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
+		c := newContainerSpec(master, s, dataDir).
+			setResources(ss.Resources).
+			setEnv(env)
+
+		// Only one service in the pod should run a jmx server, else ports will collide
+		// sidecar will only listen to one port
+		if metricsSidecarRequired && index == 0 {
+			c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxPort))
+		}
+
 		if s == serviceUserInterface {
 			c = updateSpecForUserInterface(master, c)
 		}
@@ -204,6 +217,17 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	// Return nil to indicate no statefulset is built.
 	if len(spec.Containers) == 0 {
 		return nil, nil
+	}
+
+	// add sidecar cotainer for metrics if required
+	// TODO(arjansbal)
+	if metricsSidecarRequired {
+		c := newContainerSpec(master, "MetricsSidecar", dataDir).
+			setArgs(jmxMetricsCollectorServiceMain).
+			addEnv(javaMaxHeapSizeEnvVarName, fmt.Sprintf("-Xmx%v", xmx)).
+			// name should be lowercase as it's used to for the component tag in metrics context
+			addEnv("SERVICE_NAME", name)
+		spec = spec.withContainer(c)
 	}
 
 	// Get storage class and calculates total disk size required

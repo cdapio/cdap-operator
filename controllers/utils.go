@@ -158,3 +158,21 @@ func max(x, y int64) int64 {
 	}
 	return y
 }
+
+func sidecarMetricsEnabled(serviceName string) string {
+	return fmt.Sprintf(confSidecarMetricsEnableFormat, serviceName)
+}
+
+func sidecarMetricsJMXPort(serviceName string) string {
+	return fmt.Sprintf(confSidecarMetricsJMXPortFormat, serviceName)
+}
+
+// jmxServerPort returns whther a sidecar container is required for the given service and
+// the port at which the JMX server will be exposed.
+func jmxServerPort(masterSpec *v1alpha1.CDAPMasterSpec, serviceName string) (bool, string) {
+	if port, ok := masterSpec.Config[sidecarMetricsJMXPort(serviceName)]; !ok {
+		return false, ""
+	} else {
+		return true, port
+	}
+}

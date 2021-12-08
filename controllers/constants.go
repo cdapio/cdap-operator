@@ -60,6 +60,8 @@ const (
 	confTwillSecurityMasterSecretDiskPath = "twill.security.master.secret.disk.path"
 	confTwillSecurityWorkerSecretDiskName = "twill.security.worker.secret.disk.name"
 	confTwillSecurityWorkerSecretDiskPath = "twill.security.worker.secret.disk.path"
+	confSidecarMetricsEnableFormat        = "sidecar.%s.jmx.enable"
+	confSidecarMetricsJMXPortFormat       = "sidecar.%s.jmx.port"
 
 	// default values
 	defaultImage              = "gcr.io/cdapio/cdap:latest"
@@ -99,12 +101,18 @@ const (
 	imageVersionUpgradeJobMaxRetryCount = 10
 
 	// CDAP services
-	containerStorageMain = "io.cdap.cdap.master.environment.k8s.StorageMain"
+	containerStorageMain           = "io.cdap.cdap.master.environment.k8s.StorageMain"
+	jmxMetricsCollectorServiceMain = "io.cdap.cdap.master.environment.k8s.StorageMain"
 
 	// Java heap size
 	javaMinHeapRatio          = float64(0.6)
 	javaReservedNonHeap       = int64(768 * 1024 * 1024)
 	javaMaxHeapSizeEnvVarName = "JAVA_HEAPMAX"
+
+	// Metrics sidecar related
+	defaultJMXport            = 11022
+	javaOptsEnvVarName        = "JAVA_OPTS"
+	runJMXServerJavaOptFormat = "-Dcom.sun.management.jmxremote=true  -Dcom.sun.management.jmxremote.port=%s  -Dcom.sun.management.jmxremote.ssl=false  -Dcom.sun.management.jmxremote.authenticate=false"
 
 	Bytes     = int64(1)
 	kiloBytes = int64(1024)
