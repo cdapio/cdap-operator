@@ -151,8 +151,8 @@ func ApplyDefaults(resource interface{}) {
 	}
 
 	// Set the default JMX server port if not set and metrics sidecar is enabled
-	if spec.MetricsSidecar != nil && spec.MetricsSidecar.JMXServerPort == nil {
-		spec.MetricsSidecar.JMXServerPort = int32Ptr(defaultJMXport)
+	if _, ok := spec.Config[confJMXServerPort]; spec.MetricsSidecar != nil && !ok {
+		spec.Config[confJMXServerPort] = fmt.Sprint(defaultJMXport)
 	}
 
 	// Disable explore

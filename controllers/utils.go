@@ -171,10 +171,10 @@ func findInStringArray(arr []string, key string) (bool, int) {
 	return false, -1
 }
 
-func jmxServerPort(masterSpec *v1alpha1.CDAPMasterSpec) (bool, *int32) {
+func jmxServerPort(masterSpec *v1alpha1.CDAPMasterSpec) (bool, string) {
 	if masterSpec.MetricsSidecar != nil {
-		return true, masterSpec.MetricsSidecar.JMXServerPort
+		return true, masterSpec.Config[confJMXServerPort]
 	} else {
-		return false, nil
+		return false, ""
 	}
 }

@@ -40,7 +40,10 @@ type NetworkServiceName = string
 func (d *DeploymentPlan) Init() {
 	d.planMap = make(map[int32]ServiceGroups)
 
-	// Default: each service runs in its own Pod
+	// Default: each service runs in its own Pod.
+	// Each service runs in it's own container.
+	// If there are mltiple services in a pod, the first one (index 0) will be considered as the
+	// main container and the subsequesnt ones as sidecar containers.
 	d.planMap[0] = ServiceGroups{
 		stateful: map[ServiceGroupName]ServiceGroup{
 			"logs":      {serviceLogs},
@@ -171,12 +174,11 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	spec = spec.withInitContainer(
 		newContainerSpec(master, "StorageInit", dataDir).setArgs(containerStorageMain))
 
-	metricsSidecarRequired, _ := findInStringArray(services, serviceMetricsSidecar)
-	enableSidecar, jmxServerPort := jmxServerPort(&master.Spec)
-	addedJMXOpts := false
+	metricsSidecarInGroup, _ := findInStringArray(services, serviceMetricsSidecar)
+	enableMetricsSidecar, jmxServerPort := jmxServerPort(&master.Spec)
 
 	// Add each service as a container
-	for _, s := range services {
+	for idx, s := range services {
 		ss, err := getCDAPServiceSpec(master, s)
 		if err != nil {
 			return nil, err
@@ -190,17 +192,14 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		c := newContainerSpec(master, s, dataDir).
 			setResources(ss.Resources).
 			setEnv(env)
-
-		// Only one service in the pod should run a jmx server, else ports will collide
-		// sidecar will only listen to one port
-		if s != serviceMetricsSidecar && metricsSidecarRequired && enableSidecar && !addedJMXOpts {
+		isSidecar := (idx > 0)
+		// Only main container run a jmx server if enabed
+		if !isSidecar && metricsSidecarInGroup && enableMetricsSidecar {
 			c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxServerPort))
-			addedJMXOpts = true
 		}
 
-		if s == serviceMetricsSidecar {
-			c = c.addEnv("JMX_SERVER_PORT", fmt.Sprint(jmxServerPort)).
-				addEnv("SERVICE_NAME", name)
+		if isSidecar && s == serviceMetricsSidecar {
+			c = c.addEnv("SERVICE_NAME", name)
 		}
 
 		if s == serviceUserInterface {
