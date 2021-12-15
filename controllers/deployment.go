@@ -40,10 +40,10 @@ type NetworkServiceName = string
 func (d *DeploymentPlan) Init() {
 	d.planMap = make(map[int32]ServiceGroups)
 
-	// Default: each service runs in its own Pod.
-	// Each service runs in it's own container.
-	// If there are mltiple services in a pod, the first one (index 0) will be considered as the
-	// main container and the subsequesnt ones as sidecar containers.
+	// Default: each service runs in its own Pod and.
+	// If there are mltiple services in a pod,
+	// the first one (index 0) will be considered as the
+	// main container and the subsequent ones as sidecar containers.
 	d.planMap[0] = ServiceGroups{
 		stateful: map[ServiceGroupName]ServiceGroup{
 			"logs":      {serviceLogs, serviceMetricsSidecar},
