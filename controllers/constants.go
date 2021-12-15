@@ -63,7 +63,7 @@ const (
 	confTwillSecurityMasterSecretDiskPath = "twill.security.master.secret.disk.path"
 	confTwillSecurityWorkerSecretDiskName = "twill.security.worker.secret.disk.name"
 	confTwillSecurityWorkerSecretDiskPath = "twill.security.worker.secret.disk.path"
-	confJMXServerPort                     = "jmx.server.port"
+	confJMXServerPort                     = "jmx.metrics.collector.server.port"
 
 	// default values
 	defaultImage              = "gcr.io/cdapio/cdap:latest"
@@ -112,7 +112,7 @@ const (
 
 	// Metrics sidecar related
 	defaultJMXport            = 11022
-	javaOptsEnvVarName        = "JAVA_OPTS"
+	javaOptsEnvVarName        = "OPTS"
 	runJMXServerJavaOptFormat = "-Dcom.sun.management.jmxremote=true  -Dcom.sun.management.jmxremote.port=%s  -Dcom.sun.management.jmxremote.ssl=false  -Dcom.sun.management.jmxremote.authenticate=false"
 
 	Bytes     = int64(1)
