@@ -46,12 +46,12 @@ func (d *DeploymentPlan) Init() {
 	// main container and the subsequent ones as sidecar containers.
 	d.planMap[0] = ServiceGroups{
 		stateful: map[ServiceGroupName]ServiceGroup{
-			"logs":      {serviceLogs, serviceMetricsSidecar},
-			"messaging": {serviceMessaging, serviceMetricsSidecar},
-			"metrics":   {serviceMetrics, serviceMetricsSidecar},
-			"preview":   {servicePreview, serviceMetricsSidecar},
-			"appfabric": {serviceAppFabric, serviceMetricsSidecar},
-			"runtime":   {serviceRuntime, serviceMetricsSidecar},
+			"logs":      {serviceLogs, serviceSystemMetricsExporter},
+			"messaging": {serviceMessaging, serviceSystemMetricsExporter},
+			"metrics":   {serviceMetrics, serviceSystemMetricsExporter},
+			"preview":   {servicePreview, serviceSystemMetricsExporter},
+			"appfabric": {serviceAppFabric, serviceSystemMetricsExporter},
+			"runtime":   {serviceRuntime, serviceSystemMetricsExporter},
 		},
 		deployment: map[ServiceGroupName]ServiceGroup{
 			"authentication": {serviceAuthentication},
@@ -174,8 +174,8 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	spec = spec.withInitContainer(
 		newContainerSpec(master, "StorageInit", dataDir).setArgs(containerStorageMain))
 
-	metricsSidecarInGroup, _ := findInStringArray(services, serviceMetricsSidecar)
-	enableMetricsSidecar, jmxServerPort := jmxServerPort(&master.Spec)
+	metricsSidecarInGroup, _ := findInStringArray(services, serviceSystemMetricsExporter)
+	enableSystemMetricsExporter, jmxServerPort := jmxServerPort(&master.Spec)
 
 	// Add each service as a container
 	for idx, s := range services {
@@ -194,11 +194,11 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 			setEnv(env)
 		isSidecar := (idx > 0)
 		// Only main container run a jmx server if enabed
-		if !isSidecar && metricsSidecarInGroup && enableMetricsSidecar {
+		if !isSidecar && metricsSidecarInGroup && enableSystemMetricsExporter {
 			c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxServerPort))
 		}
 
-		if isSidecar && s == serviceMetricsSidecar {
+		if isSidecar && s == serviceSystemMetricsExporter {
 			c = c.addEnv("SERVICE_NAME", name)
 		}
 
@@ -207,7 +207,12 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		}
 		spec = spec.withContainer(c)
 		// Adding a label to allow NodePort service selector to find the pod
-		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
+		// Adding pod labels for multiple services causes re-conciliation errors when
+		// a new service is added/removed as only `template` and `updateStrategy`
+		// props of spec can be modified
+		if !isSidecar {
+			spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
+		}
 
 		// Mount extra volumes from ConfigMap and Secret
 		if _, err := spec.addConfigMapVolumes(ss.ConfigMapVolumes); err != nil {

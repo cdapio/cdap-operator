@@ -172,7 +172,7 @@ func findInStringArray(arr []string, key string) (bool, int) {
 }
 
 func jmxServerPort(masterSpec *v1alpha1.CDAPMasterSpec) (bool, string) {
-	if masterSpec.MetricsSidecar != nil {
+	if masterSpec.SystemMetricsExporter != nil {
 		return true, masterSpec.Config[confJMXServerPort]
 	} else {
 		return false, ""

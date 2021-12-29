@@ -91,11 +91,11 @@ type CDAPMasterSpec struct {
 	// To disable this service: either omit or set the field to nil
 	// To enable this service: set it to a pointer to a AuthenticationSpec struct (can be an empty struct)
 	Authentication *AuthenticationSpec `json:"authentication,omitempty"`
-	// MetricsSidecar is specification for the CDAP MetricsSidecar service that runs as a sidecar container in various pods.
+	// SystemMetricsExporter is specification for the CDAP SystemMetricsExporter service that runs as a sidecar container in various pods.
 	// This is an optional service and may not be required for CDAP to be operational.
 	// To disable this service: either omit or set the field to nil
-	// To enable this service: set it to a pointer to a MetricsSidecarServiceSpec struct (can be an empty struct)
-	MetricsSidecar *MetricsSidecarServiceSpec `json:"metricsSidecar,omitempty"`
+	// To enable this service: set it to a pointer to a SystemMetricsExporterSpec struct (can be an empty struct)
+	SystemMetricsExporter *SystemMetricExporterServiceSpec `json:"systemMetricsExporter,omitempty"`
 	// SecurityContext defines the security context for all pods for all services.
 	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
 }
@@ -215,8 +215,8 @@ type SupportBundleSpec struct {
 	CDAPStatefulServiceSpec `json:",inline"`
 }
 
-// SupportBundleSpec defines the specification for the MetricsSidecar service.
-type MetricsSidecarServiceSpec struct {
+//  SystemMetricExporterServiceSpec defines the specification for the SystemMetricsExporter service.
+type SystemMetricExporterServiceSpec struct {
 	CDAPScalableServiceSpec `json:",inline"`
 	JMXServerPort           *int32 `json:"jmxServerPort,omitempty"`
 }

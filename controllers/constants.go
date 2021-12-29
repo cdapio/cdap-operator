@@ -41,8 +41,8 @@ const (
 	// serviceUserInterface defines the service type for user interface
 	serviceUserInterface ServiceName = "UserInterface"
 
-	// metricsSidecar defines the service type for sidecar metrics collection service
-	serviceMetricsSidecar ServiceName = "MetricsSidecar"
+	// serviceSystemMetricsExporter defines the service type for sidecar metrics collection service
+	serviceSystemMetricsExporter ServiceName = "SystemMetricsExporter"
 )
 
 const (
@@ -110,7 +110,7 @@ const (
 	javaReservedNonHeap       = int64(768 * 1024 * 1024)
 	javaMaxHeapSizeEnvVarName = "JAVA_HEAPMAX"
 
-	// Metrics sidecar related
+	// System Metrics sidecar related
 	defaultJMXport            = 11022
 	javaOptsEnvVarName        = "OPTS"
 	runJMXServerJavaOptFormat = "-Dcom.sun.management.jmxremote=true  -Dcom.sun.management.jmxremote.port=%s  -Dcom.sun.management.jmxremote.ssl=false  -Dcom.sun.management.jmxremote.authenticate=false"
