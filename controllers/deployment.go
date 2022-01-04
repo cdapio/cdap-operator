@@ -40,7 +40,7 @@ type NetworkServiceName = string
 func (d *DeploymentPlan) Init() {
 	d.planMap = make(map[int32]ServiceGroups)
 
-	// Default: each service runs in its own Pod and.
+	// Default: each service group runs in its own Pod and each service in it's own container.
 	// If there are mltiple services in a pod,
 	// the first one (index 0) will be considered as the
 	// main container and subsequent ones as sidecar containers.
