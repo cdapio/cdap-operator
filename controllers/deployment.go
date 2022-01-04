@@ -43,7 +43,7 @@ func (d *DeploymentPlan) Init() {
 	// Default: each service runs in its own Pod and.
 	// If there are mltiple services in a pod,
 	// the first one (index 0) will be considered as the
-	// main container and the subsequent ones as sidecar containers.
+	// main container and subsequent ones as sidecar containers.
 	d.planMap[0] = ServiceGroups{
 		stateful: map[ServiceGroupName]ServiceGroup{
 			"logs":      {serviceLogs, serviceSystemMetricsExporter},
@@ -196,10 +196,6 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		// Only main container run a jmx server if enabed
 		if !isSidecar && metricsSidecarInGroup && enableSystemMetricsExporter {
 			c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxServerPort))
-		}
-
-		if isSidecar && s == serviceSystemMetricsExporter {
-			c = c.addEnv("SERVICE_NAME", name)
 		}
 
 		if s == serviceUserInterface {
