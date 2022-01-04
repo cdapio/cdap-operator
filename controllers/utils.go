@@ -171,6 +171,10 @@ func findInStringArray(arr []string, key string) (bool, int) {
 	return false, -1
 }
 
+// jmxServerPort finds the port number at which JMX server is reachable on localhost.
+// The server is run on the main container.
+// This function returns a boolean indicating whether a JMX server is running on the pod
+// and the port number as a string if it is running.
 func jmxServerPort(masterSpec *v1alpha1.CDAPMasterSpec) (bool, string) {
 	if masterSpec.SystemMetricsExporter != nil {
 		return true, masterSpec.Config[confJMXServerPort]
