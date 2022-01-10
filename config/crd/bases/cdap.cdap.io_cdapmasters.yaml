@@ -51,6 +51,11 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                disableSystemMetricsSidecar:
+                  description: DisableSystemMetricsSidecar allows service to disable
+                    system metrics sidecar container even if SystemMetricsExporter
+                    spec is present.
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -269,6 +274,11 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                disableSystemMetricsSidecar:
+                  description: DisableSystemMetricsSidecar allows service to disable
+                    system metrics sidecar container even if SystemMetricsExporter
+                    spec is present.
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -508,6 +518,11 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                disableSystemMetricsSidecar:
+                  description: DisableSystemMetricsSidecar allows service to disable
+                    system metrics sidecar container even if SystemMetricsExporter
+                    spec is present.
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -722,6 +737,11 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                disableSystemMetricsSidecar:
+                  description: DisableSystemMetricsSidecar allows service to disable
+                    system metrics sidecar container even if SystemMetricsExporter
+                    spec is present.
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -936,6 +956,11 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                disableSystemMetricsSidecar:
+                  description: DisableSystemMetricsSidecar allows service to disable
+                    system metrics sidecar container even if SystemMetricsExporter
+                    spec is present.
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -1146,6 +1171,11 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                disableSystemMetricsSidecar:
+                  description: DisableSystemMetricsSidecar allows service to disable
+                    system metrics sidecar container even if SystemMetricsExporter
+                    spec is present.
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -1360,6 +1390,11 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                disableSystemMetricsSidecar:
+                  description: DisableSystemMetricsSidecar allows service to disable
+                    system metrics sidecar container even if SystemMetricsExporter
+                    spec is present.
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -1574,6 +1609,11 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                disableSystemMetricsSidecar:
+                  description: DisableSystemMetricsSidecar allows service to disable
+                    system metrics sidecar container even if SystemMetricsExporter
+                    spec is present.
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -1796,6 +1836,11 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                disableSystemMetricsSidecar:
+                  description: DisableSystemMetricsSidecar allows service to disable
+                    system metrics sidecar container even if SystemMetricsExporter
+                    spec is present.
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -2070,6 +2115,11 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                disableSystemMetricsSidecar:
+                  description: DisableSystemMetricsSidecar allows service to disable
+                    system metrics sidecar container even if SystemMetricsExporter
+                    spec is present.
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -2289,6 +2339,11 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                disableSystemMetricsSidecar:
+                  description: DisableSystemMetricsSidecar allows service to disable
+                    system metrics sidecar container even if SystemMetricsExporter
+                    spec is present.
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.
@@ -2510,6 +2565,11 @@ spec:
                     name. Value is the mount path. This adds ConfigMap data to the
                     directory specified by the volume mount path.
                   type: object
+                disableSystemMetricsSidecar:
+                  description: DisableSystemMetricsSidecar allows service to disable
+                    system metrics sidecar container even if SystemMetricsExporter
+                    spec is present.
+                  type: boolean
                 env:
                   description: Env is a list of environment variables for the master
                     service container.

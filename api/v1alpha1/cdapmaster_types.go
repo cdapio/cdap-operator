@@ -129,6 +129,9 @@ type CDAPServiceSpec struct {
 	SecretVolumes map[string]string `json:"secretVolumes,omitempty"`
 	// SecurityContext overrides the security context for the service pods.
 	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
+	// DisableSystemMetricsSidecar allows service to disable system metrics sidecar container
+	// even if SystemMetricsExporter spec is present.
+	DisableSystemMetricsSidecar *bool `json:"disableSystemMetricsSidecar,omitempty"`
 }
 
 // CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance.

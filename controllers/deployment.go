@@ -174,8 +174,10 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	spec = spec.withInitContainer(
 		newContainerSpec(master, "StorageInit", dataDir).setArgs(containerStorageMain))
 
-	metricsSidecarInGroup, _ := findInStringArray(services, serviceSystemMetricsExporter)
 	enableSystemMetricsExporter, jmxServerPort := jmxServerPort(&master.Spec)
+	if metricsSidecarInGroup, _ := findInStringArray(services, serviceSystemMetricsExporter); !metricsSidecarInGroup {
+		enableSystemMetricsExporter = false
+	}
 
 	// Add each service as a container
 	for idx, s := range services {
@@ -194,10 +196,17 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 			setEnv(env)
 		isSidecar := (idx > 0)
 		// Only main container run a jmx server if enabed
-		if !isSidecar && metricsSidecarInGroup && enableSystemMetricsExporter {
-			c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxServerPort))
+		if !isSidecar {
+			if ss.DisableSystemMetricsSidecar != nil && *ss.DisableSystemMetricsSidecar {
+				enableSystemMetricsExporter = false
+			}
+			if enableSystemMetricsExporter {
+				c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxServerPort))
+			}
 		}
-
+		if s == serviceSystemMetricsExporter && !enableSystemMetricsExporter {
+			continue
+		}
 		if s == serviceUserInterface {
 			c = updateSpecForUserInterface(master, c)
 		}
