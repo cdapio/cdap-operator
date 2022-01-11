@@ -66,4 +66,19 @@ A step by step guide of running CDAP in Kubernetes using CDAP operator can be fo
 
 1. Install [kubebuilder](https://book-v1.book.kubebuilder.io/quick_start.html).
 
-2. Run `make test`
+2. Install [setup-envtest](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#envtest-binaries-manager) by running:
+```
+go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+```
+
+3. After installing `setup-envtest`, use it to download envtest 1.19.x for kubebuilder and to set your KUBEBUILDER_ASSETS environment variable:
+```bash
+# Downloads envtest v1.19.x and writes the export statement to a temporary file
+$(go env GOPATH)/bin/setup-envtest use -p env 1.19.x > /tmp/setup_envtest.sh
+# Sets the KUBEBUILDER_ASSETS environment variable
+source /tmp/setup_envtest.sh
+# Deletes the temporary file
+rm /tmp/setup_envtest.sh
+```
+
+4. Run `make test`
