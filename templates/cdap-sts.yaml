@@ -126,6 +126,33 @@ spec:
           {{if $c.ImagePullPolicy}}
           imagePullPolicy: {{$c.ImagePullPolicy}}
           {{end}}
+          {{if $c.Lifecycle}}
+          lifecycle:
+            {{if $c.Lifecycle.PostStart}}
+            postStart:
+              {{if $c.Lifecycle.PostStart.Exec}}
+              exec:
+                {{if $c.Lifecycle.PostStart.Exec.Command}}
+                command:
+                {{range $v := $c.Lifecycle.PostStart.Exec.Command}}
+                  - {{$v}}
+                {{end}}
+                {{end}}
+              {{end}}
+            {{end}}
+            {{if $c.Lifecycle.PreStop}}
+            preStop:
+              {{if $c.Lifecycle.PreStop.Exec}}
+              exec:
+                {{if $c.Lifecycle.PreStop.Exec.Command}}
+                command:
+                {{range $v := $c.Lifecycle.PreStop.Exec.Command}}
+                  - {{$v}}
+                {{end}}
+                {{end}}
+              {{end}}
+            {{end}}
+          {{end}}
           env:
           {{range $e := $c.Env }}
           - name: "{{$e.Name}}"

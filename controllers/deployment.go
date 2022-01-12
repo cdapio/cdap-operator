@@ -183,7 +183,7 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 			continue
 		}
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
+		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env).setLifecycle(ss.Lifecycle)
 		if s == serviceUserInterface {
 			c = updateSpecForUserInterface(master, c)
 		}
@@ -267,7 +267,7 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 			continue
 		}
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
+		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env).setLifecycle(ss.Lifecycle)
 		if s == serviceUserInterface {
 			c = updateSpecForUserInterface(master, c)
 		}
