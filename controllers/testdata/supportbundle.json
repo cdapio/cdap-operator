@@ -1,0 +1,279 @@
+{
+  "apiVersion":"apps/v1",
+  "kind":"StatefulSet",
+  "metadata":{
+    "annotations": {
+      "deployment.kubernetes.io/revision": "1"
+    },
+    "name":"cdap-test-supportbundle",
+    "namespace":"default",
+    "creationTimestamp":null,
+    "labels":{
+      "cdap.container.SupportBundle":"test",
+      "cdap.instance": "test",
+      "custom-resource": "v1alpha1.CDAPMaster",
+      "custom-resource-name": "test",
+      "custom-resource-namespace": "default",
+      "using": "controllers.ServiceHandler"
+    },
+    "ownerReferences": [
+      {
+        "apiVersion": "cdap.cdap.io/v1alpha1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "*v1alpha1.CDAPMaster",
+        "name": "test",
+        "uid": "7aeaad53-4afe-11ea-8611-42010a800022"
+      }
+    ],
+    "resourceVersion": "1912414",
+    "selfLink": "/apis/extensions/v1beta1/namespaces/default/deployments/cdap-test-supportbundle",
+    "uid": "7b7154a2-4afe-11ea-8611-42010a800022"
+  },
+  "spec":{
+    "replicas":1,
+    "selector":{
+      "matchLabels":{
+        "cdap.container.SupportBundle":"test",
+        "cdap.instance": "test",
+        "custom-resource": "v1alpha1.CDAPMaster",
+        "custom-resource-name": "test",
+        "custom-resource-namespace": "default",
+        "using": "controllers.ServiceHandler"
+      }
+    },
+    "template":{
+      "metadata":{
+        "creationTimestamp":null,
+        "labels":{
+          "cdap.container.SupportBundle":"test",
+          "cdap.instance": "test",
+          "custom-resource": "v1alpha1.CDAPMaster",
+          "custom-resource-name": "test",
+          "custom-resource-namespace": "default",
+          "using": "controllers.ServiceHandler"
+        }
+      },
+      "spec":{
+        "volumes":[
+          {
+            "name":"podinfo",
+            "downwardAPI":{
+              "items":[
+                {
+                  "path":"pod.labels.properties",
+                  "fieldRef":{
+                    "fieldPath":"metadata.labels"
+                  }
+                },
+                {
+                  "path":"pod.name",
+                  "fieldRef":{
+                    "fieldPath":"metadata.name"
+                  }
+                },
+                {
+                  "path":"pod.uid",
+                  "fieldRef":{
+                    "fieldPath":"metadata.uid"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name":"cdap-conf",
+            "configMap":{
+              "name":"cdap-test-cconf"
+            }
+          },
+          {
+            "name":"hadoop-conf",
+            "configMap":{
+              "name":"cdap-test-hconf"
+            }
+          },
+          {
+            "name":"cdap-sysappconf",
+            "configMap":{
+              "name":"cdap-test-sysappconf"
+            }
+          },
+          {
+            "name":"cdap-security",
+            "secret":{
+              "secretName":"cdap-secret"
+            }
+          },
+          {
+            "name":"cdap-cm-vol-my-config-map-1",
+            "configMap":{
+              "name":"my-config-map-1"
+            }
+          },
+          {
+            "name":"cdap-cm-vol-my-config-map-2",
+            "configMap":{
+              "name":"my-config-map-2"
+            }
+          },
+          {
+            "name":"cdap-se-vol-my-secret-1",
+            "secret":{
+              "secretName":"my-secret-1"
+            }
+          }
+        ],
+        "initContainers":[
+          {
+            "name":"storageinit",
+            "image":"gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
+            "args":[
+              "io.cdap.cdap.master.environment.k8s.StorageMain"
+            ],
+            "resources":{
+
+            },
+            "volumeMounts":[
+              {
+                "name":"podinfo",
+                "readOnly":true,
+                "mountPath":"/etc/podinfo"
+              },
+              {
+                "name":"cdap-conf",
+                "readOnly":true,
+                "mountPath":"/etc/cdap/conf"
+              },
+              {
+                "name":"hadoop-conf",
+                "readOnly":true,
+                "mountPath":"/etc/hadoop/conf"
+              },
+              {
+                "name":"cdap-sysappconf",
+                "readOnly":true,
+                "mountPath":"/opt/cdap/master/system-app-config"
+              },
+              {
+                "name":"cdap-test-supportbundle-data",
+                "mountPath":"/data"
+              },
+              {
+                "name":"cdap-security",
+                "readOnly":true,
+                "mountPath":"/etc/cdap/security"
+              }
+            ]
+          }
+        ],
+        "containers":[
+          {
+            "name":"supportbundle",
+            "image":"gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
+            "args":[
+              "io.cdap.cdap.master.environment.k8s.SupportBundleServiceMain",
+              "--env=k8s"
+            ],
+            "env":[
+              {
+                "name":"JAVA_HEAPMAX",
+                "value":"-Xmx125829120"
+              }
+            ],
+            "resources":{
+              "requests":{
+                "cpu":"100m",
+                "memory":"200Mi"
+              }
+            },
+            "volumeMounts":[
+              {
+                "name":"podinfo",
+                "readOnly":true,
+                "mountPath":"/etc/podinfo"
+              },
+              {
+                "name":"cdap-conf",
+                "readOnly":true,
+                "mountPath":"/etc/cdap/conf"
+              },
+              {
+                "name":"hadoop-conf",
+                "readOnly":true,
+                "mountPath":"/etc/hadoop/conf"
+              },
+              {
+                "name":"cdap-sysappconf",
+                "readOnly":true,
+                "mountPath":"/opt/cdap/master/system-app-config"
+              },
+              {
+                "name":"cdap-test-supportbundle-data",
+                "mountPath":"/data"
+              },
+              {
+                "name":"cdap-security",
+                "readOnly":true,
+                "mountPath":"/etc/cdap/security"
+              },
+              {
+                "name":"cdap-cm-vol-my-config-map-1",
+                "mountPath":"/my/config/map/1"
+              },
+              {
+                "name":"cdap-cm-vol-my-config-map-2",
+                "mountPath":"/my/config/map/2"
+              },
+              {
+                "name":"cdap-se-vol-my-secret-1",
+                "mountPath":"/my/secret/1"
+              }
+            ],
+            "securityContext":{
+              "privileged":false,
+              "readOnlyRootFilesystem":false,
+              "allowPrivilegeEscalation":false
+            }
+          }
+        ],
+        "terminationGracePeriodSeconds":120,
+        "serviceAccountName":"cdap",
+        "securityContext":{
+          "runAsUser":1000,
+          "runAsGroup":1000,
+          "runAsNonRoot":true,
+          "fsGroup":2000
+        }
+      }
+    },
+    "volumeClaimTemplates":[
+      {
+        "metadata":{
+          "name":"cdap-test-supportbundle-data",
+          "creationTimestamp":null
+        },
+        "spec":{
+          "accessModes":[
+            "ReadWriteOnce"
+          ],
+          "resources":{
+            "requests":{
+              "storage":"100Gi"
+            }
+          }
+        },
+        "status":{
+
+        }
+      }
+    ],
+    "serviceName":"cdap-test-supportbundle",
+    "updateStrategy":{
+
+    }
+  },
+  "status":{
+    "replicas":0
+  }
+}
