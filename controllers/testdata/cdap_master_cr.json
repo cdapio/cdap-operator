@@ -56,7 +56,14 @@
           "name": "test-persistent-storage",
           "mountPath": "/mnt/teststorage"
         }
-      ]
+      ],
+      "lifecycle": {
+        "preStop": {
+          "exec": {
+            "command": ["sh", "-c", "echo hello"]
+          }
+        }
+      }
     },
     "authentication": {
       "metadata": {
