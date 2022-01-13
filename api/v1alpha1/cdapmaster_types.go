@@ -136,7 +136,8 @@ type CDAPServiceSpec struct {
 	AdditionalVolumeMounts []corev1.VolumeMount `json:"additionalVolumeMounts,omitempty"`
 	// SecurityContext overrides the security context for the service pods.
 	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
-	// Lifecycle is to specify Container Lifecycle hooks provided by Kubernetes for containers
+	// Lifecycle is to specify Container Lifecycle hooks provided by Kubernetes for containers.
+	// This will not be applied to the init containers as init containers do not support lifecycle.
 	Lifecycle *corev1.Lifecycle `json:"lifecycle,omitempty"`
 }
 

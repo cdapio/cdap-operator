@@ -2634,7 +2634,8 @@ spec:
                   type: array
                 lifecycle:
                   description: Lifecycle is to specify Container Lifecycle hooks provided
-                    by Kubernetes for containers
+                    by Kubernetes for containers. This will not be applied to the
+                    init containers as init containers do not support lifecycle.
                   properties:
                     postStart:
                       description: 'PostStart is called immediately after a container
@@ -4300,7 +4301,8 @@ spec:
                   type: array
                 lifecycle:
                   description: Lifecycle is to specify Container Lifecycle hooks provided
-                    by Kubernetes for containers
+                    by Kubernetes for containers. This will not be applied to the
+                    init containers as init containers do not support lifecycle.
                   properties:
                     postStart:
                       description: 'PostStart is called immediately after a container
@@ -5987,7 +5989,8 @@ spec:
                   type: array
                 lifecycle:
                   description: Lifecycle is to specify Container Lifecycle hooks provided
-                    by Kubernetes for containers
+                    by Kubernetes for containers. This will not be applied to the
+                    init containers as init containers do not support lifecycle.
                   properties:
                     postStart:
                       description: 'PostStart is called immediately after a container
@@ -7649,7 +7652,8 @@ spec:
                   type: array
                 lifecycle:
                   description: Lifecycle is to specify Container Lifecycle hooks provided
-                    by Kubernetes for containers
+                    by Kubernetes for containers. This will not be applied to the
+                    init containers as init containers do not support lifecycle.
                   properties:
                     postStart:
                       description: 'PostStart is called immediately after a container
@@ -9311,7 +9315,8 @@ spec:
                   type: array
                 lifecycle:
                   description: Lifecycle is to specify Container Lifecycle hooks provided
-                    by Kubernetes for containers
+                    by Kubernetes for containers. This will not be applied to the
+                    init containers as init containers do not support lifecycle.
                   properties:
                     postStart:
                       description: 'PostStart is called immediately after a container
@@ -10969,7 +10974,8 @@ spec:
                   type: array
                 lifecycle:
                   description: Lifecycle is to specify Container Lifecycle hooks provided
-                    by Kubernetes for containers
+                    by Kubernetes for containers. This will not be applied to the
+                    init containers as init containers do not support lifecycle.
                   properties:
                     postStart:
                       description: 'PostStart is called immediately after a container
@@ -12631,7 +12637,8 @@ spec:
                   type: array
                 lifecycle:
                   description: Lifecycle is to specify Container Lifecycle hooks provided
-                    by Kubernetes for containers
+                    by Kubernetes for containers. This will not be applied to the
+                    init containers as init containers do not support lifecycle.
                   properties:
                     postStart:
                       description: 'PostStart is called immediately after a container
@@ -14293,7 +14300,8 @@ spec:
                   type: array
                 lifecycle:
                   description: Lifecycle is to specify Container Lifecycle hooks provided
-                    by Kubernetes for containers
+                    by Kubernetes for containers. This will not be applied to the
+                    init containers as init containers do not support lifecycle.
                   properties:
                     postStart:
                       description: 'PostStart is called immediately after a container
@@ -15963,7 +15971,8 @@ spec:
                   type: array
                 lifecycle:
                   description: Lifecycle is to specify Container Lifecycle hooks provided
-                    by Kubernetes for containers
+                    by Kubernetes for containers. This will not be applied to the
+                    init containers as init containers do not support lifecycle.
                   properties:
                     postStart:
                       description: 'PostStart is called immediately after a container
@@ -17685,7 +17694,8 @@ spec:
                   type: array
                 lifecycle:
                   description: Lifecycle is to specify Container Lifecycle hooks provided
-                    by Kubernetes for containers
+                    by Kubernetes for containers. This will not be applied to the
+                    init containers as init containers do not support lifecycle.
                   properties:
                     postStart:
                       description: 'PostStart is called immediately after a container
@@ -19355,7 +19365,8 @@ spec:
                   type: array
                 lifecycle:
                   description: Lifecycle is to specify Container Lifecycle hooks provided
-                    by Kubernetes for containers
+                    by Kubernetes for containers. This will not be applied to the
+                    init containers as init containers do not support lifecycle.
                   properties:
                     postStart:
                       description: 'PostStart is called immediately after a container
