@@ -54,6 +54,10 @@ type CDAPMasterSpec struct {
 	// Key is the secret object name. Value is the mount path.
 	// This adds Secret data to the directory specified by the volume mount path.
 	SecretVolumes map[string]string `json:"secretVolumes,omitempty"`
+	// PVCVolumes defines a map from Persistent Volume Claim names to volume mount path.
+	// Key is the PVC object name. Value is the mount path.
+	// This mounts PVC to the directory specified by the volume mount path.
+	PVCVolumes map[string]string `json:"pvcVolumes,omitempty"`
 	// SystemAppConfigs specifies configs used by CDAP to run system apps
 	// dynamically. Each entry is of format <filename, json app config> which will
 	// create a separate system config file with entry value as file content.
@@ -122,6 +126,10 @@ type CDAPServiceSpec struct {
 	// Key is the secret object name. Value is the mount path.
 	// This adds Secret data to the directory specified by the volume mount path.
 	SecretVolumes map[string]string `json:"secretVolumes,omitempty"`
+	// PVCVolumes defines a map from Persistent Volume Claim names to volume mount path.
+	// Key is the PVC object name. Value is the mount path.
+	// This mounts PVC to the directory specified by the volume mount path.
+	PVCVolumes map[string]string `json:"pvcVolumes,omitempty"`
 	// SecurityContext overrides the security context for the service pods.
 	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
 }

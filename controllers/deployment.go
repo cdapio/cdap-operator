@@ -199,6 +199,9 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		if _, err := spec.addSecretVolumes(ss.SecretVolumes); err != nil {
 			return nil, err
 		}
+		if _, err := spec.addPVCVolumes(ss.PVCVolumes); err != nil {
+			return nil, err
+		}
 	}
 
 	// All services are optional services and are disabled in CR.
@@ -282,6 +285,9 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 			return nil, err
 		}
 		if _, err := spec.addSecretVolumes(ss.SecretVolumes); err != nil {
+			return nil, err
+		}
+		if _, err := spec.addPVCVolumes(ss.PVCVolumes); err != nil {
 			return nil, err
 		}
 	}

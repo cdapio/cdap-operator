@@ -135,6 +135,10 @@
               {
                 "mountPath": "/my/secret/key",
                 "name": "cdap-se-vol-secret-key"
+              },
+              {
+                "mountPath": "/my/pvc/0",
+                "name": "cdap-vol-my-pvc-0"
               }
             ]
           }
@@ -232,6 +236,12 @@
             "name": "cdap-se-vol-secret-key",
             "secret": {
               "secretName": "secret-key"
+            }
+          },
+          {
+            "name": "cdap-vol-my-pvc-0",
+            "persistentVolumeClaim": {
+              "claimName": "my-pvc-0"
             }
           }
         ]

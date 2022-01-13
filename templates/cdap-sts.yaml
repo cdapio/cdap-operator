@@ -172,6 +172,10 @@ spec:
             - name: cdap-se-vol-{{$k}}
               mountPath: {{$v}}
             {{end}}
+            {{range $k,$v := $.Base.PVCVolumes}}
+            - name: cdap-vol-{{$k}}
+              mountPath: {{$v}}
+            {{end}}
       {{end}}
       volumes:
         - name: podinfo
@@ -209,6 +213,11 @@ spec:
         - name: cdap-se-vol-{{$k}}
           secret:
             secretName: {{$k}}
+        {{end}}
+        {{range $k,$v := $.Base.PVCVolumes}}
+        - name: cdap-vol-{{$k}}
+          persistentVolumeClaim:
+            claimName: {{$k}}
         {{end}}
   volumeClaimTemplates:
   - metadata:
