@@ -174,13 +174,17 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	spec = spec.withInitContainer(
 		newContainerSpec(master, "StorageInit", dataDir).setArgs(containerStorageMain))
 
-	enableSystemMetricsExporter, jmxServerPort := jmxServerPort(&master.Spec)
-	if metricsSidecarInGroup, _ := findInStringArray(services, serviceSystemMetricsExporter); !metricsSidecarInGroup {
-		enableSystemMetricsExporter = false
+	metricsSidecarEnabled := true
+	if enabled, err := isMetricsSidecarEnabled(services, master); err != nil {
+		return nil, err
+	} else if !enabled {
+		metricsSidecarEnabled = false
+		services = removeStringsFromArray(services, serviceSystemMetricsExporter)
 	}
 
 	// Add each service as a container
 	for idx, s := range services {
+		isSidecar := (idx > 0)
 		ss, err := getCDAPServiceSpec(master, s)
 		if err != nil {
 			return nil, err
@@ -191,21 +195,11 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 			continue
 		}
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-		c := newContainerSpec(master, s, dataDir).
-			setResources(ss.Resources).
-			setEnv(env)
-		isSidecar := (idx > 0)
-		// Only main container run a jmx server if enabed
-		if !isSidecar {
-			if ss.DisableSystemMetricsSidecar != nil && *ss.DisableSystemMetricsSidecar {
-				enableSystemMetricsExporter = false
-			}
-			if enableSystemMetricsExporter {
-				c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxServerPort))
-			}
-		}
-		if s == serviceSystemMetricsExporter && !enableSystemMetricsExporter {
-			continue
+		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
+		// Only main container should run a jmx server if enabed
+		if !isSidecar && metricsSidecarEnabled {
+			jmxServerPort := master.Spec.Config[confJMXServerPort]
+			c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxServerPort))
 		}
 		if s == serviceUserInterface {
 			c = updateSpecForUserInterface(master, c)
@@ -245,6 +239,26 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	}
 	spec = spec.withStorage(storageClass, storageSize)
 	return spec, nil
+}
+
+func isMetricsSidecarEnabled(services []string, master *v1alpha1.CDAPMaster) (bool, error) {
+	if master.Spec.SystemMetricsExporter == nil {
+		return false, nil
+	}
+	if found, _ := findStringInArray(services, serviceSystemMetricsExporter); !found {
+		return false, nil
+	}
+	if len(services) == 0 {
+		return false, nil
+	}
+	if ss, err := getCDAPServiceSpec(master, services[0]); err != nil {
+		return false, err
+	} else if ss == nil {
+		return false, nil
+	} else if ss.DisableSystemMetricsSidecar != nil && *ss.DisableSystemMetricsSidecar == true {
+		return false, nil
+	}
+	return true, nil
 }
 
 // Return a single single-/multi- container deployment containing a list of supplied services

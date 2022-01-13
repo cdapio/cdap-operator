@@ -162,7 +162,7 @@ func max(x, y int64) int64 {
 // findInStringArray runs a linear search on an array to find a particular key
 // It returns true/false indicating whether the key was found.
 // If the key is found, it's frist index is also returned, otherwise false and a negative integer is returned
-func findInStringArray(arr []string, key string) (bool, int) {
+func findStringInArray(arr []string, key string) (bool, int) {
 	for index, value := range arr {
 		if value == key {
 			return true, index
@@ -171,14 +171,15 @@ func findInStringArray(arr []string, key string) (bool, int) {
 	return false, -1
 }
 
-// jmxServerPort finds the port number at which JMX server is reachable on localhost.
-// The server is run on the main container.
-// This function returns a boolean indicating whether a JMX server is running on the pod
-// and the port number as a string if it is running.
-func jmxServerPort(masterSpec *v1alpha1.CDAPMasterSpec) (bool, string) {
-	if masterSpec.SystemMetricsExporter != nil {
-		return true, masterSpec.Config[confJMXServerPort]
-	} else {
-		return false, ""
+// removeStringsFromArray returns a string array after removing all
+// occurances of "value" from "arr"
+func removeStringsFromArray(arr []string, value string) []string {
+	result := []string{}
+	for _, item := range arr {
+		if item == value {
+			continue
+		}
+		result = append(result, item)
 	}
+	return result
 }
