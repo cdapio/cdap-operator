@@ -69,6 +69,9 @@ type UserInterface struct{}
 // SupportBundle - interface to handle cdapmaster
 type SupportBundle struct{}
 
+// SystemMetricsExporter - interface to handle cdapmaster
+type SystemMetricsExporter struct{}
+
 // Objects - handler Objects
 func (b *Base) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	return []reconciler.Object{}, nil
@@ -199,5 +202,18 @@ func (s *SupportBundle) Observables(rsrc interface{}, labels map[string]string, 
 	return k8s.NewObservables().
 		WithLabels(labels).
 		For(&appsv1.StatefulSetList{}).
+		Get()
+}
+
+// Objects for SystemMetricsExporter service
+func (s *SystemMetricsExporter) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
+	return []reconciler.Object{}, nil
+}
+
+// Observables for SystemMetricsExporter
+func (s *SystemMetricsExporter) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
+	return k8s.NewObservables().
+		WithLabels(labels).
+		For(&appsv1.DeploymentList{}).
 		Get()
 }
