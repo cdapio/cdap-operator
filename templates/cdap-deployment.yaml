@@ -11,6 +11,12 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+#
+#
+# NOTE: Some properties are highly nested and it is not feasible to pick them from the template file
+# hence those are added directly in the code.
+# For example, please check the method "../controllers/deployment.go#buildDeploymentObject" and see
+# how container's lifecycle property is added to the k8s object.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -87,33 +93,6 @@ spec:
           {{end}}
           {{if $c.ImagePullPolicy}}
           imagePullPolicy: {{$c.ImagePullPolicy}}
-          {{end}}
-          {{if $c.Lifecycle}}
-          lifecycle:
-            {{if $c.Lifecycle.PostStart}}
-            postStart:
-              {{if $c.Lifecycle.PostStart.Exec}}
-              exec:
-                {{if $c.Lifecycle.PostStart.Exec.Command}}
-                command:
-                {{range $v := $c.Lifecycle.PostStart.Exec.Command}}
-                  - {{$v}}
-                {{end}}
-                {{end}}
-              {{end}}
-            {{end}}
-            {{if $c.Lifecycle.PreStop}}
-            preStop:
-              {{if $c.Lifecycle.PreStop.Exec}}
-              exec:
-                {{if $c.Lifecycle.PreStop.Exec.Command}}
-                command:
-                {{range $v := $c.Lifecycle.PreStop.Exec.Command}}
-                  - {{$v}}
-                {{end}}
-                {{end}}
-              {{end}}
-            {{end}}
           {{end}}
           env:
           {{range $e := $c.Env }}

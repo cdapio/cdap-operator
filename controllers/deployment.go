@@ -326,6 +326,18 @@ func buildStatefulSetsObject(spec *StatefulSpec) (*reconciler.Object, error) {
 	if err != nil {
 		return nil, err
 	}
+	// For container lifecycle hook, we directly pass structs from the spec to bypass the YAML templating logic.
+	k8sObj, ok := obj.Obj.(*k8s.Object)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert object to k8s object")
+	}
+	statefulSetObj, ok := k8sObj.Obj.(*appsv1.StatefulSet)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert meta object to statefulset object")
+	}
+	for index, _ := range statefulSetObj.Spec.Template.Spec.Containers {
+		setLifecycleHookForContainer(&statefulSetObj.Spec.Template.Spec.Containers[index], spec.Containers[index].Lifecycle)
+	}
 	return obj, nil
 }
 
@@ -335,7 +347,23 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 	if err != nil {
 		return nil, err
 	}
+	// For container lifecycle hook, we directly pass structs from the spec to bypass the YAML templating logic.
+	k8sObj, ok := obj.Obj.(*k8s.Object)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert object to k8s object")
+	}
+	deploymentObj, ok := k8sObj.Obj.(*appsv1.Deployment)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert meta object to statefulset object")
+	}
+	for index, _ := range deploymentObj.Spec.Template.Spec.Containers {
+		setLifecycleHookForContainer(&deploymentObj.Spec.Template.Spec.Containers[index], spec.Containers[index].Lifecycle)
+	}
 	return obj, nil
+}
+
+func setLifecycleHookForContainer(container *corev1.Container, lifecycle *corev1.Lifecycle) {
+	container.Lifecycle = lifecycle
 }
 
 // Return a NodePort service to expose the supplied target service
