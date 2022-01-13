@@ -42,6 +42,13 @@
         "runAsGroup": 3000,
         "fsGroup": 4000,
         "runAsNonRoot": false
+      },
+      "lifecycle": {
+        "preStop": {
+          "exec": {
+            "command": ["sh", "-c", "echo hello"]
+          }
+        }
       }
     },
     "authentication": {

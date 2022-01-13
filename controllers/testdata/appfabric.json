@@ -92,6 +92,13 @@
               "privileged": false,
               "readOnlyRootFilesystem": false
             },
+            "lifecycle": {
+              "preStop": {
+                "exec": {
+                  "command": ["sh", "-c", "echo hello"]
+                }
+              }
+            },
             "terminationMessagePath": "/dev/termination-log",
             "terminationMessagePolicy": "File",
             "volumeMounts": [
