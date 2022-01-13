@@ -46,12 +46,13 @@ func (d *DeploymentPlan) Init() {
 	// main container and subsequent ones as sidecar containers.
 	d.planMap[0] = ServiceGroups{
 		stateful: map[ServiceGroupName]ServiceGroup{
-			"logs":      {serviceLogs, serviceSystemMetricsExporter},
-			"messaging": {serviceMessaging, serviceSystemMetricsExporter},
-			"metrics":   {serviceMetrics, serviceSystemMetricsExporter},
-			"preview":   {servicePreview, serviceSystemMetricsExporter},
-			"appfabric": {serviceAppFabric, serviceSystemMetricsExporter},
-			"runtime":   {serviceRuntime, serviceSystemMetricsExporter},
+			"logs":          {serviceLogs, serviceSystemMetricsExporter},
+			"messaging":     {serviceMessaging, serviceSystemMetricsExporter},
+			"metrics":       {serviceMetrics, serviceSystemMetricsExporter},
+			"preview":       {servicePreview, serviceSystemMetricsExporter},
+			"appfabric":     {serviceAppFabric, serviceSystemMetricsExporter},
+			"runtime":       {serviceRuntime, serviceSystemMetricsExporter},
+			"supportbundle": {serviceSupportBundle},
 		},
 		deployment: map[ServiceGroupName]ServiceGroup{
 			"authentication": {serviceAuthentication},
