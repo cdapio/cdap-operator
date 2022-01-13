@@ -221,7 +221,6 @@ type SupportBundleSpec struct {
 //  SystemMetricExporterServiceSpec defines the specification for the SystemMetricsExporter service.
 type SystemMetricExporterServiceSpec struct {
 	CDAPScalableServiceSpec `json:",inline"`
-	JMXServerPort           *int32 `json:"jmxServerPort,omitempty"`
 }
 
 // CDAPMasterStatus defines the observed state of CDAPMaster
