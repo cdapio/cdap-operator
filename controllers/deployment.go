@@ -27,7 +27,7 @@ type DeploymentPlan struct {
 }
 type ServiceGroups struct {
 	// Map from statefulset object name to a list services in this statefulset.
-	stateful map[ServiceGroupName]ServiceGroup
+	stateful map[ServiceGroupName]PodGroup
 	// Map from deployment object name to a list services in this deployment.
 	deployment map[ServiceGroupName]ServiceGroup
 	// Map from k8s service object name to a CDAP service to be exposed.
@@ -37,6 +37,11 @@ type ServiceGroupName = string
 type ServiceGroup = []ServiceName
 type NetworkServiceName = string
 
+type PodGroup struct {
+	Main     ServiceGroup
+	Sidecars ServiceGroup
+}
+
 func (d *DeploymentPlan) Init() {
 	d.planMap = make(map[int32]ServiceGroups)
 
@@ -45,14 +50,34 @@ func (d *DeploymentPlan) Init() {
 	// the first one (index 0) will be considered as the
 	// main container and subsequent ones as sidecar containers.
 	d.planMap[0] = ServiceGroups{
-		stateful: map[ServiceGroupName]ServiceGroup{
-			"logs":          {serviceLogs, serviceSystemMetricsExporter},
-			"messaging":     {serviceMessaging, serviceSystemMetricsExporter},
-			"metrics":       {serviceMetrics, serviceSystemMetricsExporter},
-			"preview":       {servicePreview, serviceSystemMetricsExporter},
-			"appfabric":     {serviceAppFabric, serviceSystemMetricsExporter},
-			"runtime":       {serviceRuntime, serviceSystemMetricsExporter},
-			"supportbundle": {serviceSupportBundle},
+		stateful: map[ServiceGroupName]PodGroup{
+			"logs": {
+				Main:     ServiceGroup{serviceLogs},
+				Sidecars: ServiceGroup{serviceSystemMetricsExporter},
+			},
+			"messaging": {
+				Main:     ServiceGroup{serviceMessaging},
+				Sidecars: ServiceGroup{serviceSystemMetricsExporter},
+			},
+			"metrics": {
+				Main:     ServiceGroup{serviceMetrics},
+				Sidecars: ServiceGroup{serviceSystemMetricsExporter},
+			},
+			"preview": {
+				Main:     ServiceGroup{servicePreview},
+				Sidecars: ServiceGroup{serviceSystemMetricsExporter},
+			},
+			"appfabric": {
+				Main:     ServiceGroup{serviceAppFabric},
+				Sidecars: ServiceGroup{serviceSystemMetricsExporter},
+			},
+			"runtime": {
+				Main:     ServiceGroup{serviceRuntime},
+				Sidecars: ServiceGroup{serviceSystemMetricsExporter},
+			},
+			"supportbundle": {
+				Main: ServiceGroup{serviceSupportBundle},
+			},
 		},
 		deployment: map[ServiceGroupName]ServiceGroup{
 			"authentication": {serviceAuthentication},
@@ -141,25 +166,25 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 }
 
 // Return a single single-/multi- container StatefulSets containing a list of supplied services
-func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services ServiceGroup, labels map[string]string, cconf, hconf, sysappconf, dataDir string) (*StatefulSpec, error) {
+func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, group PodGroup, labels map[string]string, cconf, hconf, sysappconf, dataDir string) (*StatefulSpec, error) {
 	objName := getObjName(master, name)
-	serviceAccount, err := getServiceAccount(master, services)
+	serviceAccount, err := getServiceAccount(master, group.Main)
 	if err != nil {
 		return nil, err
 	}
-	runtimeClass, err := getRuntimeClass(master, services)
+	runtimeClass, err := getRuntimeClass(master, group.Main)
 	if err != nil {
 		return nil, err
 	}
-	priorityClass, err := getPriorityClass(master, services)
+	priorityClass, err := getPriorityClass(master, group.Main)
 	if err != nil {
 		return nil, err
 	}
-	nodeSelector, err := getNodeSelector(master, services)
+	nodeSelector, err := getNodeSelector(master, group.Main)
 	if err != nil {
 		return nil, err
 	}
-	securityContext, err := getSecurityContext(master, services)
+	securityContext, err := getSecurityContext(master, group.Main)
 	if err != nil {
 		return nil, err
 	}
@@ -175,60 +200,34 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	spec = spec.withInitContainer(
 		newContainerSpec(master, "StorageInit", dataDir).setArgs(containerStorageMain))
 
-	metricsSidecarEnabled := true
-	if enabled, err := isMetricsSidecarEnabled(services, master); err != nil {
+	addMetricsSidecar := true
+	if enabled, err := isMetricsSidecarEnabled(group, master); err != nil {
 		return nil, err
 	} else if !enabled {
-		metricsSidecarEnabled = false
-		services = removeStringsFromArray(services, serviceSystemMetricsExporter)
+		addMetricsSidecar = false
+		group.Sidecars = removeStringsFromArray(group.Sidecars, serviceSystemMetricsExporter)
 	}
 
 	// Add each service as a container
-	for idx, s := range services {
-		isSidecar := (idx > 0)
-		ss, err := getCDAPServiceSpec(master, s)
-		if err != nil {
-			return nil, err
-		}
-		// This happens when the service is optional and disabled in CR
-		// (i.e. service spec is set to nil)
-		if ss == nil {
-			continue
-		}
-		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
-		// Only main container should run a jmx server if enabed
-		if !isSidecar && metricsSidecarEnabled {
-			jmxServerPort := master.Spec.Config[confJMXServerPort]
-			c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxServerPort))
-		}
-		if s == serviceUserInterface {
-			c = updateSpecForUserInterface(master, c)
-		}
-		spec = spec.withContainer(c)
-		// Adding a label to allow NodePort service selector to find the pod
-		// Adding pod labels for multiple services causes re-conciliation errors when
-		// a new service is added/removed as only `template` and `updateStrategy`
-		// props of spec can be modified
-		if !isSidecar {
-			spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
-		}
-
-		// Mount extra volumes from ConfigMap and Secret
-		if _, err := spec.addConfigMapVolumes(ss.ConfigMapVolumes); err != nil {
-			return nil, err
-		}
-		if _, err := spec.addSecretVolumes(ss.SecretVolumes); err != nil {
+	for _, s := range group.Main {
+		if err := addServiceToStatefulSpec(spec, s, master, dataDir, false, &addMetricsSidecar); err != nil {
 			return nil, err
 		}
 	}
 
-	// All services are optional services and are disabled in CR.
+	// All main services are optional services and are disabled in CR.
 	// Return nil to indicate no statefulset is built.
 	if len(spec.Containers) == 0 {
 		return nil, nil
 	}
 
+	for _, s := range group.Sidecars {
+		if err := addServiceToStatefulSpec(spec, s, master, dataDir, true, nil); err != nil {
+			return nil, err
+		}
+	}
+
+	services := append(group.Main, group.Sidecars...)
 	// Get storage class and calculates total disk size required
 	storageClass, err := getStorageClass(master, services)
 	if err != nil {
@@ -242,22 +241,64 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	return spec, nil
 }
 
-func isMetricsSidecarEnabled(services []string, master *v1alpha1.CDAPMaster) (bool, error) {
+func addServiceToStatefulSpec(spec *StatefulSpec, s ServiceName, master *v1alpha1.CDAPMaster, dataDir string, isSidecar bool, addMetricsSidecar *bool) error {
+	ss, err := getCDAPServiceSpec(master, s)
+	if err != nil {
+		return err
+	}
+	// This happens when the service is optional and disabled in CR
+	// (i.e. service spec is set to nil)
+	if ss == nil {
+		return nil
+	}
+	env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
+	c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
+	// Only one main container should run a jmx server if enabed
+	if !isSidecar && *addMetricsSidecar {
+		jmxServerPort := master.Spec.Config[confJMXServerPort]
+		c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxServerPort))
+		*addMetricsSidecar = false
+	}
+	if s == serviceUserInterface {
+		c = updateSpecForUserInterface(master, c)
+	}
+	spec = spec.withContainer(c)
+	// Adding a label to allow NodePort service selector to find the pod
+	if !isSidecar {
+		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
+	}
+
+	// Mount extra volumes from ConfigMap and Secret
+	if _, err := spec.addConfigMapVolumes(ss.ConfigMapVolumes); err != nil {
+		return err
+	}
+	if _, err := spec.addSecretVolumes(ss.SecretVolumes); err != nil {
+		return err
+	}
+	return nil
+}
+
+func isMetricsSidecarEnabled(group PodGroup, master *v1alpha1.CDAPMaster) (bool, error) {
 	if master.Spec.SystemMetricsExporter == nil {
 		return false, nil
 	}
-	if found, _ := findStringInArray(services, serviceSystemMetricsExporter); !found {
+	if found, _ := findStringInArray(group.Sidecars, serviceSystemMetricsExporter); !found {
 		return false, nil
 	}
-	if len(services) == 0 {
+	if len(group.Main) == 0 {
 		return false, nil
 	}
-	if ss, err := getCDAPServiceSpec(master, services[0]); err != nil {
-		return false, err
-	} else if ss == nil {
-		return false, nil
-	} else if ss.DisableSystemMetricsSidecar != nil && *ss.DisableSystemMetricsSidecar == true {
-		return false, nil
+	// check if first non-nil main service has sidecar disabled
+	for _, s := range group.Main {
+		if ss, err := getCDAPServiceSpec(master, s); err != nil {
+			return false, err
+		} else if ss == nil {
+			continue
+		} else if ss.DisableSystemMetricsSidecar != nil && *ss.DisableSystemMetricsSidecar == true {
+			return false, nil
+		} else {
+			return true, nil
+		}
 	}
 	return true, nil
 }
