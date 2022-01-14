@@ -206,10 +206,8 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, group PodGroup,
 	}
 
 	// Add each service as a container
-	for _, s := range group.Main {
-		if err := addServiceToStatefulSpec(spec, s, master, dataDir, false, &addMetricsSidecar); err != nil {
-			return nil, err
-		}
+	if err := addServicesToStatefulSpec(spec, group.Main, master, dataDir, false, addMetricsSidecar); err != nil {
+		return nil, err
 	}
 
 	// All main services are optional services and are disabled in CR.
@@ -218,10 +216,8 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, group PodGroup,
 		return nil, nil
 	}
 
-	for _, s := range group.Sidecars {
-		if err := addServiceToStatefulSpec(spec, s, master, dataDir, true, nil); err != nil {
-			return nil, err
-		}
+	if err := addServicesToStatefulSpec(spec, group.Sidecars, master, dataDir, true, false); err != nil {
+		return nil, err
 	}
 
 	services := append(group.Main, group.Sidecars...)
@@ -238,39 +234,41 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, group PodGroup,
 	return spec, nil
 }
 
-func addServiceToStatefulSpec(spec *StatefulSpec, s ServiceName, master *v1alpha1.CDAPMaster, dataDir string, isSidecar bool, addMetricsSidecar *bool) error {
-	ss, err := getCDAPServiceSpec(master, s)
-	if err != nil {
-		return err
-	}
-	// This happens when the service is optional and disabled in CR
-	// (i.e. service spec is set to nil)
-	if ss == nil {
-		return nil
-	}
-	env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-	c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
-	// Only one main container should run a jmx server if enabed
-	if !isSidecar && *addMetricsSidecar {
-		jmxServerPort := master.Spec.Config[confJMXServerPort]
-		c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxServerPort))
-		*addMetricsSidecar = false
-	}
-	if s == serviceUserInterface {
-		c = updateSpecForUserInterface(master, c)
-	}
-	spec = spec.withContainer(c)
-	// Adding a label to allow NodePort service selector to find the pod
-	if !isSidecar {
-		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
-	}
+func addServicesToStatefulSpec(spec *StatefulSpec, sg ServiceGroup, master *v1alpha1.CDAPMaster, dataDir string, isSidecar, addMetricsSidecar bool) error {
+	for _, s := range sg {
+		ss, err := getCDAPServiceSpec(master, s)
+		if err != nil {
+			return err
+		}
+		// This happens when the service is optional and disabled in CR
+		// (i.e. service spec is set to nil)
+		if ss == nil {
+			continue
+		}
+		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
+		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
+		// Only one main container should run a jmx server if enabed
+		if !isSidecar && addMetricsSidecar {
+			jmxServerPort := master.Spec.Config[confJMXServerPort]
+			c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxServerPort))
+			addMetricsSidecar = false
+		}
+		if s == serviceUserInterface {
+			c = updateSpecForUserInterface(master, c)
+		}
+		spec = spec.withContainer(c)
+		// Adding a label to allow NodePort service selector to find the pod
+		if !isSidecar {
+			spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
+		}
 
-	// Mount extra volumes from ConfigMap and Secret
-	if _, err := spec.addConfigMapVolumes(ss.ConfigMapVolumes); err != nil {
-		return err
-	}
-	if _, err := spec.addSecretVolumes(ss.SecretVolumes); err != nil {
-		return err
+		// Mount extra volumes from ConfigMap and Secret
+		if _, err := spec.addConfigMapVolumes(ss.ConfigMapVolumes); err != nil {
+			return err
+		}
+		if _, err := spec.addSecretVolumes(ss.SecretVolumes); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -291,7 +289,7 @@ func isMetricsSidecarEnabled(group PodGroup, master *v1alpha1.CDAPMaster) (bool,
 			return false, err
 		} else if ss == nil {
 			continue
-		} else if ss.DisableSystemMetricsSidecar != nil && *ss.DisableSystemMetricsSidecar == true {
+		} else if ss.DisableSystemMetricsSidecar != nil && *ss.DisableSystemMetricsSidecar {
 			return false, nil
 		} else {
 			return true, nil
