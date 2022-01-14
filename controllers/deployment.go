@@ -45,10 +45,7 @@ type PodGroup struct {
 func (d *DeploymentPlan) Init() {
 	d.planMap = make(map[int32]ServiceGroups)
 
-	// Default: each service group runs in its own Pod and each service in it's own container.
-	// If there are mltiple services in a pod,
-	// the first one (index 0) will be considered as the
-	// main container and subsequent ones as sidecar containers.
+	// Default: each pod group runs in its own Pod, each service in its own container
 	d.planMap[0] = ServiceGroups{
 		stateful: map[ServiceGroupName]PodGroup{
 			"logs": {
