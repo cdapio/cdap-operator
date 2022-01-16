@@ -183,3 +183,8 @@ func removeStringsFromArray(arr []string, value string) []string {
 	}
 	return result
 }
+
+// isTrue returns whether a boolean pointer points to a true value
+func isTrue(val *bool) bool {
+	return val != nil && *val == true
+}

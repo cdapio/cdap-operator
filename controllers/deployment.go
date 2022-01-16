@@ -248,7 +248,7 @@ func addServicesToStatefulSpec(spec *StatefulSpec, sg ServiceGroup, master *v1al
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
 		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
 		// Only one main container should run a jmx server if enabed
-		if !isSidecar && addMetricsSidecar {
+		if !isSidecar && addMetricsSidecar && !isTrue(ss.DisableSystemMetricsSidecar) {
 			jmxServerPort := master.Spec.Config[confJMXServerPort]
 			c = c.addEnv(javaOptsEnvVarName, fmt.Sprintf(runJMXServerJavaOptFormat, jmxServerPort))
 			addMetricsSidecar = false
@@ -261,7 +261,6 @@ func addServicesToStatefulSpec(spec *StatefulSpec, sg ServiceGroup, master *v1al
 		if !isSidecar {
 			spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
 		}
-
 		// Mount extra volumes from ConfigMap and Secret
 		if _, err := spec.addConfigMapVolumes(ss.ConfigMapVolumes); err != nil {
 			return err
@@ -280,22 +279,19 @@ func isMetricsSidecarEnabled(group PodGroup, master *v1alpha1.CDAPMaster) (bool,
 	if found, _ := findStringInArray(group.Sidecars, serviceSystemMetricsExporter); !found {
 		return false, nil
 	}
-	if len(group.Main) == 0 {
-		return false, nil
-	}
-	// check if first non-nil main service has sidecar disabled
+	// check if some main service has sidecar enabled
 	for _, s := range group.Main {
 		if ss, err := getCDAPServiceSpec(master, s); err != nil {
 			return false, err
 		} else if ss == nil {
 			continue
-		} else if ss.DisableSystemMetricsSidecar != nil && *ss.DisableSystemMetricsSidecar {
-			return false, nil
+		} else if isTrue(ss.DisableSystemMetricsSidecar) {
+			continue
 		} else {
 			return true, nil
 		}
 	}
-	return true, nil
+	return false, nil
 }
 
 // Return a single single-/multi- container deployment containing a list of supplied services
