@@ -83,6 +83,14 @@ func (s *ContainerSpec) setArgs(arg ...string) *ContainerSpec {
 }
 
 func (s *ContainerSpec) addEnv(name, value string) *ContainerSpec {
+	// find existing EnvVar with same name
+	for idx, env := range s.Env {
+		if env.Name != name {
+			continue
+		}
+		s.Env[idx].Value += " " + value
+		return s
+	}
 	envVar := corev1.EnvVar{
 		Name:      name,
 		Value:     value,
