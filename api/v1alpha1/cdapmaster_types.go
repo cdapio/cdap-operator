@@ -93,6 +93,12 @@ type CDAPMasterSpec struct {
 	Authentication *AuthenticationSpec `json:"authentication,omitempty"`
 	// SecurityContext defines the security context for all pods for all services.
 	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
+	// AdditionalVolumes defines a list of additional volumes for all services.
+	// For information on supported volume types, see https://kubernetes.io/docs/concepts/storage/volumes/.
+	AdditionalVolumes []corev1.Volume `json:"additionalVolumes,omitempty"`
+	// AdditionalVolumeMounts defines a list of additional volume mounts for all services.
+	// For information on suported volume mount types, see https://kubernetes.io/docs/concepts/storage/volumes/.
+	AdditionalVolumeMounts []corev1.VolumeMount `json:"additionalVolumeMounts,omitempty"`
 }
 
 // CDAPServiceSpec defines the base set of specifications applicable to all master services.
@@ -122,6 +128,12 @@ type CDAPServiceSpec struct {
 	// Key is the secret object name. Value is the mount path.
 	// This adds Secret data to the directory specified by the volume mount path.
 	SecretVolumes map[string]string `json:"secretVolumes,omitempty"`
+	// AdditionalVolumes defines a list of additional volumes to mount to the service.
+	// For information on supported volume types, see https://kubernetes.io/docs/concepts/storage/volumes/.
+	AdditionalVolumes []corev1.Volume `json:"additionalVolumes,omitempty"`
+	// AdditionalVolumeMounts defines a list of additional volume mounts for the service.
+	// For information on suported volume mount types, see https://kubernetes.io/docs/concepts/storage/volumes/.
+	AdditionalVolumeMounts []corev1.VolumeMount `json:"additionalVolumeMounts,omitempty"`
 	// SecurityContext overrides the security context for the service pods.
 	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
 }
