@@ -42,7 +42,21 @@
         "runAsGroup": 3000,
         "fsGroup": 4000,
         "runAsNonRoot": false
-      }
+      },
+      "additionalVolumes": [
+        {
+          "name": "test-persistent-storage",
+          "persistentVolumeClaim": {
+            "claimName": "test-persistent-volume-claim"
+          }
+        }  
+      ],
+      "additionalVolumeMounts": [
+        {
+          "name": "test-persistent-storage",
+          "mountPath": "/mnt/teststorage"
+        }
+      ]
     },
     "authentication": {
       "metadata": {
@@ -81,6 +95,42 @@
     "secretVolumes": {
       "my-secret-1": "/my/secret/1"
     },
+    "additionalVolumes": [
+      {
+        "name": "test-volume",
+        "projected": {
+          "defaultMode": 420,
+          "sources": [
+            {
+              "serviceAccountToken": {
+                "audience": "test-aud",
+                "expirationSeconds": 3600,
+                "path": "token"
+              } 
+            },
+            {
+              "configMap": {
+                "name": "test-projected-config",
+                "items": [
+                  {
+                    "key": "config",
+                    "path": "test-projected-config"
+                  }
+                ],
+                "optional": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "additionalVolumeMounts": [
+      {
+        "name": "test-volume",
+        "mountPath": "/mnt/test",
+        "readOnly": true
+      }
+    ],
     "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
     "locationURI": "hdfs://hadoop:9000",
     "logs": {

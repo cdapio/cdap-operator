@@ -122,22 +122,24 @@ func (s *ContainerSpec) setResources(resources *corev1.ResourceRequirements) *Co
 
 // BaseSpec contains command fields for both StatefulSet and Deployment
 type BaseSpec struct {
-	Name               string                    `json:"name,omitempty"`
-	Namespace          string                    `json:"namespace,omitempty"`
-	Labels             map[string]string         `json:"labels,omitempty"`
-	ServiceAccountName string                    `json:"serviceAccountName,omitempty"`
-	Replicas           int32                     `json:"replicas,omitempty"`
-	NodeSelector       map[string]string         `json:"nodeSelector,omitempty"`
-	RuntimeClassName   string                    `json:"runtimeClassName,omitempty"`
-	PriorityClassName  string                    `json:"priorityClassName,omitempty"`
-	SecuritySecret     string                    `json:"securitySecret,omitempty"`
-	SecuritySecretPath string                    `json:"securitySecretPath,omitempty"`
-	CConf              string                    `json:"cdapConf,omitempty"`
-	HConf              string                    `json:"hadoopConf,omitempty"`
-	SysAppConf         string                    `json:"sysAppConf,omitempty"`
-	ConfigMapVolumes   map[string]string         `json:"configMapVolumes,omitempty"`
-	SecretVolumes      map[string]string         `json:"secretVolumes,omitempty"`
-	SecurityContext    *v1alpha1.SecurityContext `json:"securityContext,omitempty"`
+	Name                   string                    `json:"name,omitempty"`
+	Namespace              string                    `json:"namespace,omitempty"`
+	Labels                 map[string]string         `json:"labels,omitempty"`
+	ServiceAccountName     string                    `json:"serviceAccountName,omitempty"`
+	Replicas               int32                     `json:"replicas,omitempty"`
+	NodeSelector           map[string]string         `json:"nodeSelector,omitempty"`
+	RuntimeClassName       string                    `json:"runtimeClassName,omitempty"`
+	PriorityClassName      string                    `json:"priorityClassName,omitempty"`
+	SecuritySecret         string                    `json:"securitySecret,omitempty"`
+	SecuritySecretPath     string                    `json:"securitySecretPath,omitempty"`
+	CConf                  string                    `json:"cdapConf,omitempty"`
+	HConf                  string                    `json:"hadoopConf,omitempty"`
+	SysAppConf             string                    `json:"sysAppConf,omitempty"`
+	ConfigMapVolumes       map[string]string         `json:"configMapVolumes,omitempty"`
+	SecretVolumes          map[string]string         `json:"secretVolumes,omitempty"`
+	AdditionalVolumes      []corev1.Volume           `json:"additionalVolumes,omitempty"`
+	AdditionalVolumeMounts []corev1.VolumeMount      `json:"additionalVolumeMounts,omitempty"`
+	SecurityContext        *v1alpha1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf, sysappconf string) *BaseSpec {
@@ -156,7 +158,8 @@ func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]str
 	s.SysAppConf = sysappconf
 	s.ConfigMapVolumes = cloneMap(master.Spec.ConfigMapVolumes)
 	s.SecretVolumes = cloneMap(master.Spec.SecretVolumes)
-
+	s.AdditionalVolumes = master.Spec.AdditionalVolumes
+	s.AdditionalVolumeMounts = master.Spec.AdditionalVolumeMounts
 	return s
 }
 
@@ -216,6 +219,30 @@ func addVolumes(volumes, newVolumes map[string]string, typeName string) error {
 		}
 	}
 	return nil
+}
+
+func (s *BaseSpec) addAdditionalVolumes(additionalVolumes []corev1.Volume) (*BaseSpec, error) {
+	for _, additionalVolume := range additionalVolumes {
+		for _, specVolume := range s.AdditionalVolumes {
+			if specVolume.Name == additionalVolume.Name {
+				return nil, fmt.Errorf("failed to add custom volume %q due to already mounted as %+v", additionalVolume.Name, specVolume)
+			}
+		}
+		s.AdditionalVolumes = append(s.AdditionalVolumes, additionalVolume)
+	}
+	return s, nil
+}
+
+func (s *BaseSpec) addAdditionalVolumeMounts(additionalVolumeMounts []corev1.VolumeMount) (*BaseSpec, error) {
+	for _, additionalVolumeMount := range additionalVolumeMounts {
+		for _, specVolumeMount := range s.AdditionalVolumeMounts {
+			if specVolumeMount.Name == additionalVolumeMount.Name {
+				return nil, fmt.Errorf("failed to mount custom volume %q at path %q due to already mounted as %+v", additionalVolumeMount.Name, additionalVolumeMount.MountPath, specVolumeMount)
+			}
+		}
+		s.AdditionalVolumeMounts = append(s.AdditionalVolumeMounts, additionalVolumeMount)
+	}
+	return s, nil
 }
 
 func (s *BaseSpec) setSecurityContext(securityContext *v1alpha1.SecurityContext) *BaseSpec {
@@ -301,6 +328,20 @@ func (s *DeploymentSpec) addConfigMapVolumes(volumes map[string]string) (*Deploy
 
 func (s *DeploymentSpec) addSecretVolumes(volumes map[string]string) (*DeploymentSpec, error) {
 	if _, err := s.Base.addSecretVolumes(volumes); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *DeploymentSpec) addAdditionalVolumes(additionalVolumes []corev1.Volume) (*DeploymentSpec, error) {
+	if _, err := s.Base.addAdditionalVolumes(additionalVolumes); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *DeploymentSpec) addAdditionalVolumeMounts(additionalVolumeMounts []corev1.VolumeMount) (*DeploymentSpec, error) {
+	if _, err := s.Base.addAdditionalVolumeMounts(additionalVolumeMounts); err != nil {
 		return nil, err
 	}
 	return s, nil
@@ -392,6 +433,20 @@ func (s *StatefulSpec) addConfigMapVolumes(volumes map[string]string) (*Stateful
 
 func (s *StatefulSpec) addSecretVolumes(volumes map[string]string) (*StatefulSpec, error) {
 	if _, err := s.Base.addSecretVolumes(volumes); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *StatefulSpec) addAdditionalVolumes(additionalVolumes []corev1.Volume) (*StatefulSpec, error) {
+	if _, err := s.Base.addAdditionalVolumes(additionalVolumes); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *StatefulSpec) addAdditionalVolumeMounts(additionalVolumeMounts []corev1.VolumeMount) (*StatefulSpec, error) {
+	if _, err := s.Base.addAdditionalVolumeMounts(additionalVolumeMounts); err != nil {
 		return nil, err
 	}
 	return s, nil

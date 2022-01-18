@@ -199,6 +199,12 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		if _, err := spec.addSecretVolumes(ss.SecretVolumes); err != nil {
 			return nil, err
 		}
+		if _, err := spec.addAdditionalVolumes(ss.AdditionalVolumes); err != nil {
+			return nil, err
+		}
+		if _, err := spec.addAdditionalVolumeMounts(ss.AdditionalVolumeMounts); err != nil {
+			return nil, err
+		}
 	}
 
 	// All services are optional services and are disabled in CR.
@@ -284,6 +290,12 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		if _, err := spec.addSecretVolumes(ss.SecretVolumes); err != nil {
 			return nil, err
 		}
+		if _, err := spec.addAdditionalVolumes(ss.AdditionalVolumes); err != nil {
+			return nil, err
+		}
+		if _, err := spec.addAdditionalVolumeMounts(ss.AdditionalVolumeMounts); err != nil {
+			return nil, err
+		}
 	}
 	// All services are optional services and are disabled in CR.
 	// Return nil to indicate no deployment is built.
@@ -327,6 +339,28 @@ func buildStatefulSetsObject(spec *StatefulSpec) (*reconciler.Object, error) {
 	if err != nil {
 		return nil, err
 	}
+	// For custom volumes and custom volume mounts, we directly pass structs from the spec to bypass the YAML templating logic.
+	k8sObj, ok := obj.Obj.(*k8s.Object)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert object to k8s object")
+	}
+	statefulSetObj, ok := k8sObj.Obj.(*appsv1.StatefulSet)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert meta object to statefulset object")
+	}
+	if err := addVolumeToPodSpec(&statefulSetObj.Spec.Template.Spec, spec.Base.AdditionalVolumes); err != nil {
+		return nil, err
+	}
+	for index, _ := range statefulSetObj.Spec.Template.Spec.InitContainers {
+		if err := addVolumeMountToContainer(&statefulSetObj.Spec.Template.Spec.InitContainers[index], spec.Base.AdditionalVolumeMounts); err != nil {
+			return nil, err
+		}
+	}
+	for index, _ := range statefulSetObj.Spec.Template.Spec.Containers {
+		if err := addVolumeMountToContainer(&statefulSetObj.Spec.Template.Spec.Containers[index], spec.Base.AdditionalVolumeMounts); err != nil {
+			return nil, err
+		}
+	}
 	return obj, nil
 }
 
@@ -336,7 +370,53 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 	if err != nil {
 		return nil, err
 	}
+	// For custom volumes and volume mounts, we directly pass structs from the spec to bypass the YAML templating logic.
+	k8sObj, ok := obj.Obj.(*k8s.Object)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert object to k8s object")
+	}
+	deploymentObj, ok := k8sObj.Obj.(*appsv1.Deployment)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert meta object to statefulset object")
+	}
+	if err := addVolumeToPodSpec(&deploymentObj.Spec.Template.Spec, spec.Base.AdditionalVolumes); err != nil {
+		return nil, err
+	}
+	for index, _ := range deploymentObj.Spec.Template.Spec.InitContainers {
+		if err := addVolumeMountToContainer(&deploymentObj.Spec.Template.Spec.InitContainers[index], spec.Base.AdditionalVolumeMounts); err != nil {
+			return nil, err
+		}
+	}
+	for index, _ := range deploymentObj.Spec.Template.Spec.Containers {
+		if err := addVolumeMountToContainer(&deploymentObj.Spec.Template.Spec.Containers[index], spec.Base.AdditionalVolumeMounts); err != nil {
+			return nil, err
+		}
+	}
 	return obj, nil
+}
+
+func addVolumeToPodSpec(podSpec *corev1.PodSpec, volumesToAdd []corev1.Volume) error {
+	for _, volumeToAdd := range volumesToAdd {
+		for _, volume := range podSpec.Volumes {
+			if volume.Name == volumeToAdd.Name {
+				return fmt.Errorf("failed to add custom volume %q to pod spec: already exists", volumeToAdd.Name)
+			}
+		}
+	}
+	podSpec.Volumes = append(podSpec.Volumes, volumesToAdd...)
+	return nil
+}
+
+func addVolumeMountToContainer(container *corev1.Container, volumeMountsToAdd []corev1.VolumeMount) error {
+	for _, volumeMountToAdd := range volumeMountsToAdd {
+		for _, volumeMount := range container.VolumeMounts {
+			if volumeMount.Name == volumeMountToAdd.Name {
+				return fmt.Errorf("failed to mount custom volume %q to container %q at path %q: already mounted", volumeMountToAdd.Name, container.Name, volumeMountToAdd.MountPath)
+			}
+		}
+	}
+	container.VolumeMounts = append(container.VolumeMounts, volumeMountsToAdd...)
+	return nil
 }
 
 // Return a NodePort service to expose the supplied target service

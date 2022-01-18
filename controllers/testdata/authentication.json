@@ -135,6 +135,11 @@
               {
                 "mountPath": "/my/secret/key",
                 "name": "cdap-se-vol-secret-key"
+              },
+              {
+                "name": "test-volume",
+                "mountPath": "/mnt/test",
+                "readOnly": true
               }
             ]
           }
@@ -232,6 +237,33 @@
             "name": "cdap-se-vol-secret-key",
             "secret": {
               "secretName": "secret-key"
+            }
+          },
+          {
+            "name": "test-volume",
+            "projected": {
+              "defaultMode": 420,
+              "sources": [
+                {
+                  "serviceAccountToken": {
+                    "audience": "test-aud",
+                    "expirationSeconds": 3600,
+                    "path": "token"
+                  } 
+                },
+                {
+                  "configMap": {
+                    "name": "test-projected-config",
+                    "items": [
+                      {
+                        "key": "config",
+                        "path": "test-projected-config"
+                      }
+                    ],
+                    "optional": false
+                  }
+                }
+              ]
             }
           }
         ]

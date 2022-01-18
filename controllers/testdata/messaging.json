@@ -125,7 +125,12 @@
               {
                 "mountPath": "/my/secret/1",
                 "name": "cdap-se-vol-my-secret-1"
-              }
+              },
+              {
+                "name": "test-volume",
+                "readOnly": true,
+                "mountPath": "/mnt/test"
+            }
             ]
           }
         ],
@@ -172,16 +177,9 @@
                 "readOnly": true
               },
               {
-                "name": "cdap-cm-vol-my-config-map-1",
-                "mountPath": "/my/config/map/1"
-              },
-              {
-                "mountPath": "/my/config/map/2",
-                "name": "cdap-cm-vol-my-config-map-2"
-              },
-              {
-                "mountPath": "/my/secret/1",
-                "name": "cdap-se-vol-my-secret-1"
+                "name": "test-volume",
+                "mountPath": "/mnt/test",
+                "readOnly": true
               }
             ]
           }
@@ -274,6 +272,33 @@
             "secret": {
               "defaultMode": 420,
               "secretName": "my-secret-1"
+            }
+          },
+          {
+            "name": "test-volume",
+            "projected": {
+              "defaultMode": 420,
+              "sources": [
+                {
+                  "serviceAccountToken": {
+                    "audience": "test-aud",
+                    "expirationSeconds": 3600,
+                    "path": "token"
+                  } 
+                },
+                {
+                  "configMap": {
+                    "name": "test-projected-config",
+                    "items": [
+                      {
+                        "key": "config",
+                        "path": "test-projected-config"
+                      }
+                    ],
+                    "optional": false
+                  }
+                }
+              ]
             }
           }
         ]
