@@ -11,6 +11,12 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+#
+#
+# NOTE: Some properties are highly nested and it is not feasible to pick them from the template file
+# hence those are added directly in the code.
+# For example, please check the method "../controllers/deployment.go#buildDeploymentObject" and see
+# how container's lifecycle property is added to the k8s object.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

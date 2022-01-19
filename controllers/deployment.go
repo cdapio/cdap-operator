@@ -184,7 +184,7 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 			continue
 		}
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
+		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env).setLifecycle(ss.Lifecycle)
 		if s == serviceUserInterface {
 			c = updateSpecForUserInterface(master, c)
 		}
@@ -274,7 +274,7 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 			continue
 		}
 		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
+		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env).setLifecycle(ss.Lifecycle)
 		if s == serviceUserInterface {
 			c = updateSpecForUserInterface(master, c)
 		}
@@ -339,7 +339,7 @@ func buildStatefulSetsObject(spec *StatefulSpec) (*reconciler.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	// For custom volumes and custom volume mounts, we directly pass structs from the spec to bypass the YAML templating logic.
+	// For container lifecycle hook, custom volumes, and custom volume mounts, we directly pass structs from the spec to bypass the YAML templating logic.
 	k8sObj, ok := obj.Obj.(*k8s.Object)
 	if !ok {
 		return nil, fmt.Errorf("failed to convert object to k8s object")
@@ -360,6 +360,7 @@ func buildStatefulSetsObject(spec *StatefulSpec) (*reconciler.Object, error) {
 		if err := addVolumeMountToContainer(&statefulSetObj.Spec.Template.Spec.Containers[index], spec.Base.AdditionalVolumeMounts); err != nil {
 			return nil, err
 		}
+		setLifecycleHookForContainer(&statefulSetObj.Spec.Template.Spec.Containers[index], spec.Containers[index].Lifecycle)
 	}
 	return obj, nil
 }
@@ -370,7 +371,7 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	// For custom volumes and volume mounts, we directly pass structs from the spec to bypass the YAML templating logic.
+	// For container lifecycle hook, custom volumes, and volume mounts, we directly pass structs from the spec to bypass the YAML templating logic.
 	k8sObj, ok := obj.Obj.(*k8s.Object)
 	if !ok {
 		return nil, fmt.Errorf("failed to convert object to k8s object")
@@ -391,6 +392,7 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 		if err := addVolumeMountToContainer(&deploymentObj.Spec.Template.Spec.Containers[index], spec.Base.AdditionalVolumeMounts); err != nil {
 			return nil, err
 		}
+		setLifecycleHookForContainer(&deploymentObj.Spec.Template.Spec.Containers[index], spec.Containers[index].Lifecycle)
 	}
 	return obj, nil
 }
@@ -417,6 +419,10 @@ func addVolumeMountToContainer(container *corev1.Container, volumeMountsToAdd []
 	}
 	container.VolumeMounts = append(container.VolumeMounts, volumeMountsToAdd...)
 	return nil
+}
+
+func setLifecycleHookForContainer(container *corev1.Container, lifecycle *corev1.Lifecycle) {
+	container.Lifecycle = lifecycle
 }
 
 // Return a NodePort service to expose the supplied target service

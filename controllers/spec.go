@@ -45,6 +45,7 @@ type ContainerSpec struct {
 	ResourceRequests map[string]*resource.Quantity `json:"resourceRequests,omitempty"`
 	ResourceLimits   map[string]*resource.Quantity `json:"resourceLimits,omitempty"`
 	DataDir          string                        `json:"dataDir,omitempty"`
+	Lifecycle        *corev1.Lifecycle             `json:"lifecycle,omitempty"`
 }
 
 func newContainerSpec(master *v1alpha1.CDAPMaster, name, dataDir string) *ContainerSpec {
@@ -117,6 +118,11 @@ func (s *ContainerSpec) setResources(resources *corev1.ResourceRequirements) *Co
 			s.ResourceLimits[string(name)] = q
 		}
 	}
+	return s
+}
+
+func (s *ContainerSpec) setLifecycle(lifecycle *corev1.Lifecycle) *ContainerSpec {
+	s.Lifecycle = lifecycle
 	return s
 }
 
