@@ -16,6 +16,10 @@ package genericreconciler
 import (
 	"context"
 	"fmt"
+	"log"
+	"reflect"
+	"time"
+
 	apierror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,8 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	urt "k8s.io/apimachinery/pkg/util/runtime"
-	"log"
-	"reflect"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	rmanager "sigs.k8s.io/controller-reconciler/pkg/reconciler/manager"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
@@ -32,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/scheme"
-	"time"
 )
 
 // Constants
@@ -192,6 +193,7 @@ func (gr *Reconciler) finalizeUsing(h Handler, resource runtime.Object, crname s
 		stage = "finalizing deletion of objects"
 		for _, o := range observed {
 			oRsrcName := o.Obj.GetName()
+			log.Printf("%s %v", oRsrcName, o.Delete)
 			if o.Delete {
 				if rm, e := gr.itemMgr(o); e != nil {
 					err = e

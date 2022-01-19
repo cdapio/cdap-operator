@@ -173,6 +173,12 @@ func (h *ConfigMapHandler) Observables(rsrc interface{}, labels map[string]strin
 func (h *ConfigMapHandler) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	var expected []reconciler.Object
 	m := rsrc.(*v1alpha1.CDAPMaster)
+	if m.DeletionTimestamp != nil {
+		for idx, _ := range observed {
+			observed[idx].Delete = true
+		}
+		return expected, nil
+	}
 
 	configs := map[string][]string{
 		configMapCConf: {"cdap-site.xml", "logback.xml", "logback-container.xml"},
@@ -267,6 +273,12 @@ func (h *ServiceHandler) Objects(rsrc interface{}, rsrclabels map[string]string,
 	var expected, objs []reconciler.Object
 
 	m := rsrc.(*v1alpha1.CDAPMaster)
+	if m.DeletionTimestamp != nil {
+		for idx, _ := range observed {
+			observed[idx].Delete = true
+		}
+		return expected, nil
+	}
 	// Merge in labels (e.g. "using: <handler method name>") added by underlying reconciler-controller library
 	labels := mergeMaps(m.Labels, rsrclabels)
 
