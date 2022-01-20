@@ -218,7 +218,7 @@ func (gr *Reconciler) ownerRef(resource runtime.Object) *metav1.OwnerReference {
 	return metav1.NewControllerRef(resource.(metav1.Object), schema.GroupVersionKind{
 		Group:   gr.gv.Group,
 		Version: gr.gv.Version,
-		Kind:    reflect.TypeOf(gr.resource).String(),
+		Kind:    resource.GetObjectKind().GroupVersionKind().Kind,
 	})
 }
 
