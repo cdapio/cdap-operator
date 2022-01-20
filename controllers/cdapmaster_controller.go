@@ -173,6 +173,10 @@ func (h *ConfigMapHandler) Observables(rsrc interface{}, labels map[string]strin
 func (h *ConfigMapHandler) Objects(rsrc interface{}, rsrclabels map[string]string, observed, dependent, aggregated []reconciler.Object) ([]reconciler.Object, error) {
 	var expected []reconciler.Object
 	m := rsrc.(*v1alpha1.CDAPMaster)
+	if m.DeletionTimestamp != nil {
+		markObjectsForDeletion(observed)
+		return expected, nil
+	}
 
 	configs := map[string][]string{
 		configMapCConf: {"cdap-site.xml", "logback.xml", "logback-container.xml"},
@@ -267,6 +271,10 @@ func (h *ServiceHandler) Objects(rsrc interface{}, rsrclabels map[string]string,
 	var expected, objs []reconciler.Object
 
 	m := rsrc.(*v1alpha1.CDAPMaster)
+	if m.DeletionTimestamp != nil {
+		markObjectsForDeletion(observed)
+		return expected, nil
+	}
 	// Merge in labels (e.g. "using: <handler method name>") added by underlying reconciler-controller library
 	labels := mergeMaps(m.Labels, rsrclabels)
 
@@ -326,6 +334,16 @@ func CopyNodePortIfAny(expected, observed []reconciler.Object) {
 			}
 			newNodePort.NodePort = oldPort
 		}
+	}
+}
+
+// Function markObjectsForDeletion marks objects for deletion
+// by generic reconciler during CR deletion.
+// This is required due to bug which causes owner refs to not be picked
+// up by k8s. Refer: https://cdap.atlassian.net/browse/CDAP-18752
+func markObjectsForDeletion(objects []reconciler.Object) {
+	for idx, _ := range objects {
+		objects[idx].Delete = true
 	}
 }
 
