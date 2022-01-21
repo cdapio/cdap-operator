@@ -18,7 +18,7 @@
         "apiVersion": "cdap.cdap.io/v1alpha1",
         "blockOwnerDeletion": true,
         "controller": true,
-        "kind": "*v1alpha1.CDAPMaster",
+        "kind": "CDAPMaster",
         "name": "test",
         "uid": "7aeaad53-4afe-11ea-8611-42010a800022"
       }
