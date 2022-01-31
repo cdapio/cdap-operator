@@ -91,6 +91,14 @@ type CDAPMasterSpec struct {
 	// To disable this service: either omit or set the field to nil
 	// To enable this service: set it to a pointer to a AuthenticationSpec struct (can be an empty struct)
 	Authentication *AuthenticationSpec `json:"authentication,omitempty"`
+	// SystemMetricsExporter is specification for the CDAP SystemMetricsExporter service.
+	// This is an optional service and may not be required for CDAP to be operational.
+	// To disable this service: either omit or set the field to nil
+	// To enable this service: set it to a pointer to a SystemMetricsExporterSpec struct (can be an empty struct).
+	// CDAPServiceSpec.EnableSystemMetrics field also needs to be set to true for stateful services which require
+	// collection of system metrics. Services which have CDAPServiceSpec.EnableSystemMetrics as nil, missing or set to false,
+	// will have metrics sidecar container disabled.
+	SystemMetricsExporter *SystemMetricExporterSpec `json:"systemMetricsExporter,omitempty"`
 	// SecurityContext defines the security context for all pods for all services.
 	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
 	// AdditionalVolumes defines a list of additional volumes for all services.
@@ -136,6 +144,12 @@ type CDAPServiceSpec struct {
 	AdditionalVolumeMounts []corev1.VolumeMount `json:"additionalVolumeMounts,omitempty"`
 	// SecurityContext overrides the security context for the service pods.
 	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
+	// EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
+	// to start a metrics collection container in statefulsets. SystemMetricsExporter is a global setting in CDAPMasterSpec.
+	// When SystemMetricsExporter is absent, it disables metrics collection for all stateful services.
+	// When SystemMetricsExporter is present, this value should also be set to true for services which require system metrics
+	// collection.
+	EnableSystemMetrics *bool `json:"enableSystemMetrics,omitempty"`
 	// Lifecycle is to specify Container Lifecycle hooks provided by Kubernetes for containers.
 	// This will not be applied to the init containers as init containers do not support lifecycle.
 	Lifecycle *corev1.Lifecycle `json:"lifecycle,omitempty"`
@@ -223,6 +237,11 @@ type UserInterfaceSpec struct {
 // SupportBundleSpec defines the specification for the SupportBundle service.
 type SupportBundleSpec struct {
 	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+//  SystemMetricExporterSpec defines the specification for the SystemMetricsExporter service.
+type SystemMetricExporterSpec struct {
+	CDAPServiceSpec `json:",inline"`
 }
 
 // CDAPMasterStatus defines the observed state of CDAPMaster

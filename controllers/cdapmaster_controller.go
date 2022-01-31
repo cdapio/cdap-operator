@@ -150,6 +150,11 @@ func ApplyDefaults(resource interface{}) {
 		spec.Config[confTwillSecurityWorkerSecretDiskPath] = defaultSecuritySecretPath
 	}
 
+	// Set the default JMX server port if not set and system metrics exporter sidecar is enabled
+	if _, ok := spec.Config[confJMXServerPort]; spec.SystemMetricsExporter != nil && !ok {
+		spec.Config[confJMXServerPort] = fmt.Sprint(defaultJMXport)
+	}
+
 	// Disable explore
 	spec.Config[confExploreEnabled] = "false"
 
