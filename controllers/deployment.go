@@ -183,12 +183,13 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		if ss == nil {
 			continue
 		}
-		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env).setLifecycle(ss.Lifecycle)
-		if s == serviceUserInterface {
-			c = updateSpecForUserInterface(master, c)
-		}
+
+		c := serviceContainerSpec(ss, master, dataDir, s)
 		spec = spec.withContainer(c)
+		if err := addSystemMetricsServiceIfEnabled(spec, master, ss, dataDir, c); err != nil {
+			return nil, err
+		}
+
 		// Adding a label to allow NodePort service selector to find the pod
 		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
 
@@ -224,6 +225,45 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	}
 	spec = spec.withStorage(storageClass, storageSize)
 	return spec, nil
+}
+
+// addSystemMetricsServiceIfEnabled adds a sidecar container for
+// SystemMetricsExporterService if enabled in service spec.
+func addSystemMetricsServiceIfEnabled(stsSpec *StatefulSpec, master *v1alpha1.CDAPMaster,
+	service *v1alpha1.CDAPServiceSpec, dataDir string, mainContainer *ContainerSpec) error {
+	if master.Spec.SystemMetricsExporter == nil || service == nil {
+		return nil
+	}
+	if service.EnableSystemMetrics == nil {
+		return nil
+	}
+	if *service.EnableSystemMetrics == false {
+		return nil
+	}
+	ss, err := getCDAPServiceSpec(master, serviceSystemMetricsExporter)
+	if err != nil {
+		return err
+	}
+	c := serviceContainerSpec(ss, master, dataDir, serviceSystemMetricsExporter)
+	stsSpec = stsSpec.withContainer(c)
+	// add env variable to start jmx server in the main container
+	varAdded := false
+	varName := javaOptsEnvVarName
+	varValue := fmt.Sprintf(jmxServerOptFormat, master.Spec.Config[confJMXServerPort])
+	// find existing EnvVar with same name
+	for idx, env := range mainContainer.Env {
+		if env.Name != varName {
+			continue
+		}
+		mainContainer.Env[idx].Value += " " + varValue
+		varAdded = true
+	}
+	// add new env variable if variable doesn't exist
+	if !varAdded {
+		mainContainer.addEnv(varName, varValue)
+		varAdded = true
+	}
+	return nil
 }
 
 // Return a single single-/multi- container deployment containing a list of supplied services
@@ -273,11 +313,7 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		if ss == nil {
 			continue
 		}
-		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env).setLifecycle(ss.Lifecycle)
-		if s == serviceUserInterface {
-			c = updateSpecForUserInterface(master, c)
-		}
+		c := serviceContainerSpec(ss, master, dataDir, s)
 		spec = spec.withContainer(c)
 
 		// Adding a label to allow k8s service selector to easily find the pod
@@ -303,6 +339,16 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		return nil, nil
 	}
 	return spec, nil
+}
+
+func serviceContainerSpec(ss *v1alpha1.CDAPServiceSpec,
+	master *v1alpha1.CDAPMaster, dataDir string, service ServiceName) *ContainerSpec {
+	env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
+	c := newContainerSpec(master, service, dataDir).setResources(ss.Resources).setEnv(env).setLifecycle(ss.Lifecycle)
+	if service == serviceUserInterface {
+		c = updateSpecForUserInterface(master, c)
+	}
+	return c
 }
 
 // Return a list of reconciler objects (e.g. statefulsets, deployment, NodePort service) for the given deployment plan

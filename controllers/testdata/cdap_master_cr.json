@@ -93,7 +93,8 @@
       "router.bind.port": "11015",
       "router.server.address": "cdap-test-router",
       "security.authentication.handlerClassName":	"io.cdap.cdap.security.server.BasicAuthenticationHandler",
-      "security.authentication.basic.realmfile": "/opt/cdap/basicauth/basicrealm"
+      "security.authentication.basic.realmfile": "/opt/cdap/basicauth/basicrealm",
+      "jmx.metrics.collector.server.port": "1234"
     },
     "configMapVolumes": {
       "my-config-map-1": "/my/config/map/1",
@@ -208,7 +209,8 @@
           "cpu": "100m",
           "memory": "100Mi"
         }
-      }
+      },
+      "enableSystemMetrics": true
     },
     "router": {
       "metadata": {
@@ -237,6 +239,17 @@
         }
       },
       "storageSize": "100Gi"
+    },
+    "systemMetricsExporter": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "200Mi"
+        }
+      }
     },
     "securitySecret": "cdap-secret",
     "serviceAccountName": "cdap",

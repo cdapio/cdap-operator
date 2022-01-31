@@ -40,6 +40,9 @@ const (
 
 	// serviceUserInterface defines the service type for user interface
 	serviceUserInterface ServiceName = "UserInterface"
+
+	// serviceSystemMetricsExporter defines the service type for sidecar metrics collection service
+	serviceSystemMetricsExporter ServiceName = "SystemMetricsExporter"
 )
 
 const (
@@ -60,6 +63,7 @@ const (
 	confTwillSecurityMasterSecretDiskPath = "twill.security.master.secret.disk.path"
 	confTwillSecurityWorkerSecretDiskName = "twill.security.worker.secret.disk.name"
 	confTwillSecurityWorkerSecretDiskPath = "twill.security.worker.secret.disk.path"
+	confJMXServerPort                     = "jmx.metrics.collector.server.port"
 
 	// default values
 	defaultImage              = "gcr.io/cdapio/cdap:latest"
@@ -105,6 +109,16 @@ const (
 	javaMinHeapRatio          = float64(0.6)
 	javaReservedNonHeap       = int64(768 * 1024 * 1024)
 	javaMaxHeapSizeEnvVarName = "JAVA_HEAPMAX"
+
+	// System Metrics sidecar related
+	defaultJMXport     = 11022
+	javaOptsEnvVarName = "OPTS"
+	// -Dcom.sun.management.jmxremote.host=localhost ensures that JMX server is bound to localhost
+	// and only requests from localhost can connect to it.
+	// -Djava.rmi.server.hostname=localhost is required for clients to use 127.0.0.1 to connect to rmi server
+	// instead of public IP
+	// TODO(CDAP-18783): Enable SSL and authentication for JMX
+	jmxServerOptFormat = "-Djava.rmi.server.hostname=localhost -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.host=localhost -Dcom.sun.management.jmxremote.port=%s  -Dcom.sun.management.jmxremote.ssl=false  -Dcom.sun.management.jmxremote.authenticate=false"
 
 	Bytes     = int64(1)
 	kiloBytes = int64(1024)
