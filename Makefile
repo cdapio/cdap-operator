@@ -26,8 +26,11 @@ run: generate fmt vet manifests
 	go run ./main.go
 
 # Install CRDs into a cluster
+# Using --server-side flag as CRD is too large to set the last-applied-configuration 
+# annotation that kubectl apply automatically creates on client side
+# Server side apply is supported in k8s version 1.18+
 install: manifests
-	kustomize build config/crd | kubectl apply -f -
+	kustomize build config/crd | kubectl apply --server-side --force-conflicts -f -
 
 # Uninstall CRDs from a cluster
 uninstall: manifests
@@ -36,7 +39,7 @@ uninstall: manifests
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
 	cd config/manager && kustomize edit set image controller=${IMG}
-	kustomize build config/default | kubectl apply -f -
+	kustomize build config/default | kubectl apply --server-side --force-conflicts -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
