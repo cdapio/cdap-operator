@@ -38,6 +38,12 @@ const (
 	// serviceSupportBundle defines the service type for the support-bundle
 	serviceSupportBundle ServiceName = "SupportBundle"
 
+	// serviceTetheringAgent defines the service type for the tethering agent
+	serviceTetheringAgent ServiceName = "TetheringAgent"
+
+	// serviceArtifactCache defines the service type for the artifact cache
+	serviceArtifactCache ServiceName = "ArtifactCache"
+
 	// serviceUserInterface defines the service type for user interface
 	serviceUserInterface ServiceName = "UserInterface"
 

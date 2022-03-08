@@ -81,6 +81,8 @@ func NewReconciler(mgr manager.Manager) *gr.Reconciler {
 		Using(&cdapmaster.Router{}).
 		Using(&cdapmaster.UserInterface{}).
 		Using(&cdapmaster.SupportBundle{}).
+		Using(&cdapmaster.TetheringAgent{}).
+		Using(&cdapmaster.ArtifactCache{}).
 		Using(&VersionUpdateHandler{}).
 		Using(&ConfigMapHandler{}).
 		Using(&ServiceHandler{}).
