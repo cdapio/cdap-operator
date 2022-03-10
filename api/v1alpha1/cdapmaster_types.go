@@ -81,6 +81,16 @@ type CDAPMasterSpec struct {
 	// To disable this service: either omit or set the field to nil
 	// To enable this service: set it to a pointer to a SupportBundleSpec struct (can be an empty struct)
 	SupportBundle *SupportBundleSpec `json:"supportBundle,omitempty"`
+	// TetheringAgent is specification for the CDAP Tethering Agent service.
+	// This is an optional service and may not be required for CDAP to be operational.
+	// To disable this service: either omit or set the field to nil
+	// To enable this service: set it to a pointer to a TetheringAgentSpec struct (can be an empty struct)
+	TetheringAgent *TetheringAgentSpec `json:"tetheringAgent,omitempty"`
+	// ArtifactCache is specification for the CDAP Artifact Cache service.
+	// This is an optional service and may not be required for CDAP to be operational.
+	// To disable this service: either omit or set the field to nil
+	// To enable this service: set it to a pointer to a ArtifactCacheSpec struct (can be an empty struct)
+	ArtifactCache *ArtifactCacheSpec `json:"artifactCache,omitempty"`
 	// Runtime is specification for the CDAP runtime service.
 	// This is an optional service and may not be required for CDAP to be operational.
 	// To disable this service: either omit or set the field to nil
@@ -236,6 +246,16 @@ type UserInterfaceSpec struct {
 
 // SupportBundleSpec defines the specification for the SupportBundle service.
 type SupportBundleSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+// TetheringAgentSpec defines the specification for the TetheringAgent service.
+type TetheringAgentSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+// ArtifactCacheSpec defines the specification for the ArtifactCache service.
+type ArtifactCacheSpec struct {
 	CDAPStatefulServiceSpec `json:",inline"`
 }
 
