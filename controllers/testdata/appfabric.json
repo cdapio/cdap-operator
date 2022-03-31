@@ -74,6 +74,14 @@
             ],
             "env": [
               {
+                "name": "all-services-test",
+                "value": "some-value-overridden"
+              },
+              {
+                "name": "appfabric-env-var-test",
+                "value": "some-value"
+              },
+              {
                 "name": "JAVA_HEAPMAX",
                 "value": "-Xmx62914560"
               }

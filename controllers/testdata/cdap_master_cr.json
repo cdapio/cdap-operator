@@ -20,6 +20,12 @@
     "uid": "7aeaad53-4afe-11ea-8611-42010a800022"
   },
   "spec": {
+    "env": [
+      {
+        "name": "all-services-test",
+        "value": "some-value"
+      }
+    ],
     "securityContext": {
       "runAsUser": 1000,
       "runAsGroup": 1000,
@@ -63,7 +69,17 @@
             "command": ["sh", "-c", "echo hello"]
           }
         }
-      }
+      },
+      "env": [
+        {
+          "name": "all-services-test",
+          "value": "some-value-overridden"
+        },
+        {
+          "name": "appfabric-env-var-test",
+          "value": "some-value"
+        }
+      ]
     },
     "authentication": {
       "metadata": {

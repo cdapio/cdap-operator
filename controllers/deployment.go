@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"cdap.io/cdap-operator/api/v1alpha1"
@@ -186,7 +187,10 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 			continue
 		}
 
-		c := serviceContainerSpec(ss, master, dataDir, s)
+		c, err := serviceContainerSpec(ss, master, dataDir, s)
+		if err != nil {
+			return nil, err
+		}
 		spec = spec.withContainer(c)
 		if err := addSystemMetricsServiceIfEnabled(spec, master, ss, dataDir, c); err != nil {
 			return nil, err
@@ -246,7 +250,10 @@ func addSystemMetricsServiceIfEnabled(stsSpec *StatefulSpec, master *v1alpha1.CD
 	if err != nil {
 		return err
 	}
-	c := serviceContainerSpec(ss, master, dataDir, serviceSystemMetricsExporter)
+	c, err := serviceContainerSpec(ss, master, dataDir, serviceSystemMetricsExporter)
+	if err != nil {
+		return err
+	}
 	stsSpec = stsSpec.withContainer(c)
 	// add env variable to start jmx server in the main container
 	varAdded := false
@@ -315,7 +322,11 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		if ss == nil {
 			continue
 		}
-		c := serviceContainerSpec(ss, master, dataDir, s)
+
+		c, err := serviceContainerSpec(ss, master, dataDir, s)
+		if err != nil {
+			return nil, err
+		}
 		spec = spec.withContainer(c)
 
 		// Adding a label to allow k8s service selector to easily find the pod
@@ -343,14 +354,56 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 	return spec, nil
 }
 
+type ByEnvKey []corev1.EnvVar
+
+func (k ByEnvKey) Len() int           { return len(k) }
+func (k ByEnvKey) Swap(i, j int)      { k[i], k[j] = k[j], k[i] }
+func (k ByEnvKey) Less(i, j int) bool { return k[i].Name < k[j].Name }
+
+func mergeEnvVars(baseEnvVars []corev1.EnvVar, overwriteEnvVars []corev1.EnvVar) ([]corev1.EnvVar, error) {
+	// Merge base and overwrite environment variables
+	envMap := make(map[string]corev1.EnvVar)
+	// Add base environment variables.
+	for _, baseEnvVar := range baseEnvVars {
+		if _, ok := envMap[baseEnvVar.Name]; ok {
+			return nil, fmt.Errorf("duplicate env var %q in base slice", baseEnvVar.Name)
+		}
+		envMap[baseEnvVar.Name] = baseEnvVar
+	}
+
+	// Add and overwrite the provided environment variables.
+	// Maintain a seen map and throw an error if there are duplicates in the overwrite env var slice.
+	seenVars := make(map[string]bool)
+	for _, envVar := range overwriteEnvVars {
+		if _, ok := seenVars[envVar.Name]; ok {
+			return nil, fmt.Errorf("duplicate env var %q in overwrite slice", envVar.Name)
+		}
+		seenVars[envVar.Name] = true
+		envMap[envVar.Name] = envVar
+	}
+
+	// Convert the map to a sorted slice.
+	env := []corev1.EnvVar{}
+	for _, envVar := range envMap {
+		env = append(env, envVar)
+	}
+	sort.Sort(ByEnvKey(env))
+	return env, nil
+}
+
 func serviceContainerSpec(ss *v1alpha1.CDAPServiceSpec,
-	master *v1alpha1.CDAPMaster, dataDir string, service ServiceName) *ContainerSpec {
-	env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
+	master *v1alpha1.CDAPMaster, dataDir string, service ServiceName) (*ContainerSpec, error) {
+	// Merge environment variables between service spec and master spec
+	env, err := mergeEnvVars(master.Spec.Env, ss.Env)
+	if err != nil {
+		return nil, fmt.Errorf("failed to merge env vars for service %q with error: %v", service, err)
+	}
+	env = addJavaMaxHeapEnvIfNotPresent(env, ss.Resources)
 	c := newContainerSpec(master, service, dataDir).setResources(ss.Resources).setEnv(env).setLifecycle(ss.Lifecycle)
 	if service == serviceUserInterface {
 		c = updateSpecForUserInterface(master, c)
 	}
-	return c
+	return c, nil
 }
 
 // Return a list of reconciler objects (e.g. statefulsets, deployment, NodePort service) for the given deployment plan

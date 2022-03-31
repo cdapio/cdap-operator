@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"testing"
 
 	"cdap.io/cdap-operator/api/v1alpha1"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/nsf/jsondiff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -254,3 +257,103 @@ var _ = Describe("Controller Suite", func() {
 		})
 	})
 })
+
+func TestMergeEnvVars(t *testing.T) {
+	testCases := []struct {
+		description      string
+		baseEnvVars      []corev1.EnvVar
+		overwriteEnvVars []corev1.EnvVar
+		wantEnv          []corev1.EnvVar
+		wantErr          error
+	}{
+		{
+			description:      "Empty slices returns no env vars",
+			baseEnvVars:      []corev1.EnvVar{},
+			overwriteEnvVars: []corev1.EnvVar{},
+			wantEnv:          []corev1.EnvVar{},
+		},
+		{
+			description:      "Only one env var in base slice returns one env var",
+			baseEnvVars:      []corev1.EnvVar{corev1.EnvVar{Name: "test", Value: "test-value"}},
+			overwriteEnvVars: []corev1.EnvVar{},
+			wantEnv:          []corev1.EnvVar{corev1.EnvVar{Name: "test", Value: "test-value"}},
+		},
+		{
+			description:      "Only one env var in overwrite slice returns one env var",
+			baseEnvVars:      []corev1.EnvVar{},
+			overwriteEnvVars: []corev1.EnvVar{corev1.EnvVar{Name: "test", Value: "test-value"}},
+			wantEnv:          []corev1.EnvVar{corev1.EnvVar{Name: "test", Value: "test-value"}},
+		},
+		{
+			description:      "One different env var in each slice returns two env var",
+			baseEnvVars:      []corev1.EnvVar{corev1.EnvVar{Name: "test-a", Value: "test-value-a"}},
+			overwriteEnvVars: []corev1.EnvVar{corev1.EnvVar{Name: "test-b", Value: "test-value-b"}},
+			wantEnv: []corev1.EnvVar{
+				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
+				corev1.EnvVar{Name: "test-b", Value: "test-value-b"},
+			},
+		},
+		{
+			description: "Env var in overwrite slice overwrites expected env var from base slice",
+			baseEnvVars: []corev1.EnvVar{
+				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
+				corev1.EnvVar{Name: "test-b", Value: "test-value-b"},
+			},
+			overwriteEnvVars: []corev1.EnvVar{
+				corev1.EnvVar{Name: "test-b", Value: "test-value-d"},
+				corev1.EnvVar{Name: "test-c", Value: "test-value-c"},
+			},
+			wantEnv: []corev1.EnvVar{
+				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
+				corev1.EnvVar{Name: "test-b", Value: "test-value-d"},
+				corev1.EnvVar{Name: "test-c", Value: "test-value-c"},
+			},
+		},
+		{
+			description: "Multiple env vars in both slices returns env vars in sorted order",
+			baseEnvVars: []corev1.EnvVar{
+				corev1.EnvVar{Name: "a", Value: "test-value-a"},
+				corev1.EnvVar{Name: "c", Value: "test-value-c"},
+			},
+			overwriteEnvVars: []corev1.EnvVar{
+				corev1.EnvVar{Name: "d", Value: "test-value-d"},
+				corev1.EnvVar{Name: "b", Value: "test-value-b"},
+			},
+			wantEnv: []corev1.EnvVar{
+				corev1.EnvVar{Name: "a", Value: "test-value-a"},
+				corev1.EnvVar{Name: "b", Value: "test-value-b"},
+				corev1.EnvVar{Name: "c", Value: "test-value-c"},
+				corev1.EnvVar{Name: "d", Value: "test-value-d"},
+			},
+		},
+		{
+			description: "Duplicate env var keys in base slice returns error",
+			baseEnvVars: []corev1.EnvVar{
+				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
+				corev1.EnvVar{Name: "test-a", Value: "test-value-b"},
+			},
+			overwriteEnvVars: []corev1.EnvVar{},
+			wantErr:          cmpopts.AnyError,
+		},
+		{
+			description: "Duplicate env var keys in overwrite slice returns error",
+			baseEnvVars: []corev1.EnvVar{},
+			overwriteEnvVars: []corev1.EnvVar{
+				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
+				corev1.EnvVar{Name: "test-a", Value: "test-value-b"},
+			},
+			wantErr: cmpopts.AnyError,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.description, func(t *testing.T) {
+			gotEnv, err := mergeEnvVars(testCase.baseEnvVars, testCase.overwriteEnvVars)
+			if got, want := gotEnv, testCase.wantEnv; !cmp.Equal(got, want) {
+				t.Errorf("mergeEnvVars(%+v, %+v): unexpected env slice: got %+v, want %+v", testCase.baseEnvVars, testCase.overwriteEnvVars, got, want)
+			}
+			if got, want := err, testCase.wantErr; !cmp.Equal(got, want, cmpopts.EquateErrors()) {
+				t.Errorf("mergeEnvVars(%+v, %+v): unexpected env slice: got %v, want %v", testCase.baseEnvVars, testCase.overwriteEnvVars, got, want)
+			}
+		})
+	}
+}

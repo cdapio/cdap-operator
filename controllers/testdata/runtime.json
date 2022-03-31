@@ -74,6 +74,10 @@
             ],
             "env": [
               {
+                "name": "all-services-test",
+                "value": "some-value"
+              },
+              {
                 "name": "JAVA_HEAPMAX",
                 "value": "-Xmx62914560"
               },
@@ -154,6 +158,10 @@
               "--env=k8s"
             ],
             "env": [
+              {
+                "name": "all-services-test",
+                "value": "some-value"
+              },
               {
                 "name": "JAVA_HEAPMAX",
                 "value": "-Xmx125829120"

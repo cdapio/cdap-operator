@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/go-logr/logr v0.1.0
+	github.com/google/go-cmp v0.5.7
 	github.com/nsf/jsondiff v0.0.0-20190712045011-8443391ee9b6
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
