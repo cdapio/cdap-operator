@@ -76,6 +76,10 @@
             ],
             "env": [
               {
+                "name": "all-services-test",
+                "value": "some-value"
+              },
+              {
                 "name": "JAVA_HEAPMAX",
                 "value": "-Xmx62914560"
               },

@@ -42,6 +42,8 @@ type CDAPMasterSpec struct {
 	SecuritySecret string `json:"securitySecret,omitempty"`
 	// ServiceAccountName is the service account for all the service pods.
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	// Env is a list of environment variables for the all service containers.
+	Env []corev1.EnvVar `json:"env,omitempty"`
 	// LocationURI is an URI specifying an object storage for CDAP.
 	LocationURI string `json:"locationURI"`
 	// Config is a set of configurations that goes into cdap-site.xml.
