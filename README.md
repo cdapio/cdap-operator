@@ -68,7 +68,7 @@ You can checkout the CDAP Operator source code, build and run locally. To build 
    ```
 1. Deploy CDAP CRD to the cluster
    ```
-   kubectl apply -f config/crds
+   kubectl apply -k config/crd
    ```
 1. Edit the sample CDAP CR and deploy to the cluster
    ```
@@ -96,3 +96,24 @@ You can also build a docker image containing the CDAP controller and deploy it t
 ### Using CDAP operator to manage CDAP instances in Kubernetes
 
 A step by step guide of running CDAP in Kubernetes using CDAP operator can be found in the [blog post](https://link.medium.com/hpPbiUYT9X).
+
+### Running Unit Tests
+
+1. Install [kubebuilder](https://book-v1.book.kubebuilder.io/quick_start.html).
+
+2. Install [setup-envtest](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#envtest-binaries-manager) by running:
+```
+go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+```
+
+3. After installing `setup-envtest`, use it to download envtest 1.19.x for kubebuilder and to set your KUBEBUILDER_ASSETS environment variable:
+```bash
+# Downloads envtest v1.19.x and writes the export statement to a temporary file
+$(go env GOPATH)/bin/setup-envtest use -p env 1.19.x > /tmp/setup_envtest.sh
+# Sets the KUBEBUILDER_ASSETS environment variable
+source /tmp/setup_envtest.sh
+# Deletes the temporary file
+rm /tmp/setup_envtest.sh
+```
+
+4. Run `make test`

@@ -42,6 +42,8 @@ type CDAPMasterSpec struct {
 	SecuritySecret string `json:"securitySecret,omitempty"`
 	// ServiceAccountName is the service account for all the service pods.
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	// Env is a list of environment variables for the all service containers.
+	Env []corev1.EnvVar `json:"env,omitempty"`
 	// LocationURI is an URI specifying an object storage for CDAP.
 	LocationURI string `json:"locationURI"`
 	// Config is a set of configurations that goes into cdap-site.xml.
@@ -76,6 +78,21 @@ type CDAPMasterSpec struct {
 	Router RouterSpec `json:"router,omitempty"`
 	// UserInterface is specification for the CDAP UI service.
 	UserInterface UserInterfaceSpec `json:"userInterface,omitempty"`
+	// SupportBundle is specification for the CDAP support-bundle service.
+	// This is an optional service and may not be required for CDAP to be operational.
+	// To disable this service: either omit or set the field to nil
+	// To enable this service: set it to a pointer to a SupportBundleSpec struct (can be an empty struct)
+	SupportBundle *SupportBundleSpec `json:"supportBundle,omitempty"`
+	// TetheringAgent is specification for the CDAP Tethering Agent service.
+	// This is an optional service and may not be required for CDAP to be operational.
+	// To disable this service: either omit or set the field to nil
+	// To enable this service: set it to a pointer to a TetheringAgentSpec struct (can be an empty struct)
+	TetheringAgent *TetheringAgentSpec `json:"tetheringAgent,omitempty"`
+	// ArtifactCache is specification for the CDAP Artifact Cache service.
+	// This is an optional service and may not be required for CDAP to be operational.
+	// To disable this service: either omit or set the field to nil
+	// To enable this service: set it to a pointer to a ArtifactCacheSpec struct (can be an empty struct)
+	ArtifactCache *ArtifactCacheSpec `json:"artifactCache,omitempty"`
 	// Runtime is specification for the CDAP runtime service.
 	// This is an optional service and may not be required for CDAP to be operational.
 	// To disable this service: either omit or set the field to nil
@@ -86,6 +103,22 @@ type CDAPMasterSpec struct {
 	// To disable this service: either omit or set the field to nil
 	// To enable this service: set it to a pointer to a AuthenticationSpec struct (can be an empty struct)
 	Authentication *AuthenticationSpec `json:"authentication,omitempty"`
+	// SystemMetricsExporter is specification for the CDAP SystemMetricsExporter service.
+	// This is an optional service and may not be required for CDAP to be operational.
+	// To disable this service: either omit or set the field to nil
+	// To enable this service: set it to a pointer to a SystemMetricsExporterSpec struct (can be an empty struct).
+	// CDAPServiceSpec.EnableSystemMetrics field also needs to be set to true for stateful services which require
+	// collection of system metrics. Services which have CDAPServiceSpec.EnableSystemMetrics as nil, missing or set to false,
+	// will have metrics sidecar container disabled.
+	SystemMetricsExporter *SystemMetricExporterSpec `json:"systemMetricsExporter,omitempty"`
+	// SecurityContext defines the security context for all pods for all services.
+	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
+	// AdditionalVolumes defines a list of additional volumes for all services.
+	// For information on supported volume types, see https://kubernetes.io/docs/concepts/storage/volumes/.
+	AdditionalVolumes []corev1.Volume `json:"additionalVolumes,omitempty"`
+	// AdditionalVolumeMounts defines a list of additional volume mounts for all services.
+	// For information on suported volume mount types, see https://kubernetes.io/docs/concepts/storage/volumes/.
+	AdditionalVolumeMounts []corev1.VolumeMount `json:"additionalVolumeMounts,omitempty"`
 }
 
 // CDAPServiceSpec defines the base set of specifications applicable to all master services.
@@ -115,6 +148,23 @@ type CDAPServiceSpec struct {
 	// Key is the secret object name. Value is the mount path.
 	// This adds Secret data to the directory specified by the volume mount path.
 	SecretVolumes map[string]string `json:"secretVolumes,omitempty"`
+	// AdditionalVolumes defines a list of additional volumes to mount to the service.
+	// For information on supported volume types, see https://kubernetes.io/docs/concepts/storage/volumes/.
+	AdditionalVolumes []corev1.Volume `json:"additionalVolumes,omitempty"`
+	// AdditionalVolumeMounts defines a list of additional volume mounts for the service.
+	// For information on suported volume mount types, see https://kubernetes.io/docs/concepts/storage/volumes/.
+	AdditionalVolumeMounts []corev1.VolumeMount `json:"additionalVolumeMounts,omitempty"`
+	// SecurityContext overrides the security context for the service pods.
+	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
+	// EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
+	// to start a metrics collection container in statefulsets. SystemMetricsExporter is a global setting in CDAPMasterSpec.
+	// When SystemMetricsExporter is absent, it disables metrics collection for all stateful services.
+	// When SystemMetricsExporter is present, this value should also be set to true for services which require system metrics
+	// collection.
+	EnableSystemMetrics *bool `json:"enableSystemMetrics,omitempty"`
+	// Lifecycle is to specify Container Lifecycle hooks provided by Kubernetes for containers.
+	// This will not be applied to the init containers as init containers do not support lifecycle.
+	Lifecycle *corev1.Lifecycle `json:"lifecycle,omitempty"`
 }
 
 // CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance.
@@ -204,6 +254,26 @@ type UserInterfaceSpec struct {
 	CDAPExternalServiceSpec `json:",inline"`
 }
 
+// SupportBundleSpec defines the specification for the SupportBundle service.
+type SupportBundleSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+// TetheringAgentSpec defines the specification for the TetheringAgent service.
+type TetheringAgentSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+// ArtifactCacheSpec defines the specification for the ArtifactCache service.
+type ArtifactCacheSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
+}
+
+//  SystemMetricExporterSpec defines the specification for the SystemMetricsExporter service.
+type SystemMetricExporterSpec struct {
+	CDAPServiceSpec `json:",inline"`
+}
+
 // CDAPMasterStatus defines the observed state of CDAPMaster
 type CDAPMasterStatus struct {
 	status.Meta          `json:",inline"`
@@ -236,6 +306,32 @@ type CDAPMasterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []CDAPMaster `json:"items"`
+}
+
+// SecurityContext defines fields for setting corev1.SecurityContext for containers and
+// corev1.PodSecurityContext for pods.
+// For additional information, see https://kubernetes.io/docs/tasks/configure-pod-container/security-context/.
+type SecurityContext struct {
+	// RunAsUser runs the pod as the specified user ID. It is applied at the pod level.
+	RunAsUser *int64 `json:"runAsUser,omitempty"`
+	// RunAsGroup runs the pod as the specified group ID. It is applied at the pod level.
+	RunAsGroup *int64 `json:"runAsGroup,omitempty"`
+	// FSGroup mounts volumes as the specified group ID and gives the primary user access
+	// to that group. It is applied at the pod level.
+	FSGroup *int64 `json:"fsGroup,omitempty"`
+	// AllowPrivilegeEscalation prevents the container process from running SUID binaries.
+	// It is applied at the container level.
+	AllowPrivilegeEscalation *bool `json:"allowPrivilegeEscalation,omitempty"`
+	// RunAsNonRoot indicates that the container must run as a non-root user.
+	// If true, the Kubelet will validate the image at runtime to ensure that it
+	// does not run as UID 0 (root) and fail to start the container if it does.
+	RunAsNonRoot *bool `json:"runAsNonRoot,omitempty"`
+	// Privileged runs container in privileged mode. It is applied at the container level.
+	// Processes in privileged containers are essentially equivalent to root on the host.
+	Privileged *bool `json:"privileged,omitempty"`
+	// ReadOnlyRootFilesystem specifies whether the container's root filesystem is read-only.
+	// It is applied at the container level.
+	ReadOnlyRootFilesystem *bool `json:"readOnlyRootFilesystem,omitempty"`
 }
 
 func init() {

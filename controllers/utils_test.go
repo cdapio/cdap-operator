@@ -39,7 +39,7 @@ var _ = Describe("Controller Suite", func() {
 			}
 			serviceToStatefulSpec = map[string]*v1alpha1.CDAPStatefulServiceSpec{
 				serviceLogs:          &master.Spec.Logs.CDAPStatefulServiceSpec,
-				serviceAppFabric:     &master.Spec.Logs.CDAPStatefulServiceSpec,
+				serviceAppFabric:     &master.Spec.AppFabric.CDAPStatefulServiceSpec,
 				serviceMetrics:       &master.Spec.Metrics.CDAPStatefulServiceSpec,
 				serviceRouter:        nil,
 				serviceMessaging:     &master.Spec.Messaging.CDAPStatefulServiceSpec,

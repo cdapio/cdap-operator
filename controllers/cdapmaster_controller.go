@@ -80,6 +80,9 @@ func NewReconciler(mgr manager.Manager) *gr.Reconciler {
 		Using(&cdapmaster.Preview{}).
 		Using(&cdapmaster.Router{}).
 		Using(&cdapmaster.UserInterface{}).
+		Using(&cdapmaster.SupportBundle{}).
+		Using(&cdapmaster.TetheringAgent{}).
+		Using(&cdapmaster.ArtifactCache{}).
 		Using(&VersionUpdateHandler{}).
 		Using(&ConfigMapHandler{}).
 		Using(&ServiceHandler{}).
@@ -122,8 +125,6 @@ func ApplyDefaults(resource interface{}) {
 	if spec.Config == nil {
 		spec.Config = make(map[string]string)
 	}
-	// Set the local data directory
-	spec.Config[confLocalDataDirKey] = confLocalDataDirVal
 
 	// Set the configMapCConf entry for the router and UI service and ports
 	if spec.Config[confRouterServerAddress] == "" {
@@ -136,6 +137,32 @@ func ApplyDefaults(resource interface{}) {
 
 	if spec.Config[confUserInterfaceBindPort] == "" {
 		spec.Config[confUserInterfaceBindPort] = strconv.Itoa(int(*spec.UserInterface.ServicePort))
+	}
+
+	// Set the default local data directory if it is not set in cdap-cr.
+	if _, ok := spec.Config[confLocalDataDirKey]; !ok {
+		spec.Config[confLocalDataDirKey] = confLocalDataDirVal
+	}
+
+	// Set security secret disk names to be consistent with securitySecret if not overwritten.
+	if _, ok := spec.Config[confTwillSecurityMasterSecretDiskName]; !ok && spec.SecuritySecret != "" {
+		spec.Config[confTwillSecurityMasterSecretDiskName] = spec.SecuritySecret
+	}
+	if _, ok := spec.Config[confTwillSecurityMasterSecretDiskPath]; !ok && spec.SecuritySecret != "" {
+		spec.Config[confTwillSecurityMasterSecretDiskPath] = defaultSecuritySecretPath
+	}
+	// This configuration makes the default securitySecret available to the workers by default.
+	// TODO: Add support for secure-by-default configurations.
+	if _, ok := spec.Config[confTwillSecurityWorkerSecretDiskName]; !ok && spec.SecuritySecret != "" {
+		spec.Config[confTwillSecurityWorkerSecretDiskName] = spec.SecuritySecret
+	}
+	if _, ok := spec.Config[confTwillSecurityWorkerSecretDiskPath]; !ok && spec.SecuritySecret != "" {
+		spec.Config[confTwillSecurityWorkerSecretDiskPath] = defaultSecuritySecretPath
+	}
+
+	// Set the default JMX server port if not set and system metrics exporter sidecar is enabled
+	if _, ok := spec.Config[confJMXServerPort]; spec.SystemMetricsExporter != nil && !ok {
+		spec.Config[confJMXServerPort] = fmt.Sprint(defaultJMXport)
 	}
 
 	// Disable explore

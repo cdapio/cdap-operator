@@ -22,7 +22,7 @@
         "apiVersion": "cdap.cdap.io/v1alpha1",
         "blockOwnerDeletion": true,
         "controller": true,
-        "kind": "*v1alpha1.CDAPMaster",
+        "kind": "CDAPMaster",
         "name": "test",
         "uid": "7aeaad53-4afe-11ea-8611-42010a800022"
       }
@@ -74,8 +74,16 @@
             ],
             "env": [
               {
+                "name": "all-services-test",
+                "value": "some-value"
+              },
+              {
                 "name": "JAVA_HEAPMAX",
                 "value": "-Xmx62914560"
+              },
+              {
+                "name": "OPTS",
+                "value": "-Djava.rmi.server.hostname=localhost -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.host=localhost -Dcom.sun.management.jmxremote.port=1234  -Dcom.sun.management.jmxremote.ssl=false  -Dcom.sun.management.jmxremote.authenticate=false"
               }
             ],
             "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
@@ -86,6 +94,11 @@
                 "cpu": "100m",
                 "memory": "100Mi"
               }
+            },
+            "securityContext": {
+              "privileged": false,
+              "readOnlyRootFilesystem": false,
+              "allowPrivilegeEscalation": false
             },
             "terminationMessagePath": "/dev/termination-log",
             "terminationMessagePolicy": "File",
@@ -131,6 +144,92 @@
               {
                 "mountPath": "/my/secret/1",
                 "name": "cdap-se-vol-my-secret-1"
+              },
+              {
+                "name": "test-volume",
+                "readOnly": true,
+                "mountPath": "/mnt/test"
+              }
+            ]
+          },
+          {
+            "args": [
+              "io.cdap.cdap.master.environment.k8s.SystemMetricsExporterServiceMain",
+              "--env=k8s"
+            ],
+            "env": [
+              {
+                "name": "all-services-test",
+                "value": "some-value"
+              },
+              {
+                "name": "JAVA_HEAPMAX",
+                "value": "-Xmx125829120"
+              }
+            ],
+            "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "systemmetricsexporter",
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "200Mi"
+              }
+            },
+            "securityContext": {
+              "privileged": false,
+              "readOnlyRootFilesystem": false,
+              "allowPrivilegeEscalation": false
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/etc/podinfo",
+                "name": "podinfo",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/cdap/conf",
+                "name": "cdap-conf",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/hadoop/conf",
+                "name": "hadoop-conf",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/opt/cdap/master/system-app-config",
+                "name": "cdap-sysappconf",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/data",
+                "name": "cdap-test-runtime-data",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/cdap/security",
+                "name": "cdap-security",
+                "readOnly": true
+              },
+              {
+                "name": "cdap-cm-vol-my-config-map-1",
+                "mountPath": "/my/config/map/1"
+              },
+              {
+                "name": "cdap-cm-vol-my-config-map-2",
+                "mountPath": "/my/config/map/2"
+              },
+              {
+                "mountPath": "/my/secret/1",
+                "name": "cdap-se-vol-my-secret-1"
+              },
+              {
+                "name": "test-volume",
+                "readOnly": true,
+                "mountPath": "/mnt/test"
               }
             ]
           }
@@ -174,16 +273,9 @@
                 "mountPath": "/etc/cdap/security"
               },
               {
-                "name": "cdap-cm-vol-my-config-map-1",
-                "mountPath": "/my/config/map/1"
-              },
-              {
-                "name": "cdap-cm-vol-my-config-map-2",
-                "mountPath": "/my/config/map/2"
-              },
-              {
-                "mountPath": "/my/secret/1",
-                "name": "cdap-se-vol-my-secret-1"
+                "name": "test-volume",
+                "mountPath": "/mnt/test",
+                "readOnly": true
               }
             ]
           }
@@ -191,7 +283,12 @@
         "dnsPolicy": "ClusterFirst",
         "restartPolicy": "Always",
         "schedulerName": "default-scheduler",
-        "securityContext": {},
+        "securityContext": {
+          "fsGroup": 2000,
+          "runAsGroup": 1000,
+          "runAsUser": 1000,
+          "runAsNonRoot": true
+        },
         "serviceAccount": "cdap",
         "serviceAccountName": "cdap",
         "terminationGracePeriodSeconds": 120,
@@ -270,6 +367,33 @@
             "secret": {
               "defaultMode": 420,
               "secretName": "my-secret-1"
+            }
+          },
+          {
+            "name": "test-volume",
+            "projected": {
+              "defaultMode": 420,
+              "sources": [
+                {
+                  "serviceAccountToken": {
+                    "audience": "test-aud",
+                    "expirationSeconds": 3600,
+                    "path": "token"
+                  } 
+                },
+                {
+                  "configMap": {
+                    "name": "test-projected-config",
+                    "items": [
+                      {
+                        "key": "config",
+                        "path": "test-projected-config"
+                      }
+                    ],
+                    "optional": false
+                  }
+                }
+              ]
             }
           }
         ]

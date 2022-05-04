@@ -16,6 +16,10 @@ package genericreconciler
 import (
 	"context"
 	"fmt"
+	"log"
+	"reflect"
+	"time"
+
 	apierror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,8 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	urt "k8s.io/apimachinery/pkg/util/runtime"
-	"log"
-	"reflect"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	rmanager "sigs.k8s.io/controller-reconciler/pkg/reconciler/manager"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
@@ -32,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/scheme"
-	"time"
 )
 
 // Constants
@@ -216,7 +217,7 @@ func (gr *Reconciler) ownerRef(resource runtime.Object) *metav1.OwnerReference {
 	return metav1.NewControllerRef(resource.(metav1.Object), schema.GroupVersionKind{
 		Group:   gr.gv.Group,
 		Version: gr.gv.Version,
-		Kind:    reflect.TypeOf(gr.resource).String(),
+		Kind:    resource.GetObjectKind().GroupVersionKind().Kind,
 	})
 }
 

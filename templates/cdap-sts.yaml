@@ -11,6 +11,12 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+#
+#
+# NOTE: Some properties are highly nested and it is not feasible to pick them from the template file
+# hence those are added directly in the code.
+# For example, please check the method "../controllers/deployment.go#buildStatefulSetsObject" and see
+# how container's lifecycle property is added to the k8s object.
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -37,6 +43,21 @@ spec:
         {{$k}}: "{{$v}}"
         {{end}}
     spec:
+      {{if .Base.SecurityContext}}
+      securityContext:
+        # For non-boolean pointers, it is reasonable to set this value only if it is non-zero.
+        {{if .Base.SecurityContext.RunAsUser}}
+        runAsUser: {{.Base.SecurityContext.RunAsUser}}
+        {{end}}
+        {{if .Base.SecurityContext.RunAsGroup}}
+        runAsGroup: {{.Base.SecurityContext.RunAsGroup}}
+        {{end}}
+        {{if .Base.SecurityContext.FSGroup}}
+        fsGroup: {{.Base.SecurityContext.FSGroup}}
+        {{end}}
+        # For boolean pointers, we always set the value and ensure there is a default set for nil values.
+        runAsNonRoot: {{.Base.SecurityContext.RunAsNonRoot}}
+      {{end}}
       {{if .Base.ServiceAccountName}}
       serviceAccountName: {{.Base.ServiceAccountName}}
       {{end}}
@@ -84,7 +105,7 @@ spec:
               mountPath: {{.DataDir}}
             {{if $.Base.SecuritySecret}}
             - name: cdap-security
-              mountPath: /etc/cdap/security
+              mountPath: {{$.Base.SecuritySecretPath}}
               readOnly: true
             {{end}}
       {{end}}
@@ -93,6 +114,13 @@ spec:
         - name: {{$c.Name}}
           image: {{$c.Image}}
           workingDir: {{$c.WorkingDir}}
+          {{if $.Base.SecurityContext}}
+          securityContext:
+            # For boolean pointers, we always set the value and ensure there is a default set for nil values.
+            privileged: {{$.Base.SecurityContext.Privileged}}
+            allowPrivilegeEscalation: {{$.Base.SecurityContext.AllowPrivilegeEscalation}}
+            readOnlyRootFilesystem: {{$.Base.SecurityContext.ReadOnlyRootFilesystem}}
+          {{end}}
           command:
           {{range $v := $c.Command }}
             - {{$v}}
@@ -122,6 +150,139 @@ spec:
               {{$k}}: {{$v.String}}
               {{end}}
             {{end}}
+          {{if $c.LivenessProbe}}
+          livenessProbe:
+            {{if $c.LivenessProbe.InitialDelaySeconds }}
+            initialDelaySeconds: {{$c.LivenessProbe.InitialDelaySeconds }}
+            {{end}}
+            {{if $c.LivenessProbe.TimeoutSeconds }}
+            timeoutSeconds: {{$c.LivenessProbe.TimeoutSeconds }}
+            {{end}}
+            {{if $c.LivenessProbe.PeriodSeconds }}
+            periodSeconds: {{$c.LivenessProbe.PeriodSeconds }}
+            {{end}}
+            {{if $c.LivenessProbe.SuccessThreshold }}
+            successThreshold: {{$c.LivenessProbe.SuccessThreshold }}
+            {{end}}
+            {{if $c.LivenessProbe.FailureThreshold }}
+            failureThreshold: {{$c.LivenessProbe.FailureThreshold }}
+            {{end}}
+            
+            {{if $c.LivenessProbe.Handler}}
+
+            {{if $c.LivenessProbe.Handler.HTTPGet}}
+            httpGet:
+              {{if $c.LivenessProbe.Handler.HTTPGet.Path}}
+              path: {{$c.LivenessProbe.Handler.HTTPGet.Path}} 
+              {{end}}
+              port: {{$c.LivenessProbe.Handler.HTTPGet.Port}}
+              {{if $c.LivenessProbe.Handler.HTTPGet.Scheme}}
+              scheme: {{$c.LivenessProbe.Handler.HTTPGet.Scheme}}
+              {{end}}
+              {{if $c.LivenessProbe.Handler.HTTPGet.Host}}
+              host: {{$c.LivenessProbe.Handler.HTTPGet.Host}}
+              {{end}}
+              {{if $c.LivenessProbe.Handler.HTTPGet.HTTPHeaders}}
+              httpHeaders:
+                {{range $h := $c.LivenessProbe.Handler.HTTPGet.HTTPHeaders }}
+              - name: {{$h.Name}}
+                value: {{$h.Value}}
+                {{end}}
+              {{end}}
+            {{end}}
+
+            {{if $c.LivenessProbe.Handler.Exec}}
+            exec:
+              command:
+              {{range $v := $c.LivenessProbe.Handler.Exec.Command }}
+              - {{$v}}
+              {{end}}
+            {{end}}
+
+            {{if $c.LivenessProbe.Handler.TCPSocket}}
+            tcpSocket:
+              port: {{$c.LivenessProbe.Handler.TCPSocket.Port}}
+            {{end}}
+
+            {{end}}
+
+          {{end}}
+
+          {{if $c.ReadinessProbe}}
+          readinessProbe:
+            {{if $c.ReadinessProbe.InitialDelaySeconds }}
+            initialDelaySeconds: {{$c.ReadinessProbe.InitialDelaySeconds }}
+            {{end}}
+            {{if $c.ReadinessProbe.TimeoutSeconds }}
+            timeoutSeconds: {{$c.ReadinessProbe.TimeoutSeconds }}
+            {{end}}
+            {{if $c.ReadinessProbe.PeriodSeconds }}
+            periodSeconds: {{$c.ReadinessProbe.PeriodSeconds }}
+            {{end}}
+            {{if $c.ReadinessProbe.SuccessThreshold }}
+            successThreshold: {{$c.ReadinessProbe.SuccessThreshold }}
+            {{end}}
+            {{if $c.ReadinessProbe.FailureThreshold }}
+            failureThreshold: {{$c.ReadinessProbe.FailureThreshold }}
+            {{end}}
+            {{if $c.ReadinessProbe.Handler}}
+
+            {{if $c.ReadinessProbe.Handler.HTTPGet}}
+            httpGet:
+              {{if $c.ReadinessProbe.Handler.HTTPGet.Path}}
+              path: {{$c.ReadinessProbe.Handler.HTTPGet.Path}} 
+              {{end}}
+              port: {{$c.ReadinessProbe.Handler.HTTPGet.Port}}
+              {{if $c.ReadinessProbe.Handler.HTTPGet.Scheme}}
+              scheme: {{$c.ReadinessProbe.Handler.HTTPGet.Scheme}}
+              {{end}}
+              {{if $c.ReadinessProbe.Handler.HTTPGet.Host}}
+              host: {{$c.ReadinessProbe.Handler.HTTPGet.Host}}
+              {{end}}
+              {{if $c.ReadinessProbe.Handler.HTTPGet.HTTPHeaders}}
+              httpHeaders:
+                {{range $h := $c.ReadinessProbe.Handler.HTTPGet.HTTPHeaders }}
+              - name: {{$h.Name}}
+                value: {{$h.Value}}
+                {{end}}
+              {{end}}
+            {{end}}
+            
+            {{if $c.ReadinessProbe.Handler.Exec}}
+            exec:
+              command:
+              {{range $v := $c.ReadinessProbe.Handler.Exec.Command }}
+              - {{$v}}
+              {{end}}
+            {{end}}
+
+            {{if $c.ReadinessProbe.Handler.TCPSocket}}
+            tcpSocket:
+              port: {{$c.ReadinessProbe.Handler.TCPSocket.Port}}
+            {{end}}
+
+            {{end}}
+
+          {{end}}
+
+          {{if $c.Ports}}
+          ports:
+            {{range $cp := $c.Ports}}
+          - containerPort: {{$cp.ContainerPort}}
+            {{if $cp.Name}}
+            name: {{$cp.Name}}
+            {{end}}
+            {{if $cp.Protocol}}
+            protocol: {{$cp.Protocol}}
+            {{end}}
+            {{if $cp.HostPort}}
+            hostPort: {{$cp.HostPort}}
+            {{end}}
+            {{if $cp.HostIP}}
+            hostIP: {{$cp.HostIP}}
+            {{end}}
+            {{end}}
+          {{end}}  
           volumeMounts:
             - name: podinfo
               mountPath: /etc/podinfo

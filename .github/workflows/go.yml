@@ -21,10 +21,13 @@ jobs:
 
     - name: Install Kubebuilder
       run: |
+        version=2.3.1
         os=$(go env GOOS)
         arch=$(go env GOARCH)
-        curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | sudo tar -xz -C /tmp/
-        sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
+        curl -L -O "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${version}/kubebuilder_${version}_${os}_${arch}.tar.gz"
+        tar -zxvf kubebuilder_${version}_${os}_${arch}.tar.gz
+        sudo mv kubebuilder_${version}_${os}_${arch} /usr/local/kubebuilder
+        rm -f kubebuilder_${version}_${os}_${arch}.tar.gz
         sudo find /usr/local/kubebuilder/bin -type f -exec ln -s {} /usr/local/bin \;
     - name: Test
       run: make manifests test

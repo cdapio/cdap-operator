@@ -22,7 +22,7 @@
         "apiVersion": "cdap.cdap.io/v1alpha1",
         "blockOwnerDeletion": true,
         "controller": true,
-        "kind": "*v1alpha1.CDAPMaster",
+        "kind": "CDAPMaster",
         "name": "test",
         "uid": "7aeaad53-4afe-11ea-8611-42010a800022"
       }
@@ -74,6 +74,14 @@
             ],
             "env": [
               {
+                "name": "all-services-test",
+                "value": "some-value-overridden"
+              },
+              {
+                "name": "appfabric-env-var-test",
+                "value": "some-value"
+              },
+              {
                 "name": "JAVA_HEAPMAX",
                 "value": "-Xmx62914560"
               }
@@ -85,6 +93,18 @@
               "requests": {
                 "cpu": "100m",
                 "memory": "100Mi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": true,
+              "privileged": false,
+              "readOnlyRootFilesystem": false
+            },
+            "lifecycle": {
+              "preStop": {
+                "exec": {
+                  "command": ["sh", "-c", "echo hello"]
+                }
               }
             },
             "terminationMessagePath": "/dev/termination-log",
@@ -131,6 +151,15 @@
               {
                 "mountPath": "/my/secret/1",
                 "name": "cdap-se-vol-my-secret-1"
+              },
+              {
+                "mountPath": "/mnt/test",
+                "name": "test-volume",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/mnt/teststorage",
+                "name": "test-persistent-storage"
               }
             ]
           }
@@ -174,16 +203,13 @@
                 "mountPath": "/etc/cdap/security"
               },
               {
-                "name": "cdap-cm-vol-my-config-map-1",
-                "mountPath": "/my/config/map/1"
+                "mountPath": "/mnt/test",
+                "name": "test-volume",
+                "readOnly": true
               },
               {
-                "mountPath": "/my/config/map/2",
-                "name": "cdap-cm-vol-my-config-map-2"
-              },
-              {
-                "mountPath": "/my/secret/1",
-                "name": "cdap-se-vol-my-secret-1"
+                "mountPath": "/mnt/teststorage",
+                "name": "test-persistent-storage"
               }
             ]
           }
@@ -191,7 +217,12 @@
         "dnsPolicy": "ClusterFirst",
         "restartPolicy": "Always",
         "schedulerName": "default-scheduler",
-        "securityContext": {},
+        "securityContext": {
+          "fsGroup": 4000,
+          "runAsGroup": 3000,
+          "runAsUser": 3000,
+          "runAsNonRoot": false
+        },
         "serviceAccount": "cdap",
         "serviceAccountName": "cdap",
         "terminationGracePeriodSeconds": 120,
@@ -272,6 +303,39 @@
             "secret": {
               "defaultMode": 420,
               "secretName": "my-secret-1"
+            }
+          },
+          {
+            "name": "test-volume",
+            "projected": {
+              "defaultMode": 420,
+              "sources": [
+                {
+                  "serviceAccountToken": {
+                    "audience": "test-aud",
+                    "expirationSeconds": 3600,
+                    "path": "token"
+                  } 
+                },
+                {
+                  "configMap": {
+                    "name": "test-projected-config",
+                    "items": [
+                      {
+                        "key": "config",
+                        "path": "test-projected-config"
+                      }
+                    ],
+                    "optional": false
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "test-persistent-storage",
+            "persistentVolumeClaim": {
+              "claimName": "test-persistent-volume-claim"
             }
           }
         ]

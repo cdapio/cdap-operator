@@ -3,9 +3,10 @@ package controllers
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
-	v1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
+	"cdap.io/cdap-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -43,12 +44,15 @@ func (d *DeploymentPlan) Init() {
 	// Default: each service runs in its own Pod
 	d.planMap[0] = ServiceGroups{
 		stateful: map[ServiceGroupName]ServiceGroup{
-			"logs":      {serviceLogs},
-			"messaging": {serviceMessaging},
-			"metrics":   {serviceMetrics},
-			"preview":   {servicePreview},
-			"appfabric": {serviceAppFabric},
-			"runtime":   {serviceRuntime},
+			"logs":           {serviceLogs},
+			"messaging":      {serviceMessaging},
+			"metrics":        {serviceMetrics},
+			"preview":        {servicePreview},
+			"appfabric":      {serviceAppFabric},
+			"runtime":        {serviceRuntime},
+			"supportbundle":  {serviceSupportBundle},
+			"tetheringagent": {serviceTetheringAgent},
+			"artifactcache":  {serviceArtifactCache},
 		},
 		deployment: map[ServiceGroupName]ServiceGroup{
 			"authentication": {serviceAuthentication},
@@ -91,7 +95,7 @@ func buildDeploymentPlanSpec(master *v1alpha1.CDAPMaster, labels map[string]stri
 	cconf := getObjName(master, configMapCConf)
 	hconf := getObjName(master, configMapHConf)
 	sysappconf := getObjName(master, configMapSysAppConf)
-	dataDir := confLocalDataDirVal
+	dataDir := master.Spec.Config[confLocalDataDirKey]
 
 	spec := newDeploymentPlanSpec()
 	// Build statefulsets
@@ -155,12 +159,17 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	if err != nil {
 		return nil, err
 	}
+	securityContext, err := getSecurityContext(master, services)
+	if err != nil {
+		return nil, err
+	}
 
 	spec := newStatefulSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
 		setNodeSelector(nodeSelector).
 		setRuntimeClassName(runtimeClass).
-		setPriorityClassName(priorityClass)
+		setPriorityClassName(priorityClass).
+		setSecurityContext(securityContext)
 
 	// Add init container
 	spec = spec.withInitContainer(
@@ -168,43 +177,47 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 
 	// Add each service as a container
 	for _, s := range services {
-		ss, err := getCDAPServiceSpec(master, s)
+		statefulSet, err := getCDAPStatefulServiceSpec(master, s)
 		if err != nil {
 			return nil, err
 		}
 		// This happens when the service is optional and disabled in CR
 		// (i.e. service spec is set to nil)
-		if ss == nil {
+		if statefulSet == nil {
 			continue
 		}
-		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-		c := newContainerSpec(master, s, dataDir).setResources(ss.Resources).setEnv(env)
-		if s == serviceUserInterface {
-			c = updateSpecForUserInterface(master, c)
-		}
 
+		c, err := serviceContainerSpec(&statefulSet.CDAPServiceSpec, master, dataDir, s)
+		if err != nil {
+			return nil, err
+		}
 		spec = spec.withContainer(c)
 
-		statefulSet, err := getCDAPStatefulServiceSpec(master, s)
-		if err != nil || statefulSet == nil {
-			continue
-		} else {
-			if statefulSet.Containers != nil {
-				for _, container := range statefulSet.Containers {
-					additionalContainer := containerSpecFromContainer(container, dataDir)
-					spec.withContainer(additionalContainer)
-				}
+		if statefulSet.Containers != nil {
+			for _, container := range statefulSet.Containers {
+				additionalContainer := containerSpecFromContainer(container, dataDir)
+				spec = spec.withContainer(additionalContainer)
 			}
+		}
+
+		if err := addSystemMetricsServiceIfEnabled(spec, master, &statefulSet.CDAPServiceSpec, dataDir, c); err != nil {
+			return nil, err
 		}
 
 		// Adding a label to allow NodePort service selector to find the pod
 		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
 
 		// Mount extra volumes from ConfigMap and Secret
-		if _, err := spec.addConfigMapVolumes(ss.ConfigMapVolumes); err != nil {
+		if _, err := spec.addConfigMapVolumes(statefulSet.CDAPServiceSpec.ConfigMapVolumes); err != nil {
 			return nil, err
 		}
-		if _, err := spec.addSecretVolumes(ss.SecretVolumes); err != nil {
+		if _, err := spec.addSecretVolumes(statefulSet.CDAPServiceSpec.SecretVolumes); err != nil {
+			return nil, err
+		}
+		if _, err := spec.addAdditionalVolumes(statefulSet.CDAPServiceSpec.AdditionalVolumes); err != nil {
+			return nil, err
+		}
+		if _, err := spec.addAdditionalVolumeMounts(statefulSet.CDAPServiceSpec.AdditionalVolumeMounts); err != nil {
 			return nil, err
 		}
 	}
@@ -226,6 +239,48 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	}
 	spec = spec.withStorage(storageClass, storageSize)
 	return spec, nil
+}
+
+// addSystemMetricsServiceIfEnabled adds a sidecar container for
+// SystemMetricsExporterService if enabled in service spec.
+func addSystemMetricsServiceIfEnabled(stsSpec *StatefulSpec, master *v1alpha1.CDAPMaster,
+	service *v1alpha1.CDAPServiceSpec, dataDir string, mainContainer *ContainerSpec) error {
+	if master.Spec.SystemMetricsExporter == nil || service == nil {
+		return nil
+	}
+	if service.EnableSystemMetrics == nil {
+		return nil
+	}
+	if *service.EnableSystemMetrics == false {
+		return nil
+	}
+	ss, err := getCDAPServiceSpec(master, serviceSystemMetricsExporter)
+	if err != nil {
+		return err
+	}
+	c, err := serviceContainerSpec(ss, master, dataDir, serviceSystemMetricsExporter)
+	if err != nil {
+		return err
+	}
+	stsSpec = stsSpec.withContainer(c)
+	// add env variable to start jmx server in the main container
+	varAdded := false
+	varName := javaOptsEnvVarName
+	varValue := fmt.Sprintf(jmxServerOptFormat, master.Spec.Config[confJMXServerPort])
+	// find existing EnvVar with same name
+	for idx, env := range mainContainer.Env {
+		if env.Name != varName {
+			continue
+		}
+		mainContainer.Env[idx].Value += " " + varValue
+		varAdded = true
+	}
+	// add new env variable if variable doesn't exist
+	if !varAdded {
+		mainContainer.addEnv(varName, varValue)
+		varAdded = true
+	}
+	return nil
 }
 
 // Return a single single-/multi- container deployment containing a list of supplied services
@@ -251,57 +306,58 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 	if err != nil {
 		return nil, err
 	}
+	securityContext, err := getSecurityContext(master, services)
+	if err != nil {
+		return nil, err
+	}
 
 	spec := newDeploymentSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
 		setNodeSelector(nodeSelector).
 		setRuntimeClassName(runtimeClass).
 		setPriorityClassName(priorityClass).
-		setReplicas(replicas)
+		setReplicas(replicas).
+		setSecurityContext(securityContext)
 
 	// Add each service as a container
 	for _, s := range services {
-		ss, err := getCDAPServiceSpec(master, s)
+		scalableSpec, err := getCDAPScalableServiceSpec(master, s)
 		if err != nil {
 			return nil, err
 		}
 		// This happens when the service is optional and disabled in CR
 		// (i.e. service spec is set to nil)
-		if ss == nil {
+		if scalableSpec == nil {
 			continue
 		}
-		env := addJavaMaxHeapEnvIfNotPresent(ss.Env, ss.Resources)
-		c := newContainerSpec(master, s, dataDir).
-			setResources(ss.Resources).
-			setEnv(env)
 
-		es, err := getCDAPScalableServiceSpec(master, s)
-		if err != nil || es == nil {
-			continue
-		} else {
-			if es.Containers != nil {
+		c, err := serviceContainerSpec(&scalableSpec.CDAPServiceSpec, master, dataDir, s)
+		if err != nil {
+			return nil, err
+		}
+		spec = spec.withContainer(c)
 
-				for _, container := range es.Containers {
-
-					additionalContainer := containerSpecFromContainer(container, dataDir)
-					spec.withContainer(additionalContainer)
-				}
+		if scalableSpec.Containers != nil {
+			for _, container := range scalableSpec.Containers {
+				additionalContainer := containerSpecFromContainer(container, dataDir)
+				spec = spec.withContainer(additionalContainer)
 			}
 		}
 
-		if s == serviceUserInterface {
-			c = updateSpecForUserInterface(master, c)
-		}
-
-		spec.withContainer(c)
 		// Adding a label to allow k8s service selector to easily find the pod
 		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
 
 		// Mount extra volumes from ConfigMap and Secret
-		if _, err := spec.addConfigMapVolumes(ss.ConfigMapVolumes); err != nil {
+		if _, err := spec.addConfigMapVolumes(scalableSpec.CDAPServiceSpec.ConfigMapVolumes); err != nil {
 			return nil, err
 		}
-		if _, err := spec.addSecretVolumes(ss.SecretVolumes); err != nil {
+		if _, err := spec.addSecretVolumes(scalableSpec.CDAPServiceSpec.SecretVolumes); err != nil {
+			return nil, err
+		}
+		if _, err := spec.addAdditionalVolumes(scalableSpec.CDAPServiceSpec.AdditionalVolumes); err != nil {
+			return nil, err
+		}
+		if _, err := spec.addAdditionalVolumeMounts(scalableSpec.CDAPServiceSpec.AdditionalVolumeMounts); err != nil {
 			return nil, err
 		}
 	}
@@ -311,6 +367,58 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		return nil, nil
 	}
 	return spec, nil
+}
+
+type ByEnvKey []corev1.EnvVar
+
+func (k ByEnvKey) Len() int           { return len(k) }
+func (k ByEnvKey) Swap(i, j int)      { k[i], k[j] = k[j], k[i] }
+func (k ByEnvKey) Less(i, j int) bool { return k[i].Name < k[j].Name }
+
+func mergeEnvVars(baseEnvVars []corev1.EnvVar, overwriteEnvVars []corev1.EnvVar) ([]corev1.EnvVar, error) {
+	// Merge base and overwrite environment variables
+	envMap := make(map[string]corev1.EnvVar)
+	// Add base environment variables.
+	for _, baseEnvVar := range baseEnvVars {
+		if _, ok := envMap[baseEnvVar.Name]; ok {
+			return nil, fmt.Errorf("duplicate env var %q in base slice", baseEnvVar.Name)
+		}
+		envMap[baseEnvVar.Name] = baseEnvVar
+	}
+
+	// Add and overwrite the provided environment variables.
+	// Maintain a seen map and throw an error if there are duplicates in the overwrite env var slice.
+	seenVars := make(map[string]bool)
+	for _, envVar := range overwriteEnvVars {
+		if _, ok := seenVars[envVar.Name]; ok {
+			return nil, fmt.Errorf("duplicate env var %q in overwrite slice", envVar.Name)
+		}
+		seenVars[envVar.Name] = true
+		envMap[envVar.Name] = envVar
+	}
+
+	// Convert the map to a sorted slice.
+	env := []corev1.EnvVar{}
+	for _, envVar := range envMap {
+		env = append(env, envVar)
+	}
+	sort.Sort(ByEnvKey(env))
+	return env, nil
+}
+
+func serviceContainerSpec(ss *v1alpha1.CDAPServiceSpec,
+	master *v1alpha1.CDAPMaster, dataDir string, service ServiceName) (*ContainerSpec, error) {
+	// Merge environment variables between service spec and master spec
+	env, err := mergeEnvVars(master.Spec.Env, ss.Env)
+	if err != nil {
+		return nil, fmt.Errorf("failed to merge env vars for service %q with error: %v", service, err)
+	}
+	env = addJavaMaxHeapEnvIfNotPresent(env, ss.Resources)
+	c := newContainerSpec(master, service, dataDir).setResources(ss.Resources).setEnv(env).setLifecycle(ss.Lifecycle)
+	if service == serviceUserInterface {
+		c = updateSpecForUserInterface(master, c)
+	}
+	return c, nil
 }
 
 // Return a list of reconciler objects (e.g. statefulsets, deployment, NodePort service) for the given deployment plan
@@ -347,6 +455,29 @@ func buildStatefulSetsObject(spec *StatefulSpec) (*reconciler.Object, error) {
 	if err != nil {
 		return nil, err
 	}
+	// For container lifecycle hook, custom volumes, and custom volume mounts, we directly pass structs from the spec to bypass the YAML templating logic.
+	k8sObj, ok := obj.Obj.(*k8s.Object)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert object to k8s object")
+	}
+	statefulSetObj, ok := k8sObj.Obj.(*appsv1.StatefulSet)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert meta object to statefulset object")
+	}
+	if err := addVolumeToPodSpec(&statefulSetObj.Spec.Template.Spec, spec.Base.AdditionalVolumes); err != nil {
+		return nil, err
+	}
+	for index, _ := range statefulSetObj.Spec.Template.Spec.InitContainers {
+		if err := addVolumeMountToContainer(&statefulSetObj.Spec.Template.Spec.InitContainers[index], spec.Base.AdditionalVolumeMounts); err != nil {
+			return nil, err
+		}
+	}
+	for index, _ := range statefulSetObj.Spec.Template.Spec.Containers {
+		if err := addVolumeMountToContainer(&statefulSetObj.Spec.Template.Spec.Containers[index], spec.Base.AdditionalVolumeMounts); err != nil {
+			return nil, err
+		}
+		setLifecycleHookForContainer(&statefulSetObj.Spec.Template.Spec.Containers[index], spec.Containers[index].Lifecycle)
+	}
 	return obj, nil
 }
 
@@ -356,7 +487,58 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 	if err != nil {
 		return nil, err
 	}
+	// For container lifecycle hook, custom volumes, and volume mounts, we directly pass structs from the spec to bypass the YAML templating logic.
+	k8sObj, ok := obj.Obj.(*k8s.Object)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert object to k8s object")
+	}
+	deploymentObj, ok := k8sObj.Obj.(*appsv1.Deployment)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert meta object to statefulset object")
+	}
+	if err := addVolumeToPodSpec(&deploymentObj.Spec.Template.Spec, spec.Base.AdditionalVolumes); err != nil {
+		return nil, err
+	}
+	for index, _ := range deploymentObj.Spec.Template.Spec.InitContainers {
+		if err := addVolumeMountToContainer(&deploymentObj.Spec.Template.Spec.InitContainers[index], spec.Base.AdditionalVolumeMounts); err != nil {
+			return nil, err
+		}
+	}
+	for index, _ := range deploymentObj.Spec.Template.Spec.Containers {
+		if err := addVolumeMountToContainer(&deploymentObj.Spec.Template.Spec.Containers[index], spec.Base.AdditionalVolumeMounts); err != nil {
+			return nil, err
+		}
+		setLifecycleHookForContainer(&deploymentObj.Spec.Template.Spec.Containers[index], spec.Containers[index].Lifecycle)
+	}
 	return obj, nil
+}
+
+func addVolumeToPodSpec(podSpec *corev1.PodSpec, volumesToAdd []corev1.Volume) error {
+	for _, volumeToAdd := range volumesToAdd {
+		for _, volume := range podSpec.Volumes {
+			if volume.Name == volumeToAdd.Name {
+				return fmt.Errorf("failed to add custom volume %q to pod spec: already exists", volumeToAdd.Name)
+			}
+		}
+	}
+	podSpec.Volumes = append(podSpec.Volumes, volumesToAdd...)
+	return nil
+}
+
+func addVolumeMountToContainer(container *corev1.Container, volumeMountsToAdd []corev1.VolumeMount) error {
+	for _, volumeMountToAdd := range volumeMountsToAdd {
+		for _, volumeMount := range container.VolumeMounts {
+			if volumeMount.Name == volumeMountToAdd.Name {
+				return fmt.Errorf("failed to mount custom volume %q to container %q at path %q: already mounted", volumeMountToAdd.Name, container.Name, volumeMountToAdd.MountPath)
+			}
+		}
+	}
+	container.VolumeMounts = append(container.VolumeMounts, volumeMountsToAdd...)
+	return nil
+}
+
+func setLifecycleHookForContainer(container *corev1.Container, lifecycle *corev1.Lifecycle) {
+	container.Lifecycle = lifecycle
 }
 
 // Return a NodePort service to expose the supplied target service
@@ -482,9 +664,22 @@ func getRuntimeClass(master *v1alpha1.CDAPMaster, services ServiceGroup) (string
 func getServiceAccount(master *v1alpha1.CDAPMaster, services ServiceGroup) (string, error) {
 	serviceAccount := master.Spec.ServiceAccountName
 	if err := getStringFieldValue(master, services, "ServiceAccountName", &serviceAccount); err != nil {
-		return "", nil
+		return "", err
 	}
 	return serviceAccount, nil
+}
+
+// Return default SecurityContext in CDAPMaster.Spec or the overridden security context.
+func getSecurityContext(master *v1alpha1.CDAPMaster, services ServiceGroup) (*v1alpha1.SecurityContext, error) {
+	securityContext := master.Spec.SecurityContext
+	val, err := getFieldValueIfUnique(master, services, "SecurityContext")
+	if err != nil {
+		return nil, err
+	}
+	if overriddenSecurityContext, ok := val.(v1alpha1.SecurityContext); ok {
+		return &overriddenSecurityContext, nil
+	}
+	return securityContext, nil
 }
 
 // getReplicas returns the Replicas if all supplied services have the same setting, otherwise return an error
@@ -558,7 +753,7 @@ func getFieldValueIfUnique(master *v1alpha1.CDAPMaster, services ServiceGroup, f
 			fieldVal = fieldVal.Elem()
 		}
 		// Skip if empty
-		if fieldVal.Len() == 0 {
+		if fieldVal.Kind() == reflect.String && fieldVal.Len() == 0 {
 			continue
 		}
 		values = append(values, fieldVal.Interface())

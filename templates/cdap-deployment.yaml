@@ -11,6 +11,12 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+#
+#
+# NOTE: Some properties are highly nested and it is not feasible to pick them from the template file
+# hence those are added directly in the code.
+# For example, please check the method "../controllers/deployment.go#buildDeploymentObject" and see
+# how container's lifecycle property is added to the k8s object.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -36,6 +42,21 @@ spec:
         {{$k}}: "{{$v}}"
         {{end}}
     spec:
+      {{if .Base.SecurityContext}}
+      securityContext:
+        # For non-boolean pointers, it is reasonable to set this value only if it is non-zero.
+        {{if .Base.SecurityContext.RunAsUser}}
+        runAsUser: {{.Base.SecurityContext.RunAsUser}}
+        {{end}}
+        {{if .Base.SecurityContext.RunAsGroup}}
+        runAsGroup: {{.Base.SecurityContext.RunAsGroup}}
+        {{end}}
+        {{if .Base.SecurityContext.FSGroup}}
+        fsGroup: {{.Base.SecurityContext.FSGroup}}
+        {{end}}
+        # For boolean pointers, we always set the value and ensure there is a default set for nil values.
+        runAsNonRoot: {{.Base.SecurityContext.RunAsNonRoot}}
+      {{end}}
       {{if .Base.ServiceAccountName}}
       serviceAccountName: {{.Base.ServiceAccountName}}
       {{end}}
@@ -55,6 +76,13 @@ spec:
         - name: {{$c.Name}}
           image: {{$c.Image}}
           workingDir: {{$c.WorkingDir}}
+          {{if $.Base.SecurityContext}}
+          securityContext:
+            # For boolean pointers, we always set the value and ensure there is a default set for nil values.
+            privileged: {{$.Base.SecurityContext.Privileged}}
+            allowPrivilegeEscalation: {{$.Base.SecurityContext.AllowPrivilegeEscalation}}
+            readOnlyRootFilesystem: {{$.Base.SecurityContext.ReadOnlyRootFilesystem}}
+          {{end}}
           command:
           {{range $v := $c.Command }}
             - {{$v}}
@@ -243,7 +271,7 @@ spec:
               readOnly: true
             {{if $.Base.SecuritySecret}}
             - name: cdap-security
-              mountPath: /etc/cdap/security
+              mountPath: {{$.Base.SecuritySecretPath}}
               readOnly: true
             {{end}}
             {{range $k,$v := $.Base.ConfigMapVolumes}}
@@ -254,17 +282,6 @@ spec:
             - name: cdap-se-vol-{{$k}}
               mountPath: {{$v}}
             {{end}}
-          
-            {{if $c.VolumeMounts}}
-            {{range $vm := $c.VolumeMounts}}
-            - name: {{$vm.Name}}
-              mountPath: {{$vm.MountPath}}
-              {{if $vm.ReadOnly }}
-              readOnly: {{$vm.ReadOnly}}
-              {{end}}
-            {{end}}
-            {{end}}
-
       {{end}}
       volumes:
         - name: podinfo

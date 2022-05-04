@@ -19,6 +19,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"os"
+	"reflect"
+	"strings"
+	"text/template"
+
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -29,14 +35,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
-	"log"
-	"os"
-	"reflect"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"text/template"
 )
 
 // constants
@@ -116,6 +117,52 @@ func isReferringSameObject(a, b metav1.OwnerReference) bool {
 	return aGV == bGV && a.Kind == b.Kind && a.Name == b.Name
 }
 
+// needUpdateOwnerRefKindFormat returns whether 2 owner refs refer to
+// the same Object, but with owner Kind in different formats.
+func needUpdateOwnerRefKindFormat(a, b metav1.OwnerReference) bool {
+	// Check for referrences to different Objects
+	if a.APIVersion != b.APIVersion || a.Name != b.Name {
+		return false
+	}
+	// Check if Kinds are equivalent.
+	verNumA := versionNumber(a.APIVersion)
+	verNumB := versionNumber(b.APIVersion)
+	if !areKindsEquivalent(a.Kind, verNumA, b.Kind, verNumB) {
+		return false
+	}
+	// If Kinds already in same format, no need to update
+	if a.Kind == b.Kind {
+		return false
+	}
+	return true
+}
+
+// versionNumber returns the version number for api
+// version name of format <api-name>/<version-number>, eg: v1alpha1/Abc
+func versionNumber(apiVersion string) string {
+	parts := strings.Split(apiVersion, "/")
+	return parts[len(parts)-1]
+}
+
+// areKindsEquivalent returns whether two kinds are equivalent,
+// but in possibly different formats.
+// Possible formats:
+// 1) *<version>.<kind>, eg: *v1alpha1.CronJob
+// 2) <kind>, eg: CronJob
+func areKindsEquivalent(a, versionA, b, versionB string) bool {
+	if versionA != versionB {
+		return false
+	}
+	if a == b {
+		return true
+	}
+	if len(a) < len(b) {
+		return areKindsEquivalent(b, versionB, a, versionA)
+	}
+	// a is longer, possibly in format 1.
+	return a == fmt.Sprintf("*%s.%s", versionB, b)
+}
+
 // SetLabels - set labels
 func (o *Object) SetLabels(labels map[string]string) {
 	o.Obj.SetLabels(labels)
@@ -127,9 +174,21 @@ func (o *Object) SetOwnerReferences(ref *metav1.OwnerReference) bool {
 		return false
 	}
 	objRefs := o.Obj.GetOwnerReferences()
-	for _, r := range objRefs {
+	for idx, r := range objRefs {
 		if isReferringSameObject(*ref, r) {
 			return false
+		}
+		// If the owner refs point to the same object,
+		// but with different Kind format,  we need to replace
+		// the existing owner ref as K8s doesn't allow multiple owners
+		//  with controller field set to true.
+		// Replacement of owner refs is required since
+		// kind format *<api-version>.<kind> (eg: *v1aplha1.Abc)
+		// is no longer identified by K8s version 1.20 onwards.
+		if needUpdateOwnerRefKindFormat(*ref, r) {
+			objRefs[idx] = *ref
+			o.Obj.SetOwnerReferences(objRefs)
+			return true
 		}
 	}
 	objRefs = append(objRefs, *ref)
