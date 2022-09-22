@@ -52,12 +52,6 @@ const (
 )
 
 const (
-	// CRD field name (used by reflection)
-	fieldNameCDAPServiceSpec         = "CDAPServiceSpec"
-	fieldNameCDAPScalableServiceSpec = "CDAPScalableServiceSpec"
-	fieldNameCDAPStatefulServiceSpec = "CDAPStatefulServiceSpec"
-	fieldNameCDAPExternalServiceSpec = "CDAPExternalServiceSpec"
-
 	// cconf and hconf
 	confExploreEnabled                    = "explore.enabled"
 	confLocalDataDirKey                   = "local.data.dir"
