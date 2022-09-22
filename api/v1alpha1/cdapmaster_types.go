@@ -196,6 +196,15 @@ type CDAPStatefulServiceSpec struct {
 	StorageClassName *string `json:"storageClassName,omitempty"`
 }
 
+// CDAPScalableStatefulServiceSpec defines the base specification for stateful master services that can scale to more than one instance.
+//
+// If the name of structure needs to be changed, update the code where it uses reflect to find this field.
+type CDAPScalableStatefulServiceSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
+	// Replicas is number of replicas for the service.
+	Replicas *int32 `json:"replicas,omitempty"`
+}
+
 // AppFabricSpec defines the specification for the AppFabric service.
 type AppFabricSpec struct {
 	CDAPStatefulServiceSpec `json:",inline"`
@@ -228,7 +237,7 @@ type PreviewSpec struct {
 
 // RuntimeSpec defines the specification for the Runtime service.
 type RuntimeSpec struct {
-	CDAPStatefulServiceSpec `json:",inline"`
+	CDAPScalableStatefulServiceSpec `json:",inline"`
 }
 
 // AuthenticationSpec defines the specification for the Authentication service.
