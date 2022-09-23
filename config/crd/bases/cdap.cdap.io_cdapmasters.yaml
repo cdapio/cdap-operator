@@ -18029,6 +18029,10 @@ spec:
                   description: PriorityClassName is to specify the priority of the
                     pods for this service.
                   type: string
+                replicas:
+                  description: Replicas is number of replicas for the service.
+                  format: int32
+                  type: integer
                 resources:
                   description: Resources are Compute resources required by the service.
                   properties:

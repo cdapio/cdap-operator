@@ -226,7 +226,8 @@
           "memory": "100Mi"
         }
       },
-      "enableSystemMetrics": true
+      "enableSystemMetrics": true,
+      "replicas": 2
     },
     "router": {
       "metadata": {
