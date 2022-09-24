@@ -162,13 +162,18 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	if err != nil {
 		return nil, err
 	}
+	replicas, err := getReplicas(master, services)
+	if err != nil {
+		return nil, err
+	}
 
 	spec := newStatefulSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
 		setNodeSelector(nodeSelector).
 		setRuntimeClassName(runtimeClass).
 		setPriorityClassName(priorityClass).
-		setSecurityContext(securityContext)
+		setSecurityContext(securityContext).
+		setReplicas(replicas)
 
 	// Add init container
 	spec = spec.withInitContainer(
@@ -618,17 +623,12 @@ func getSecurityContext(master *v1alpha1.CDAPMaster, services ServiceGroup) (*v1
 func getReplicas(master *v1alpha1.CDAPMaster, services ServiceGroup) (int32, error) {
 	replicas := int32(0)
 	for _, service := range services {
-		if spec, err := getCDAPScalableServiceSpec(master, service); err != nil {
-			return 0, nil
-		} else if spec != nil {
-			if spec.Replicas == nil {
-				continue
-			}
-			if replicas == 0 {
-				replicas = *spec.Replicas
-			} else if replicas != *spec.Replicas {
-				return 0, fmt.Errorf("value of field Replicas not the same across (%s)", strings.Join(services, ","))
-			}
+		if serviceReplicas, err := getServiceReplicas(master, service); err != nil {
+			return 0, err
+		} else if replicas == 0 {
+			replicas = serviceReplicas
+		} else if replicas != serviceReplicas {
+			return 0, fmt.Errorf("value of field Replicas not the same across (%s)", strings.Join(services, ","))
 		}
 	}
 
@@ -636,6 +636,25 @@ func getReplicas(master *v1alpha1.CDAPMaster, services ServiceGroup) (int32, err
 		return 1, nil
 	}
 	return replicas, nil
+}
+
+// getServiceReplicas returns the Replicas of a scalable service. If the service is not scalable, return 1 as the replica count.
+func getServiceReplicas(master *v1alpha1.CDAPMaster, service ServiceName) (int32, error) {
+	spec, err := getCDAPMasterServiceSpec(master, service)
+	if err != nil {
+		return 0, err
+	}
+
+	// Get the Replicas *int32 field
+	value, err := getFieldValue(spec, func(field reflect.StructField) bool {
+		return field.Name == "Replicas" && field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Int32
+	})
+	// If no replicas field, just return 1
+	if err != nil || value == nil || value.IsNil() {
+		return 1, nil
+	}
+
+	return int32(value.Elem().Int()), nil
 }
 
 // Use reflection to extract the string value of supplied field name across all service specs. Return the value only
