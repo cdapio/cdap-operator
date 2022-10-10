@@ -146,6 +146,7 @@ type BaseSpec struct {
 	AdditionalVolumes      []corev1.Volume           `json:"additionalVolumes,omitempty"`
 	AdditionalVolumeMounts []corev1.VolumeMount      `json:"additionalVolumeMounts,omitempty"`
 	SecurityContext        *v1alpha1.SecurityContext `json:"securityContext,omitempty"`
+	Affinity               *corev1.Affinity          `json:"affinity,omitemtpy"`
 }
 
 func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf, sysappconf string) *BaseSpec {
@@ -171,6 +172,11 @@ func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]str
 
 func (s *BaseSpec) setServiceAccountName(name string) *BaseSpec {
 	s.ServiceAccountName = name
+	return s
+}
+
+func (s *BaseSpec) setAffinity(affinity *corev1.Affinity) *BaseSpec {
+	s.Affinity = affinity
 	return s
 }
 
@@ -358,6 +364,11 @@ func (s *DeploymentSpec) setSecurityContext(securityContext *v1alpha1.SecurityCo
 	return s
 }
 
+func (s *DeploymentSpec) setAffinity(affinity *corev1.Affinity) *DeploymentSpec {
+	s.Base.setAffinity(affinity)
+	return s
+}
+
 // For VolumnClaimTemplate in Statefulset
 type StorageSpec struct {
 	StorageClassName string `json:"storageClassName,omitempty"`
@@ -392,6 +403,11 @@ func (s *StatefulSpec) addLabel(key, val string) *StatefulSpec {
 
 func (s *StatefulSpec) setServiceAccountName(name string) *StatefulSpec {
 	s.Base.setServiceAccountName(name)
+	return s
+}
+
+func (s *StatefulSpec) setAffinity(affinity *corev1.Affinity) *StatefulSpec {
+	s.Base.setAffinity(affinity)
 	return s
 }
 

@@ -55,7 +55,7 @@
           "persistentVolumeClaim": {
             "claimName": "test-persistent-volume-claim"
           }
-        }  
+        }
       ],
       "additionalVolumeMounts": [
         {
@@ -79,7 +79,28 @@
           "name": "appfabric-env-var-test",
           "value": "some-value"
         }
-      ]
+      ],
+      "affinity": {
+        "podAntiAffinity": {
+          "preferredDuringSchedulingIgnoredDuringExecution": [
+            {
+              "weight": 100,
+              "podAffinityTerm": {
+                "labelSelector": {
+                  "matchExpressions": [
+                    {
+                      "key": "security",
+                      "operator": "In",
+                      "values": ["S2"]
+                    }
+                  ]
+                },
+                "topologyKey": "topology.kubernetes.io/zone"
+              }
+            }
+          ]
+        }
+      }
     },
     "authentication": {
       "metadata": {
@@ -108,7 +129,7 @@
       "metadata.storage.implementation": "elastic",
       "router.bind.port": "11015",
       "router.server.address": "cdap-test-router",
-      "security.authentication.handlerClassName":	"io.cdap.cdap.security.server.BasicAuthenticationHandler",
+      "security.authentication.handlerClassName": "io.cdap.cdap.security.server.BasicAuthenticationHandler",
       "security.authentication.basic.realmfile": "/opt/cdap/basicauth/basicrealm",
       "jmx.metrics.collector.server.port": "1234"
     },
@@ -130,7 +151,7 @@
                 "audience": "test-aud",
                 "expirationSeconds": 3600,
                 "path": "token"
-              } 
+              }
             },
             {
               "configMap": {
@@ -230,6 +251,27 @@
       "replicas": 2
     },
     "router": {
+      "affinity": {
+        "podAntiAffinity": {
+          "preferredDuringSchedulingIgnoredDuringExecution": [
+            {
+              "weight": 100,
+              "podAffinityTerm": {
+                "labelSelector": {
+                  "matchExpressions": [
+                    {
+                      "key": "security",
+                      "operator": "In",
+                      "values": ["S2"]
+                    }
+                  ]
+                },
+                "topologyKey": "topology.kubernetes.io/zone"
+              }
+            }
+          ]
+        }
+      },
       "metadata": {
         "creationTimestamp": null
       },
