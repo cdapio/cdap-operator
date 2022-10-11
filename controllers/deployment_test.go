@@ -161,7 +161,7 @@ var _ = Describe("Controller Suite", func() {
 		)
 		BeforeEach(func() {
 			envVar = []corev1.EnvVar{
-				corev1.EnvVar{
+				{
 					Name:  "some_env_var_name",
 					Value: "some_env_var_value",
 				},
@@ -274,63 +274,63 @@ func TestMergeEnvVars(t *testing.T) {
 		},
 		{
 			description:      "Only one env var in base slice returns one env var",
-			baseEnvVars:      []corev1.EnvVar{corev1.EnvVar{Name: "test", Value: "test-value"}},
+			baseEnvVars:      []corev1.EnvVar{{Name: "test", Value: "test-value"}},
 			overwriteEnvVars: []corev1.EnvVar{},
-			wantEnv:          []corev1.EnvVar{corev1.EnvVar{Name: "test", Value: "test-value"}},
+			wantEnv:          []corev1.EnvVar{{Name: "test", Value: "test-value"}},
 		},
 		{
 			description:      "Only one env var in overwrite slice returns one env var",
 			baseEnvVars:      []corev1.EnvVar{},
-			overwriteEnvVars: []corev1.EnvVar{corev1.EnvVar{Name: "test", Value: "test-value"}},
-			wantEnv:          []corev1.EnvVar{corev1.EnvVar{Name: "test", Value: "test-value"}},
+			overwriteEnvVars: []corev1.EnvVar{{Name: "test", Value: "test-value"}},
+			wantEnv:          []corev1.EnvVar{{Name: "test", Value: "test-value"}},
 		},
 		{
 			description:      "One different env var in each slice returns two env var",
-			baseEnvVars:      []corev1.EnvVar{corev1.EnvVar{Name: "test-a", Value: "test-value-a"}},
-			overwriteEnvVars: []corev1.EnvVar{corev1.EnvVar{Name: "test-b", Value: "test-value-b"}},
+			baseEnvVars:      []corev1.EnvVar{{Name: "test-a", Value: "test-value-a"}},
+			overwriteEnvVars: []corev1.EnvVar{{Name: "test-b", Value: "test-value-b"}},
 			wantEnv: []corev1.EnvVar{
-				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "test-b", Value: "test-value-b"},
+				{Name: "test-a", Value: "test-value-a"},
+				{Name: "test-b", Value: "test-value-b"},
 			},
 		},
 		{
 			description: "Env var in overwrite slice overwrites expected env var from base slice",
 			baseEnvVars: []corev1.EnvVar{
-				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "test-b", Value: "test-value-b"},
+				{Name: "test-a", Value: "test-value-a"},
+				{Name: "test-b", Value: "test-value-b"},
 			},
 			overwriteEnvVars: []corev1.EnvVar{
-				corev1.EnvVar{Name: "test-b", Value: "test-value-d"},
-				corev1.EnvVar{Name: "test-c", Value: "test-value-c"},
+				{Name: "test-b", Value: "test-value-d"},
+				{Name: "test-c", Value: "test-value-c"},
 			},
 			wantEnv: []corev1.EnvVar{
-				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "test-b", Value: "test-value-d"},
-				corev1.EnvVar{Name: "test-c", Value: "test-value-c"},
+				{Name: "test-a", Value: "test-value-a"},
+				{Name: "test-b", Value: "test-value-d"},
+				{Name: "test-c", Value: "test-value-c"},
 			},
 		},
 		{
 			description: "Multiple env vars in both slices returns env vars in sorted order",
 			baseEnvVars: []corev1.EnvVar{
-				corev1.EnvVar{Name: "a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "c", Value: "test-value-c"},
+				{Name: "a", Value: "test-value-a"},
+				{Name: "c", Value: "test-value-c"},
 			},
 			overwriteEnvVars: []corev1.EnvVar{
-				corev1.EnvVar{Name: "d", Value: "test-value-d"},
-				corev1.EnvVar{Name: "b", Value: "test-value-b"},
+				{Name: "d", Value: "test-value-d"},
+				{Name: "b", Value: "test-value-b"},
 			},
 			wantEnv: []corev1.EnvVar{
-				corev1.EnvVar{Name: "a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "b", Value: "test-value-b"},
-				corev1.EnvVar{Name: "c", Value: "test-value-c"},
-				corev1.EnvVar{Name: "d", Value: "test-value-d"},
+				{Name: "a", Value: "test-value-a"},
+				{Name: "b", Value: "test-value-b"},
+				{Name: "c", Value: "test-value-c"},
+				{Name: "d", Value: "test-value-d"},
 			},
 		},
 		{
 			description: "Duplicate env var keys in base slice returns error",
 			baseEnvVars: []corev1.EnvVar{
-				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "test-a", Value: "test-value-b"},
+				{Name: "test-a", Value: "test-value-a"},
+				{Name: "test-a", Value: "test-value-b"},
 			},
 			overwriteEnvVars: []corev1.EnvVar{},
 			wantErr:          cmpopts.AnyError,
@@ -339,8 +339,8 @@ func TestMergeEnvVars(t *testing.T) {
 			description: "Duplicate env var keys in overwrite slice returns error",
 			baseEnvVars: []corev1.EnvVar{},
 			overwriteEnvVars: []corev1.EnvVar{
-				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "test-a", Value: "test-value-b"},
+				{Name: "test-a", Value: "test-value-a"},
+				{Name: "test-a", Value: "test-value-b"},
 			},
 			wantErr: cmpopts.AnyError,
 		},

@@ -167,6 +167,10 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	if err != nil {
 		return nil, err
 	}
+	affinity, err := getAffinity(master, services)
+	if err != nil {
+		return nil, err
+	}
 
 	spec := newStatefulSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
@@ -174,7 +178,8 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		setRuntimeClassName(runtimeClass).
 		setPriorityClassName(priorityClass).
 		setSecurityContext(securityContext).
-		setReplicas(replicas)
+		setReplicas(replicas).
+		setAffinity(affinity)
 
 	// Add init container
 	spec = spec.withInitContainer(
@@ -307,6 +312,10 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 	if err != nil {
 		return nil, err
 	}
+	affinity, err := getAffinity(master, services)
+	if err != nil {
+		return nil, err
+	}
 
 	spec := newDeploymentSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
@@ -314,7 +323,8 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		setRuntimeClassName(runtimeClass).
 		setPriorityClassName(priorityClass).
 		setReplicas(replicas).
-		setSecurityContext(securityContext)
+		setSecurityContext(securityContext).
+		setAffinity(affinity)
 
 	// Add each service as a container
 	for _, s := range services {
@@ -457,6 +467,10 @@ func buildStatefulSetsObject(spec *StatefulSpec) (*reconciler.Object, error) {
 	if err := addVolumeToPodSpec(&statefulSetObj.Spec.Template.Spec, spec.Base.AdditionalVolumes); err != nil {
 		return nil, err
 	}
+
+	// Set Affinity for pod spec.
+	statefulSetObj.Spec.Template.Spec.Affinity = spec.Base.Affinity
+
 	for index, _ := range statefulSetObj.Spec.Template.Spec.InitContainers {
 		if err := addVolumeMountToContainer(&statefulSetObj.Spec.Template.Spec.InitContainers[index], spec.Base.AdditionalVolumeMounts); err != nil {
 			return nil, err
@@ -489,6 +503,8 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 	if err := addVolumeToPodSpec(&deploymentObj.Spec.Template.Spec, spec.Base.AdditionalVolumes); err != nil {
 		return nil, err
 	}
+	// Set Affinity for pod spec.
+	deploymentObj.Spec.Template.Spec.Affinity = spec.Base.Affinity
 	for index, _ := range deploymentObj.Spec.Template.Spec.InitContainers {
 		if err := addVolumeMountToContainer(&deploymentObj.Spec.Template.Spec.InitContainers[index], spec.Base.AdditionalVolumeMounts); err != nil {
 			return nil, err
@@ -670,6 +686,21 @@ func getSecurityContext(master *v1alpha1.CDAPMaster, services ServiceGroup) (*v1
 		return &overriddenSecurityContext, nil
 	}
 	return securityContext, nil
+}
+
+// Return the affinity if all the supplied services have the same affinity or nil. Otherwise return an error.
+func getAffinity(master *v1alpha1.CDAPMaster, services ServiceGroup) (*corev1.Affinity, error) {
+	val, err := getFieldValueIfUnique(master, services, "Affinity")
+	if err != nil {
+		return nil, err
+	}
+	if val == nil {
+		return nil, nil
+	}
+	if affinity, ok := val.(corev1.Affinity); ok {
+		return &affinity, nil
+	}
+	return nil, fmt.Errorf("unable to cast value of type %T into Affinity", val)
 }
 
 // getReplicas returns the Replicas if all supplied services have the same setting, otherwise return an error

@@ -165,6 +165,8 @@ type CDAPServiceSpec struct {
 	// Lifecycle is to specify Container Lifecycle hooks provided by Kubernetes for containers.
 	// This will not be applied to the init containers as init containers do not support lifecycle.
 	Lifecycle *corev1.Lifecycle `json:"lifecycle,omitempty"`
+	// Affinity describes node affinity scheduling rules for the service.
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 }
 
 // CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance.
@@ -270,7 +272,7 @@ type ArtifactCacheSpec struct {
 	CDAPStatefulServiceSpec `json:",inline"`
 }
 
-//  SystemMetricExporterSpec defines the specification for the SystemMetricsExporter service.
+// SystemMetricExporterSpec defines the specification for the SystemMetricsExporter service.
 type SystemMetricExporterSpec struct {
 	CDAPServiceSpec `json:",inline"`
 }
