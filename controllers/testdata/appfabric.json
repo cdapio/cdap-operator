@@ -402,6 +402,7 @@
       }
     ],
     "observedGeneration": 535,
+    "availableReplicas": 0,
     "readyReplicas": 1,
     "replicas": 0,
     "updatedReplicas": 1

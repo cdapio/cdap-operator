@@ -17,15 +17,16 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"log"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
-	"log"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
-	crscheme "sigs.k8s.io/controller-runtime/pkg/runtime/scheme"
+	crscheme "sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
 var (

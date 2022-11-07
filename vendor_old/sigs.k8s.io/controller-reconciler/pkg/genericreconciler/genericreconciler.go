@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strings"
 	"time"
 
 	apierror "k8s.io/apimachinery/pkg/api/errors"
@@ -31,9 +32,10 @@ import (
 	rmanager "sigs.k8s.io/controller-reconciler/pkg/reconciler/manager"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
 // Constants
@@ -68,7 +70,7 @@ func (gr *Reconciler) ReconcileResource(namespacedname types.NamespacedName) (re
 	period := DefaultReconcilePeriod
 	expected := []reconciler.Object{}
 	resource := gr.resource.(runtime.Object).DeepCopyObject()
-	nname := reflect.TypeOf(resource).String() + "/" + namespacedname.String()
+	nname := strings.Trim(reflect.TypeOf(resource).String(), "*") + "/" + namespacedname.String()
 	rm := gr.rsrcMgr.Get("k8s")
 	err := k8s.Get(rm, namespacedname, resource.(runtime.Object))
 	if err != nil {
@@ -358,7 +360,7 @@ func (gr *Reconciler) reconcileUsing(h Handler, resource runtime.Object, crname 
 }
 
 // Reconcile expected by kubebuilder
-func (gr *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (gr *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	r, err := gr.ReconcileResource(request.NamespacedName)
 	if err != nil {
 		fmt.Printf("err: %s", err.Error())
@@ -375,7 +377,7 @@ func WithManager(m manager.Manager) *Reconciler {
 
 // For - register api type
 func (gr *Reconciler) For(resource runtime.Object, gv schema.GroupVersion) *Reconciler {
-	gr.resource = resource
+	gr.resource = resource.(client.Object)
 	gr.gv = gv
 	return gr
 }

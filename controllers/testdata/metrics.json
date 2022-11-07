@@ -344,6 +344,7 @@
     "currentRevision": "cdap-test-metrics-5f584f798c",
     "observedGeneration": 8,
     "readyReplicas": 1,
+    "availableReplicas": 0,
     "replicas": 0,
     "updateRevision": "cdap-test-metrics-5f584f798c",
     "updatedReplicas": 1
