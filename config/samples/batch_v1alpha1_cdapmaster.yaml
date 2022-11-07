@@ -1,0 +1,20 @@
+apiVersion: cdap.cdap.io/v1alpha1
+kind: CDAPMaster
+metadata:
+  name: test
+spec:
+  locationURI: hdfs://hadoop:9000
+  serviceAccountName: cdap
+  securitySecret: cdap-secret
+  config:
+    enable.preview: "true"
+    data.storage.implementation: postgresql
+    data.storage.sql.jdbc.connection.url: jdbc:postgresql://postgres-postgresql:5432/cdap
+    data.storage.sql.jdbc.driver.name: org.postgresql.Driver
+    metadata.storage.implementation: elastic
+    metadata.elasticsearch.cluster.hosts: elasticsearch-master
+    hdfs.user: root
+    security.enabled: "true"
+    security.auth.server.announce.address: ""
+    security.auth.server.bind.address: "0.0.0.0"
+    security.auth.server.bind.port: "10009"

@@ -342,6 +342,7 @@
     "currentRevision": "cdap-test-preview-59d99db958",
     "observedGeneration": 8,
     "readyReplicas": 1,
+    "availableReplicas": 0,
     "replicas": 0,
     "updateRevision": "cdap-test-preview-59d99db958",
     "updatedReplicas": 1

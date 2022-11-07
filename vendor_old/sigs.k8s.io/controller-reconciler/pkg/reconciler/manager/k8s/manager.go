@@ -26,7 +26,7 @@ import (
 	"text/template"
 
 	corev1 "k8s.io/api/core/v1"
-	policyv1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -222,7 +222,7 @@ func (o *Object) GetName() string {
 // Observable captures the k8s resource info and selector to fetch child resources
 type Observable struct {
 	// ObjList refers to the list of resource objects
-	ObjList metav1.ListInterface
+	ObjList client.ObjectList
 	// Obj refers to the resource object  can be: sts, service, secret, pvc, ..
 	Obj metav1.Object
 	// Labels list of labels
@@ -305,7 +305,7 @@ func ObjectsFromFiles(values interface{}, fileResources []FileResource) ([]recon
 }
 
 // NewObservable returns an observable object
-func NewObservable(list metav1.ListInterface, labels map[string]string) reconciler.Observable {
+func NewObservable(list client.ObjectList, labels map[string]string) reconciler.Observable {
 	return reconciler.Observable{
 		Type: Type,
 		Obj: Observable{
@@ -329,7 +329,7 @@ func (rm *RsrcManager) ObservablesFromObjects(bag []reconciler.Object, labels ma
 			continue
 		}
 		if obj.ObjList != nil {
-			ro := obj.Obj.(runtime.Object)
+			ro := obj.Obj.(client.Object)
 			kinds, _, err := rm.scheme.ObjectKinds(ro)
 			if err == nil {
 				// Expect only 1 kind.  If there is more than one kind this is probably an edge case such as ListOptions.
@@ -349,7 +349,7 @@ func (rm *RsrcManager) ObservablesFromObjects(bag []reconciler.Object, labels ma
 				observable := reconciler.Observable{
 					Type: Type,
 					Obj: Observable{
-						ObjList: obj.ObjList,
+						ObjList: obj.ObjList.(client.ObjectList),
 						Labels:  labels,
 					},
 				}
@@ -525,7 +525,7 @@ func (rm *RsrcManager) Observe(observables ...reconciler.Observable) ([]reconcil
 		if obs.Labels != nil {
 			//log.Printf("   >>>list: %s labels:[%v]", reflect.TypeOf(obs.ObjList).String(), obs.Labels)
 			opts := client.ListOptions{Raw: &metav1.ListOptions{TypeMeta: obs.Type}}
-			err = rm.client.List(context.TODO(), obs.ObjList.(runtime.Object), client.MatchingLabels(obs.Labels), &opts)
+			err = rm.client.List(context.TODO(), obs.ObjList, client.MatchingLabels(obs.Labels), &opts)
 
 			if err == nil {
 				items, err := meta.ExtractList(obs.ObjList.(runtime.Object))
@@ -551,7 +551,7 @@ func (rm *RsrcManager) Observe(observables ...reconciler.Observable) ([]reconcil
 			otype := reflect.TypeOf(obj).String()
 			err = rm.client.Get(context.TODO(),
 				types.NamespacedName{Name: name, Namespace: namespace},
-				obs.Obj.(runtime.Object))
+				obs.Obj.(client.Object))
 			if err == nil {
 				log.Printf("   >>get: %s", otype+"/"+namespace+"/"+name)
 				resources = append(resources, reconciler.Object{Type: Type, Obj: &Object{Obj: obs.Obj}})
@@ -571,24 +571,24 @@ func (rm *RsrcManager) Observe(observables ...reconciler.Observable) ([]reconcil
 
 // Update - Generic client update
 func (rm *RsrcManager) Update(item reconciler.Object) error {
-	return rm.client.Update(context.TODO(), item.Obj.(*Object).Obj.(runtime.Object).DeepCopyObject())
+	return rm.client.Update(context.TODO(), item.Obj.(*Object).Obj.(client.Object))
 
 }
 
 // Create - Generic client create
 func (rm *RsrcManager) Create(item reconciler.Object) error {
-	return rm.client.Create(context.TODO(), item.Obj.(*Object).Obj.(runtime.Object))
+	return rm.client.Create(context.TODO(), item.Obj.(*Object).Obj.(client.Object))
 }
 
 // Delete - Generic client delete
 func (rm *RsrcManager) Delete(item reconciler.Object) error {
-	return rm.client.Delete(context.TODO(), item.Obj.(*Object).Obj.(runtime.Object), client.PropagationPolicy(metav1.DeletePropagationForeground))
+	return rm.client.Delete(context.TODO(), item.Obj.(*Object).Obj.(client.Object), client.PropagationPolicy(metav1.DeletePropagationForeground))
 }
 
 // Get a specific k8s obj
 func Get(rm manager.Manager, nn types.NamespacedName, o runtime.Object) error {
 	krm := rm.(*RsrcManager)
-	return krm.client.Get(context.TODO(), nn, o)
+	return krm.client.Get(context.TODO(), nn, o.(client.Object))
 }
 
 //---------------------- Objects ---------------------------------------
@@ -689,7 +689,7 @@ func (o *Observables) WithLabels(labels reconciler.KVMap) *Observables {
 }
 
 // For - add
-func (o *Observables) For(list metav1.ListInterface) *Observables {
+func (o *Observables) For(list client.ObjectList) *Observables {
 	o.observables = append(o.observables, NewObservable(list, o.labels))
 	return o
 }

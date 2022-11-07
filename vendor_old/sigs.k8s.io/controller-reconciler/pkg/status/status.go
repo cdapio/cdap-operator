@@ -16,7 +16,7 @@ package status
 import (
 	//"fmt"
 	appsv1 "k8s.io/api/apps/v1"
-	policyv1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-reconciler/pkg/reconciler"

@@ -1,7 +1,16 @@
 domain: cdap.io
+layout:
+- go.kubebuilder.io/v3
+projectName: cdap-operator
 repo: cdap.io/cdap-operator
 resources:
-- group: cdap
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: cdap.io
+  group: cdap
   kind: CDAPMaster
+  path: cdap.io/cdap-operator/api/v1alpha1
   version: v1alpha1
-version: "2"
+version: "3"
