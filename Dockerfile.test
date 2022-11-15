@@ -1,0 +1,27 @@
+# Build the manager binary
+FROM golang:1.19 as tester
+
+ENV version 1.0.8
+ENV arch amd64
+
+# Copy everything in the go src
+WORKDIR /go/src/cdap.io/cdap-operator
+COPY ./ ./
+
+# Install Kubebuilder
+RUN curl -L -O "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${version}/kubebuilder_${version}_linux_${arch}.tar.gz" && \
+    tar -zxvf kubebuilder_${version}_linux_${arch}.tar.gz && \
+    mv kubebuilder_${version}_linux_${arch} /usr/local/kubebuilder && \
+    cp /usr/local/kubebuilder/bin/* /usr/local/bin
+
+# Install setup-envtest
+RUN go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+RUN go env -w GO111MODULE=auto
+
+# download envtest 1.19.x for kubebuilder and to set KUBEBUILDER_ASSETS environment variable
+RUN $(go env GOPATH)/bin/setup-envtest use -p env 1.19.x > /tmp/setup_envtest.sh && \
+    eval `$(go env GOPATH)/bin/setup-envtest use -p env 1.19.x` && \
+    rm /tmp/setup_envtest.sh
+
+CMD make test

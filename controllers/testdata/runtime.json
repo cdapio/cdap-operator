@@ -33,7 +33,7 @@
   },
   "spec": {
     "progressDeadlineSeconds": 600,
-    "replicas": 1,
+    "replicas": 2,
     "revisionHistoryLimit": 10,
     "selector": {
       "matchLabels": {
@@ -421,7 +421,7 @@
     ]
   },
   "status": {
-    "availableReplicas": 1,
+    "availableReplicas": 0,
     "conditions": [
       {
         "lastTransitionTime": "2020-02-09T05:39:22Z",

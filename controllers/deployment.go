@@ -163,13 +163,23 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 	if err != nil {
 		return nil, err
 	}
+	replicas, err := getReplicas(master, services)
+	if err != nil {
+		return nil, err
+	}
+	affinity, err := getAffinity(master, services)
+	if err != nil {
+		return nil, err
+	}
 
 	spec := newStatefulSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
 		setNodeSelector(nodeSelector).
 		setRuntimeClassName(runtimeClass).
 		setPriorityClassName(priorityClass).
-		setSecurityContext(securityContext)
+		setSecurityContext(securityContext).
+		setReplicas(replicas).
+		setAffinity(affinity)
 
 	// Add init container
 	spec = spec.withInitContainer(
@@ -192,6 +202,14 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 			return nil, err
 		}
 		spec = spec.withContainer(c)
+
+		if ss.Containers != nil {
+			for _, container := range ss.Containers {
+				additionalContainer := containerSpecFromContainer(container, dataDir)
+				spec = spec.withContainer(additionalContainer)
+			}
+		}
+
 		if err := addSystemMetricsServiceIfEnabled(spec, master, ss, dataDir, c); err != nil {
 			return nil, err
 		}
@@ -302,6 +320,10 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 	if err != nil {
 		return nil, err
 	}
+	affinity, err := getAffinity(master, services)
+	if err != nil {
+		return nil, err
+	}
 
 	spec := newDeploymentSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
@@ -309,7 +331,8 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		setRuntimeClassName(runtimeClass).
 		setPriorityClassName(priorityClass).
 		setReplicas(replicas).
-		setSecurityContext(securityContext)
+		setSecurityContext(securityContext).
+		setAffinity(affinity)
 
 	// Add each service as a container
 	for _, s := range services {
@@ -328,6 +351,13 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 			return nil, err
 		}
 		spec = spec.withContainer(c)
+
+		if ss.Containers != nil {
+			for _, container := range ss.Containers {
+				additionalContainer := containerSpecFromContainer(container, dataDir)
+				spec = spec.withContainer(additionalContainer)
+			}
+		}
 
 		// Adding a label to allow k8s service selector to easily find the pod
 		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
@@ -452,17 +482,26 @@ func buildStatefulSetsObject(spec *StatefulSpec) (*reconciler.Object, error) {
 	if err := addVolumeToPodSpec(&statefulSetObj.Spec.Template.Spec, spec.Base.AdditionalVolumes); err != nil {
 		return nil, err
 	}
+
+	// Set Affinity for pod spec.
+  statefulSetObj.Spec.Template.Spec.Affinity = spec.Base.Affinity
+
 	for index, _ := range statefulSetObj.Spec.Template.Spec.InitContainers {
 		if err := addVolumeMountToContainer(&statefulSetObj.Spec.Template.Spec.InitContainers[index], spec.Base.AdditionalVolumeMounts); err != nil {
 			return nil, err
 		}
 	}
 	for index, _ := range statefulSetObj.Spec.Template.Spec.Containers {
-		if err := addVolumeMountToContainer(&statefulSetObj.Spec.Template.Spec.Containers[index], spec.Base.AdditionalVolumeMounts); err != nil {
-			return nil, err
-		}
-		setLifecycleHookForContainer(&statefulSetObj.Spec.Template.Spec.Containers[index], spec.Containers[index].Lifecycle)
-	}
+		container := &statefulSetObj.Spec.Template.Spec.Containers[index]
+    if err := addVolumeMountToContainer(container, spec.Base.AdditionalVolumeMounts); err != nil {
+      return nil, err
+    }
+    setEnvForContainer(container, spec.Containers[index].Env)
+    setLifecycleHookForContainer(container, spec.Containers[index].Lifecycle)
+    setLivenessProbeForContainer(container, spec.Containers[index].LivenessProbe)
+    setReadinessProbeForContainer(container, spec.Containers[index].ReadinessProbe)
+    setPortsForContainer(container, spec.Containers[index].Ports)
+  }
 	return obj, nil
 }
 
@@ -484,17 +523,24 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 	if err := addVolumeToPodSpec(&deploymentObj.Spec.Template.Spec, spec.Base.AdditionalVolumes); err != nil {
 		return nil, err
 	}
+	// Set Affinity for pod spec.
+  deploymentObj.Spec.Template.Spec.Affinity = spec.Base.Affinity
 	for index, _ := range deploymentObj.Spec.Template.Spec.InitContainers {
 		if err := addVolumeMountToContainer(&deploymentObj.Spec.Template.Spec.InitContainers[index], spec.Base.AdditionalVolumeMounts); err != nil {
 			return nil, err
 		}
 	}
 	for index, _ := range deploymentObj.Spec.Template.Spec.Containers {
-		if err := addVolumeMountToContainer(&deploymentObj.Spec.Template.Spec.Containers[index], spec.Base.AdditionalVolumeMounts); err != nil {
-			return nil, err
-		}
-		setLifecycleHookForContainer(&deploymentObj.Spec.Template.Spec.Containers[index], spec.Containers[index].Lifecycle)
-	}
+		container := &deploymentObj.Spec.Template.Spec.Containers[index]
+    if err := addVolumeMountToContainer(container, spec.Base.AdditionalVolumeMounts); err != nil {
+      return nil, err
+    }
+    setEnvForContainer(container, spec.Containers[index].Env)
+    setLifecycleHookForContainer(container, spec.Containers[index].Lifecycle)
+    setLivenessProbeForContainer(container, spec.Containers[index].LivenessProbe)
+    setReadinessProbeForContainer(container, spec.Containers[index].ReadinessProbe)
+    setPortsForContainer(container, spec.Containers[index].Ports)
+  }
 	return obj, nil
 }
 
@@ -522,8 +568,24 @@ func addVolumeMountToContainer(container *corev1.Container, volumeMountsToAdd []
 	return nil
 }
 
+func setEnvForContainer(container *corev1.Container, env []corev1.EnvVar) {
+	container.Env = env
+}
+
 func setLifecycleHookForContainer(container *corev1.Container, lifecycle *corev1.Lifecycle) {
 	container.Lifecycle = lifecycle
+}
+
+func setLivenessProbeForContainer(container *corev1.Container, livenessProbe *corev1.Probe) {
+	container.LivenessProbe = livenessProbe
+}
+
+func setReadinessProbeForContainer(container *corev1.Container, readinessProbe *corev1.Probe) {
+	container.ReadinessProbe = readinessProbe
+}
+
+func setPortsForContainer(container *corev1.Container, ports []corev1.ContainerPort) {
+	container.Ports = ports
 }
 
 // Return a NodePort service to expose the supplied target service
@@ -667,21 +729,31 @@ func getSecurityContext(master *v1alpha1.CDAPMaster, services ServiceGroup) (*v1
 	return securityContext, nil
 }
 
+// Return the affinity if all the supplied services have the same affinity or nil. Otherwise return an error.
+func getAffinity(master *v1alpha1.CDAPMaster, services ServiceGroup) (*corev1.Affinity, error) {
+	val, err := getFieldValueIfUnique(master, services, "Affinity")
+	if err != nil {
+		return nil, err
+	}
+	if val == nil {
+		return nil, nil
+	}
+	if affinity, ok := val.(corev1.Affinity); ok {
+		return &affinity, nil
+	}
+	return nil, fmt.Errorf("unable to cast value of type %T into Affinity", val)
+}
+
 // getReplicas returns the Replicas if all supplied services have the same setting, otherwise return an error
 func getReplicas(master *v1alpha1.CDAPMaster, services ServiceGroup) (int32, error) {
 	replicas := int32(0)
 	for _, service := range services {
-		if spec, err := getCDAPScalableServiceSpec(master, service); err != nil {
-			return 0, nil
-		} else if spec != nil {
-			if spec.Replicas == nil {
-				continue
-			}
-			if replicas == 0 {
-				replicas = *spec.Replicas
-			} else if replicas != *spec.Replicas {
-				return 0, fmt.Errorf("value of field Replicas not the same across (%s)", strings.Join(services, ","))
-			}
+		if serviceReplicas, err := getServiceReplicas(master, service); err != nil {
+			return 0, err
+		} else if replicas == 0 {
+			replicas = serviceReplicas
+		} else if replicas != serviceReplicas {
+			return 0, fmt.Errorf("value of field Replicas not the same across (%s)", strings.Join(services, ","))
 		}
 	}
 
@@ -689,6 +761,25 @@ func getReplicas(master *v1alpha1.CDAPMaster, services ServiceGroup) (int32, err
 		return 1, nil
 	}
 	return replicas, nil
+}
+
+// getServiceReplicas returns the Replicas of a scalable service. If the service is not scalable, return 1 as the replica count.
+func getServiceReplicas(master *v1alpha1.CDAPMaster, service ServiceName) (int32, error) {
+	spec, err := getCDAPMasterServiceSpec(master, service)
+	if err != nil {
+		return 0, err
+	}
+
+	// Get the Replicas *int32 field
+	value, err := getFieldValue(spec, func(field reflect.StructField) bool {
+		return field.Name == "Replicas" && field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Int32
+	})
+	// If no replicas field, just return 1
+	if err != nil || value == nil || value.IsNil() {
+		return 1, nil
+	}
+
+	return int32(value.Elem().Int()), nil
 }
 
 // Use reflection to extract the string value of supplied field name across all service specs. Return the value only

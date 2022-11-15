@@ -344,6 +344,7 @@
     "currentRevision": "cdap-test-messaging-68cf487786",
     "observedGeneration": 8,
     "readyReplicas": 1,
+    "availableReplicas": 0,
     "replicas": 0,
     "updateRevision": "cdap-test-messaging-68cf487786",
     "updatedReplicas": 1

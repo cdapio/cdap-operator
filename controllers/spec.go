@@ -46,6 +46,25 @@ type ContainerSpec struct {
 	ResourceLimits   map[string]*resource.Quantity `json:"resourceLimits,omitempty"`
 	DataDir          string                        `json:"dataDir,omitempty"`
 	Lifecycle        *corev1.Lifecycle             `json:"lifecycle,omitempty"`
+	Ports            []corev1.ContainerPort        `json:"ports,omitempty" patchStrategy:"merge" patchMergeKey:"containerPort" protobuf:"bytes,6,rep,name=ports"`
+	LivenessProbe    *corev1.Probe                 `json:"livenessProbe,omitempty" protobuf:"bytes,10,opt,name=livenessProbe"`
+	ReadinessProbe   *corev1.Probe                 `json:"readinessProbe,omitempty" protobuf:"bytes,11,opt,name=readinessProbe"`
+}
+
+func containerSpecFromContainer(container *corev1.Container, dataDir string) *ContainerSpec {
+	additionalContainer := new(ContainerSpec)
+	additionalContainer.Name = strings.ToLower(container.Name)
+	additionalContainer.Image = container.Image
+	additionalContainer.ImagePullPolicy = container.ImagePullPolicy
+	additionalContainer.WorkingDir = container.WorkingDir
+	additionalContainer.Args = container.Args
+	additionalContainer.Env = container.Env
+	additionalContainer.DataDir = dataDir
+	additionalContainer.LivenessProbe = container.LivenessProbe
+	additionalContainer.ReadinessProbe = container.ReadinessProbe
+	additionalContainer.Ports = container.Ports
+
+	return additionalContainer
 }
 
 func newContainerSpec(master *v1alpha1.CDAPMaster, name, dataDir string) *ContainerSpec {
@@ -146,6 +165,7 @@ type BaseSpec struct {
 	AdditionalVolumes      []corev1.Volume           `json:"additionalVolumes,omitempty"`
 	AdditionalVolumeMounts []corev1.VolumeMount      `json:"additionalVolumeMounts,omitempty"`
 	SecurityContext        *v1alpha1.SecurityContext `json:"securityContext,omitempty"`
+	Affinity               *corev1.Affinity          `json:"affinity,omitemtpy"`
 }
 
 func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf, sysappconf string) *BaseSpec {
@@ -171,6 +191,11 @@ func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]str
 
 func (s *BaseSpec) setServiceAccountName(name string) *BaseSpec {
 	s.ServiceAccountName = name
+	return s
+}
+
+func (s *BaseSpec) setAffinity(affinity *corev1.Affinity) *BaseSpec {
+	s.Affinity = affinity
 	return s
 }
 
@@ -358,6 +383,11 @@ func (s *DeploymentSpec) setSecurityContext(securityContext *v1alpha1.SecurityCo
 	return s
 }
 
+func (s *DeploymentSpec) setAffinity(affinity *corev1.Affinity) *DeploymentSpec {
+	s.Base.setAffinity(affinity)
+	return s
+}
+
 // For VolumnClaimTemplate in Statefulset
 type StorageSpec struct {
 	StorageClassName string `json:"storageClassName,omitempty"`
@@ -392,6 +422,11 @@ func (s *StatefulSpec) addLabel(key, val string) *StatefulSpec {
 
 func (s *StatefulSpec) setServiceAccountName(name string) *StatefulSpec {
 	s.Base.setServiceAccountName(name)
+	return s
+}
+
+func (s *StatefulSpec) setAffinity(affinity *corev1.Affinity) *StatefulSpec {
+	s.Base.setAffinity(affinity)
 	return s
 }
 

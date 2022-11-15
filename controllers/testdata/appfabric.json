@@ -66,6 +66,27 @@
         }
       },
       "spec": {
+        "affinity": {
+          "podAntiAffinity": {
+            "preferredDuringSchedulingIgnoredDuringExecution": [
+              {
+                "weight": 100,
+                "podAffinityTerm": {
+                  "labelSelector": {
+                    "matchExpressions": [
+                      {
+                        "key": "security",
+                        "operator": "In",
+                        "values": ["S2"]
+                      }
+                    ]
+                  },
+                  "topologyKey": "topology.kubernetes.io/zone"
+                }
+              }
+            ]
+          }
+        },
         "containers": [
           {
             "args": [
@@ -168,9 +189,7 @@
           {
             "name": "storageinit",
             "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
-            "args": [
-              "io.cdap.cdap.master.environment.k8s.StorageMain"
-            ],
+            "args": ["io.cdap.cdap.master.environment.k8s.StorageMain"],
             "resources": {},
             "volumeMounts": [
               {
@@ -315,7 +334,7 @@
                     "audience": "test-aud",
                     "expirationSeconds": 3600,
                     "path": "token"
-                  } 
+                  }
                 },
                 {
                   "configMap": {
@@ -383,6 +402,7 @@
       }
     ],
     "observedGeneration": 535,
+    "availableReplicas": 0,
     "readyReplicas": 1,
     "replicas": 0,
     "updatedReplicas": 1

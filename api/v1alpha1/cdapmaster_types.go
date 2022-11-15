@@ -1,4 +1,5 @@
 /*
+Copyright 2022.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -31,6 +32,8 @@ import (
 //   is used to find field value.
 // * For services that are optional (i.e. may or may not be required for CDAP to be operational), their service
 //   specification fields are pointers. By default, these optional services are disabled. Set to non-nil to enable them.
+
+// CDAPMasterSpec defines the desired state of CDAPMaster
 type CDAPMasterSpec struct {
 	// Image is the docker image name for the CDAP backend.
 	Image string `json:"image,omitempty"`
@@ -117,7 +120,7 @@ type CDAPMasterSpec struct {
 	// For information on supported volume types, see https://kubernetes.io/docs/concepts/storage/volumes/.
 	AdditionalVolumes []corev1.Volume `json:"additionalVolumes,omitempty"`
 	// AdditionalVolumeMounts defines a list of additional volume mounts for all services.
-	// For information on suported volume mount types, see https://kubernetes.io/docs/concepts/storage/volumes/.
+	// For information on supported volume mount types, see https://kubernetes.io/docs/concepts/storage/volumes/.
 	AdditionalVolumeMounts []corev1.VolumeMount `json:"additionalVolumeMounts,omitempty"`
 }
 
@@ -152,7 +155,7 @@ type CDAPServiceSpec struct {
 	// For information on supported volume types, see https://kubernetes.io/docs/concepts/storage/volumes/.
 	AdditionalVolumes []corev1.Volume `json:"additionalVolumes,omitempty"`
 	// AdditionalVolumeMounts defines a list of additional volume mounts for the service.
-	// For information on suported volume mount types, see https://kubernetes.io/docs/concepts/storage/volumes/.
+	// For information on supported volume mount types, see https://kubernetes.io/docs/concepts/storage/volumes/.
 	AdditionalVolumeMounts []corev1.VolumeMount `json:"additionalVolumeMounts,omitempty"`
 	// SecurityContext overrides the security context for the service pods.
 	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
@@ -165,6 +168,12 @@ type CDAPServiceSpec struct {
 	// Lifecycle is to specify Container Lifecycle hooks provided by Kubernetes for containers.
 	// This will not be applied to the init containers as init containers do not support lifecycle.
 	Lifecycle *corev1.Lifecycle `json:"lifecycle,omitempty"`
+	// Affinity describes node affinity scheduling rules for the service.
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// Containers define any additional containers a service has
+	// This is a list of containers and can be left blank
+	// A typical use is to add sidecars for a deployment
+	Containers []*corev1.Container `json:"containers,omitempty"`
 }
 
 // CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance.
@@ -194,6 +203,15 @@ type CDAPStatefulServiceSpec struct {
 	StorageSize string `json:"storageSize,omitempty"`
 	// StorageClassName is the name of the StorageClass for the persistent volume used by the service.
 	StorageClassName *string `json:"storageClassName,omitempty"`
+}
+
+// CDAPScalableStatefulServiceSpec defines the base specification for stateful master services that can scale to more than one instance.
+//
+// If the name of structure needs to be changed, update the code where it uses reflect to find this field.
+type CDAPScalableStatefulServiceSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
+	// Replicas is number of replicas for the service.
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // AppFabricSpec defines the specification for the AppFabric service.
@@ -228,7 +246,7 @@ type PreviewSpec struct {
 
 // RuntimeSpec defines the specification for the Runtime service.
 type RuntimeSpec struct {
-	CDAPStatefulServiceSpec `json:",inline"`
+	CDAPScalableStatefulServiceSpec `json:",inline"`
 }
 
 // AuthenticationSpec defines the specification for the Authentication service.
@@ -261,7 +279,7 @@ type ArtifactCacheSpec struct {
 	CDAPStatefulServiceSpec `json:",inline"`
 }
 
-//  SystemMetricExporterSpec defines the specification for the SystemMetricsExporter service.
+// SystemMetricExporterSpec defines the specification for the SystemMetricsExporter service.
 type SystemMetricExporterSpec struct {
 	CDAPServiceSpec `json:",inline"`
 }
@@ -280,7 +298,7 @@ type CDAPMasterStatus struct {
 	DowngradeStartTimeMillis int64 `json:"downgradeStartTimeMillis,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // CDAPMaster is the Schema for the cdapmasters API
 type CDAPMaster struct {
@@ -291,7 +309,7 @@ type CDAPMaster struct {
 	Status CDAPMasterStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // CDAPMasterList contains a list of CDAPMaster
 type CDAPMasterList struct {

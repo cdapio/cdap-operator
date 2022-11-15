@@ -26,7 +26,7 @@ import (
 	g "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -49,8 +49,9 @@ type Framework struct {
 	typename  string
 	Namespace string
 	mgr       manager.Manager
-	stopCh    chan struct{}
+	ctx    context.Context
 	client    client.Client
+	cancelContext context.CancelFunc
 }
 
 // Context context
@@ -71,19 +72,21 @@ func New(typename string) *Framework {
 	mgr, err := manager.New(cfg, manager.Options{})
 	g.Expect(err).NotTo(g.HaveOccurred(), "failed to initialize the Framework: %v", err)
 
-	err = apiextensionsv1beta1.AddToScheme(mgr.GetScheme())
+	err = apiextensionsv1.AddToScheme(mgr.GetScheme())
 	g.Expect(err).NotTo(g.HaveOccurred(), "failed to initialize the Framework: %v", err)
 
 	namespace := *ns
 	if namespace == "" {
 		namespace = "default"
 	}
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Framework{
 		typename:  typename,
 		Namespace: namespace,
 		mgr:       mgr,
 		client:    mgr.GetClient(),
-		stopCh:    make(chan struct{}),
+		ctx:    ctx,
+		cancelContext: cancel,
 	}
 }
 
@@ -116,31 +119,31 @@ func (f *Framework) GetScheme() *runtime.Scheme {
 // Start setup
 func (f *Framework) Start() {
 	// Start the manager so the watcher/cache are properly setup and started.
-	go f.mgr.Start(f.stopCh)
+	go f.mgr.Start(f.ctx)
 }
 
 // Stop setup
 func (f *Framework) Stop() {
 	gi.By("Tearing down the Framework")
 	// Stop the manager.
-	defer close(f.stopCh)
+	defer f.cancelContext()
 }
 
 // DeleteCR delete CR
 func (c *Context) DeleteCR() {
-	err := c.F.client.Delete(context.Background(), c.CR.(runtime.Object))
+	err := c.F.client.Delete(context.Background(), c.CR.(client.Object))
 	g.Expect(err).NotTo(g.HaveOccurred(), "failed to delete CR %s: %v", c.CR.GetName(), err)
 }
 
 // UpdateCR update CR
 func (c *Context) UpdateCR() {
-	err := c.F.client.Update(context.Background(), c.CR.(runtime.Object))
+	err := c.F.client.Update(context.Background(), c.CR.(client.Object))
 	g.Expect(err).NotTo(g.HaveOccurred(), "failed to update CR %s: %v", c.CR.GetName(), err)
 }
 
 // RefreshCR syncs to latest CR in api server
 func (c *Context) RefreshCR() {
-	err := c.F.client.Get(context.Background(), types.NamespacedName{Name: c.CR.GetName(), Namespace: c.CR.GetNamespace()}, c.CR.(runtime.Object))
+	err := c.F.client.Get(context.Background(), types.NamespacedName{Name: c.CR.GetName(), Namespace: c.CR.GetNamespace()}, c.CR.(client.Object))
 	g.Expect(err).NotTo(g.HaveOccurred(), "failed to refresh CR %s: %v", c.CR.GetName(), err)
 }
 
@@ -151,7 +154,7 @@ func (c *Context) CheckCR(validationFuncs ...func(interface{}) bool) {
 	f := c.F
 	gi.By("Checking the CR for " + f.typename + " name: " + name)
 	err := wait.Poll(5000*time.Millisecond, c.timeout*time.Second, func() (bool, error) {
-		err := f.client.Get(context.Background(), types.NamespacedName{Name: name, Namespace: c.CR.GetNamespace()}, c.CR.(runtime.Object))
+		err := f.client.Get(context.Background(), types.NamespacedName{Name: name, Namespace: c.CR.GetNamespace()}, c.CR.(client.Object))
 		if err != nil {
 			if errors.IsNotFound(err) {
 				return false, nil
@@ -174,7 +177,7 @@ func (c *Context) CheckCR(validationFuncs ...func(interface{}) bool) {
 
 // CreateCR create CR
 func (c *Context) CreateCR() {
-	err := c.F.client.Create(context.Background(), c.CR.(runtime.Object))
+	err := c.F.client.Create(context.Background(), c.CR.(client.Object))
 	g.Expect(err).NotTo(g.HaveOccurred(), "failed to create CR %s: %v", c.CR.GetName(), err)
 }
 

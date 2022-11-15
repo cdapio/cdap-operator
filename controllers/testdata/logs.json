@@ -344,6 +344,7 @@
     "currentRevision": "cdap-test-logs-7fd555cbbf",
     "observedGeneration": 8,
     "readyReplicas": 1,
+    "availableReplicas": 0,
     "replicas": 0,
     "updateRevision": "cdap-test-logs-7fd555cbbf",
     "updatedReplicas": 1

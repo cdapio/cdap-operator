@@ -1,18 +1,19 @@
 package controllers
 
 import (
-	v1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
 	"fmt"
-	batchv1 "k8s.io/api/batch/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"reflect"
-	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
-	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
-	"sigs.k8s.io/controller-reconciler/pkg/status"
 	"strconv"
 	"strings"
 	"time"
+
+	v1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
+	batchv1 "k8s.io/api/batch/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-reconciler/pkg/reconciler"
+	"sigs.k8s.io/controller-reconciler/pkg/reconciler/manager/k8s"
+	"sigs.k8s.io/controller-reconciler/pkg/status"
 )
 
 type VersionUpdated = bool

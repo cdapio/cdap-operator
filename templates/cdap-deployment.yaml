@@ -71,8 +71,8 @@ spec:
       priorityClassName: {{.Base.PriorityClassName}}
       {{end}}
       terminationGracePeriodSeconds: 120
-      {{range $c := .Containers}}
       containers:
+        {{range $c := .Containers}}
         - name: {{$c.Name}}
           image: {{$c.Image}}
           workingDir: {{$c.WorkingDir}}
@@ -93,11 +93,6 @@ spec:
           {{end}}
           {{if $c.ImagePullPolicy}}
           imagePullPolicy: {{$c.ImagePullPolicy}}
-          {{end}}
-          env:
-          {{range $e := $c.Env }}
-          - name: "{{$e.Name}}"
-            value: "{{$e.Value}}"
           {{end}}
           resources:
             {{if $c.ResourceRequests}}

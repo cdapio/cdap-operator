@@ -161,7 +161,7 @@ var _ = Describe("Controller Suite", func() {
 		)
 		BeforeEach(func() {
 			envVar = []corev1.EnvVar{
-				corev1.EnvVar{
+				{
 					Name:  "some_env_var_name",
 					Value: "some_env_var_value",
 				},
@@ -256,6 +256,160 @@ var _ = Describe("Controller Suite", func() {
 			}
 		})
 	})
+
+	Describe("Add additional generic container", func() {
+		readMaster := func(fileName string) *v1alpha1.CDAPMaster {
+			master := &v1alpha1.CDAPMaster{}
+			err := fromJson(fileName, master)
+			Expect(err).To(BeNil())
+			return master
+		}
+		readExpectedJson := func(fileName string) []byte {
+			json, err := ioutil.ReadFile("testdata/" + fileName)
+			Expect(err).To(BeNil())
+			return json
+		}
+		diffJson := func(expected, actual []byte) {
+			opts := jsondiff.DefaultConsoleOptions()
+			diff, text := jsondiff.Compare(expected, actual, &opts)
+			Expect(diff.String()).To(Equal(jsondiff.SupersetMatch.String()), text)
+		}
+		diffAdditionalContainers := func(containers []corev1.Container, containerName, expectedJsonFilename string) {
+			var additionalContainer *corev1.Container
+			for _, c := range containers {
+				if c.Name == containerName {
+					additionalContainer = &c
+					break
+				}
+			}
+
+			actualContainerJson, _ := json.Marshal(additionalContainer)
+			expectedContainerJson := readExpectedJson(expectedJsonFilename)
+			diffJson(actualContainerJson, expectedContainerJson)
+		}
+		It("It should add multiple containers for Router", func() {
+			master := readMaster("testdata/cdap_master_cr_multi_additional_containers.json")
+			emptyLabels := make(map[string]string)
+			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
+			Expect(err).To(BeNil())
+			objs, err := buildObjectsForDeploymentPlan(spec)
+			Expect(err).To(BeNil())
+
+			var strategyHandler DeploymentPlan
+			strategyHandler.Init()
+
+			for _, obj := range objs {
+				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.Deployment); ok {
+
+					if o.Name == getObjName(master, "router") {
+						containers := o.Spec.Template.Spec.Containers
+
+						Expect(len(containers)).To(BeIdenticalTo(3))
+
+						diffAdditionalContainers(containers, "test-router-container-a", "additional_router_container_a.json")
+						diffAdditionalContainers(containers, "test-router-container-b", "additional_router_container_b.json")
+					}
+				}
+			}
+		})
+		It("It should add multiple containers for AppFabric", func() {
+			master := readMaster("testdata/cdap_master_cr_multi_additional_containers.json")
+			emptyLabels := make(map[string]string)
+			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
+			Expect(err).To(BeNil())
+			objs, err := buildObjectsForDeploymentPlan(spec)
+			Expect(err).To(BeNil())
+
+			var strategyHandler DeploymentPlan
+			strategyHandler.Init()
+
+			for _, obj := range objs {
+				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.StatefulSet); ok {
+					if o.Name == getObjName(master, "appFabric") {
+						containers := o.Spec.Template.Spec.Containers
+
+						Expect(len(containers)).To(BeIdenticalTo(3))
+
+						diffAdditionalContainers(containers, "test-appfabric-container-a", "additional_appfabric_container_a.json")
+						diffAdditionalContainers(containers, "test-appfabric-container-b", "additional_appfabric_container_b.json")
+					}
+				}
+			}
+		})
+		It("It should add no additional containers for Router", func() {
+			master := readMaster("testdata/cdap_master_cr.json")
+			emptyLabels := make(map[string]string)
+			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
+			Expect(err).To(BeNil())
+			objs, err := buildObjectsForDeploymentPlan(spec)
+			Expect(err).To(BeNil())
+
+			var strategyHandler DeploymentPlan
+			strategyHandler.Init()
+
+			for _, obj := range objs {
+				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.Deployment); ok {
+					if o.Name == getObjName(master, "router") {
+						containers := o.Spec.Template.Spec.Containers
+
+						Expect(len(containers)).To(BeIdenticalTo(1))
+						Expect(containers[0].Name).To(BeIdenticalTo("router"))
+						Expect(containers[0].Env).To(ConsistOf([]corev1.EnvVar{
+							{
+								Name: "all-services-test",
+								Value: "some-value",
+								ValueFrom: nil,
+							},
+							{
+								Name: "JAVA_HEAPMAX",
+								Value: "-Xmx62914560",
+								ValueFrom: nil,
+							},
+						}))
+					}
+				}
+			}
+		})
+		It("It should add no additional containers for AppFabric", func() {
+			master := readMaster("testdata/cdap_master_cr.json")
+			emptyLabels := make(map[string]string)
+			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
+			Expect(err).To(BeNil())
+			objs, err := buildObjectsForDeploymentPlan(spec)
+			Expect(err).To(BeNil())
+
+			var strategyHandler DeploymentPlan
+			strategyHandler.Init()
+
+			for _, obj := range objs {
+				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.StatefulSet); ok {
+					if o.Name == getObjName(master, "appFabric") {
+						containers := o.Spec.Template.Spec.Containers
+
+						Expect(len(containers)).To(BeIdenticalTo(1))
+						Expect(containers[0].Name).To(BeIdenticalTo("appfabric"))
+						Expect(containers[0].Env).To(ConsistOf([]corev1.EnvVar{
+							{
+								Name: "all-services-test",
+								Value: "some-value-overridden",
+								ValueFrom: nil,
+							},
+							{
+								Name: "appfabric-env-var-test",
+								Value: "some-value",
+								ValueFrom: nil,
+							},
+							{
+								Name: "JAVA_HEAPMAX",
+								Value: "-Xmx62914560",
+								ValueFrom: nil,
+							},
+						}))
+					}
+				}
+			}
+		})
+	})
 })
 
 func TestMergeEnvVars(t *testing.T) {
@@ -274,63 +428,63 @@ func TestMergeEnvVars(t *testing.T) {
 		},
 		{
 			description:      "Only one env var in base slice returns one env var",
-			baseEnvVars:      []corev1.EnvVar{corev1.EnvVar{Name: "test", Value: "test-value"}},
+			baseEnvVars:      []corev1.EnvVar{{Name: "test", Value: "test-value"}},
 			overwriteEnvVars: []corev1.EnvVar{},
-			wantEnv:          []corev1.EnvVar{corev1.EnvVar{Name: "test", Value: "test-value"}},
+			wantEnv:          []corev1.EnvVar{{Name: "test", Value: "test-value"}},
 		},
 		{
 			description:      "Only one env var in overwrite slice returns one env var",
 			baseEnvVars:      []corev1.EnvVar{},
-			overwriteEnvVars: []corev1.EnvVar{corev1.EnvVar{Name: "test", Value: "test-value"}},
-			wantEnv:          []corev1.EnvVar{corev1.EnvVar{Name: "test", Value: "test-value"}},
+			overwriteEnvVars: []corev1.EnvVar{{Name: "test", Value: "test-value"}},
+			wantEnv:          []corev1.EnvVar{{Name: "test", Value: "test-value"}},
 		},
 		{
 			description:      "One different env var in each slice returns two env var",
-			baseEnvVars:      []corev1.EnvVar{corev1.EnvVar{Name: "test-a", Value: "test-value-a"}},
-			overwriteEnvVars: []corev1.EnvVar{corev1.EnvVar{Name: "test-b", Value: "test-value-b"}},
+			baseEnvVars:      []corev1.EnvVar{{Name: "test-a", Value: "test-value-a"}},
+			overwriteEnvVars: []corev1.EnvVar{{Name: "test-b", Value: "test-value-b"}},
 			wantEnv: []corev1.EnvVar{
-				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "test-b", Value: "test-value-b"},
+				{Name: "test-a", Value: "test-value-a"},
+				{Name: "test-b", Value: "test-value-b"},
 			},
 		},
 		{
 			description: "Env var in overwrite slice overwrites expected env var from base slice",
 			baseEnvVars: []corev1.EnvVar{
-				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "test-b", Value: "test-value-b"},
+				{Name: "test-a", Value: "test-value-a"},
+				{Name: "test-b", Value: "test-value-b"},
 			},
 			overwriteEnvVars: []corev1.EnvVar{
-				corev1.EnvVar{Name: "test-b", Value: "test-value-d"},
-				corev1.EnvVar{Name: "test-c", Value: "test-value-c"},
+				{Name: "test-b", Value: "test-value-d"},
+				{Name: "test-c", Value: "test-value-c"},
 			},
 			wantEnv: []corev1.EnvVar{
-				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "test-b", Value: "test-value-d"},
-				corev1.EnvVar{Name: "test-c", Value: "test-value-c"},
+				{Name: "test-a", Value: "test-value-a"},
+				{Name: "test-b", Value: "test-value-d"},
+				{Name: "test-c", Value: "test-value-c"},
 			},
 		},
 		{
 			description: "Multiple env vars in both slices returns env vars in sorted order",
 			baseEnvVars: []corev1.EnvVar{
-				corev1.EnvVar{Name: "a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "c", Value: "test-value-c"},
+				{Name: "a", Value: "test-value-a"},
+				{Name: "c", Value: "test-value-c"},
 			},
 			overwriteEnvVars: []corev1.EnvVar{
-				corev1.EnvVar{Name: "d", Value: "test-value-d"},
-				corev1.EnvVar{Name: "b", Value: "test-value-b"},
+				{Name: "d", Value: "test-value-d"},
+				{Name: "b", Value: "test-value-b"},
 			},
 			wantEnv: []corev1.EnvVar{
-				corev1.EnvVar{Name: "a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "b", Value: "test-value-b"},
-				corev1.EnvVar{Name: "c", Value: "test-value-c"},
-				corev1.EnvVar{Name: "d", Value: "test-value-d"},
+				{Name: "a", Value: "test-value-a"},
+				{Name: "b", Value: "test-value-b"},
+				{Name: "c", Value: "test-value-c"},
+				{Name: "d", Value: "test-value-d"},
 			},
 		},
 		{
 			description: "Duplicate env var keys in base slice returns error",
 			baseEnvVars: []corev1.EnvVar{
-				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "test-a", Value: "test-value-b"},
+				{Name: "test-a", Value: "test-value-a"},
+				{Name: "test-a", Value: "test-value-b"},
 			},
 			overwriteEnvVars: []corev1.EnvVar{},
 			wantErr:          cmpopts.AnyError,
@@ -339,8 +493,8 @@ func TestMergeEnvVars(t *testing.T) {
 			description: "Duplicate env var keys in overwrite slice returns error",
 			baseEnvVars: []corev1.EnvVar{},
 			overwriteEnvVars: []corev1.EnvVar{
-				corev1.EnvVar{Name: "test-a", Value: "test-value-a"},
-				corev1.EnvVar{Name: "test-a", Value: "test-value-b"},
+				{Name: "test-a", Value: "test-value-a"},
+				{Name: "test-a", Value: "test-value-b"},
 			},
 			wantErr: cmpopts.AnyError,
 		},
