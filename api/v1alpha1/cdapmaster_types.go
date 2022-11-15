@@ -25,8 +25,6 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// CDAPMasterSpec defines the desired state of CDAPMaster
-//
 // Important notes:
 // * The field name of each service MUST match the constant values of ServiceName in constants.go as reflection
 //   is used to find field value.

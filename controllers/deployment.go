@@ -484,7 +484,7 @@ func buildStatefulSetsObject(spec *StatefulSpec) (*reconciler.Object, error) {
 	}
 
 	// Set Affinity for pod spec.
-  statefulSetObj.Spec.Template.Spec.Affinity = spec.Base.Affinity
+	statefulSetObj.Spec.Template.Spec.Affinity = spec.Base.Affinity
 
 	for index, _ := range statefulSetObj.Spec.Template.Spec.InitContainers {
 		if err := addVolumeMountToContainer(&statefulSetObj.Spec.Template.Spec.InitContainers[index], spec.Base.AdditionalVolumeMounts); err != nil {
@@ -524,7 +524,7 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 		return nil, err
 	}
 	// Set Affinity for pod spec.
-  deploymentObj.Spec.Template.Spec.Affinity = spec.Base.Affinity
+	deploymentObj.Spec.Template.Spec.Affinity = spec.Base.Affinity
 	for index, _ := range deploymentObj.Spec.Template.Spec.InitContainers {
 		if err := addVolumeMountToContainer(&deploymentObj.Spec.Template.Spec.InitContainers[index], spec.Base.AdditionalVolumeMounts); err != nil {
 			return nil, err
