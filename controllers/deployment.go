@@ -493,15 +493,15 @@ func buildStatefulSetsObject(spec *StatefulSpec) (*reconciler.Object, error) {
 	}
 	for index, _ := range statefulSetObj.Spec.Template.Spec.Containers {
 		container := &statefulSetObj.Spec.Template.Spec.Containers[index]
-    if err := addVolumeMountToContainer(container, spec.Base.AdditionalVolumeMounts); err != nil {
-      return nil, err
-    }
-    setEnvForContainer(container, spec.Containers[index].Env)
-    setLifecycleHookForContainer(container, spec.Containers[index].Lifecycle)
-    setLivenessProbeForContainer(container, spec.Containers[index].LivenessProbe)
-    setReadinessProbeForContainer(container, spec.Containers[index].ReadinessProbe)
-    setPortsForContainer(container, spec.Containers[index].Ports)
-  }
+		if err := addVolumeMountToContainer(container, spec.Base.AdditionalVolumeMounts); err != nil {
+			return nil, err
+		}
+		setEnvForContainer(container, spec.Containers[index].Env)
+		setLifecycleHookForContainer(container, spec.Containers[index].Lifecycle)
+		setLivenessProbeForContainer(container, spec.Containers[index].LivenessProbe)
+		setReadinessProbeForContainer(container, spec.Containers[index].ReadinessProbe)
+		setPortsForContainer(container, spec.Containers[index].Ports)
+	}
 	return obj, nil
 }
 
@@ -532,15 +532,15 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 	}
 	for index, _ := range deploymentObj.Spec.Template.Spec.Containers {
 		container := &deploymentObj.Spec.Template.Spec.Containers[index]
-    if err := addVolumeMountToContainer(container, spec.Base.AdditionalVolumeMounts); err != nil {
-      return nil, err
-    }
-    setEnvForContainer(container, spec.Containers[index].Env)
-    setLifecycleHookForContainer(container, spec.Containers[index].Lifecycle)
-    setLivenessProbeForContainer(container, spec.Containers[index].LivenessProbe)
-    setReadinessProbeForContainer(container, spec.Containers[index].ReadinessProbe)
-    setPortsForContainer(container, spec.Containers[index].Ports)
-  }
+		if err := addVolumeMountToContainer(container, spec.Base.AdditionalVolumeMounts); err != nil {
+			return nil, err
+		}
+		setEnvForContainer(container, spec.Containers[index].Env)
+		setLifecycleHookForContainer(container, spec.Containers[index].Lifecycle)
+		setLivenessProbeForContainer(container, spec.Containers[index].LivenessProbe)
+		setReadinessProbeForContainer(container, spec.Containers[index].ReadinessProbe)
+		setPortsForContainer(container, spec.Containers[index].Ports)
+	}
 	return obj, nil
 }
 

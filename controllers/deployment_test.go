@@ -356,13 +356,13 @@ var _ = Describe("Controller Suite", func() {
 						Expect(containers[0].Name).To(BeIdenticalTo("router"))
 						Expect(containers[0].Env).To(ConsistOf([]corev1.EnvVar{
 							{
-								Name: "all-services-test",
-								Value: "some-value",
+								Name:      "all-services-test",
+								Value:     "some-value",
 								ValueFrom: nil,
 							},
 							{
-								Name: "JAVA_HEAPMAX",
-								Value: "-Xmx62914560",
+								Name:      "JAVA_HEAPMAX",
+								Value:     "-Xmx62914560",
 								ValueFrom: nil,
 							},
 						}))
@@ -390,18 +390,18 @@ var _ = Describe("Controller Suite", func() {
 						Expect(containers[0].Name).To(BeIdenticalTo("appfabric"))
 						Expect(containers[0].Env).To(ConsistOf([]corev1.EnvVar{
 							{
-								Name: "all-services-test",
-								Value: "some-value-overridden",
+								Name:      "all-services-test",
+								Value:     "some-value-overridden",
 								ValueFrom: nil,
 							},
 							{
-								Name: "appfabric-env-var-test",
-								Value: "some-value",
+								Name:      "appfabric-env-var-test",
+								Value:     "some-value",
 								ValueFrom: nil,
 							},
 							{
-								Name: "JAVA_HEAPMAX",
-								Value: "-Xmx62914560",
+								Name:      "JAVA_HEAPMAX",
+								Value:     "-Xmx62914560",
 								ValueFrom: nil,
 							},
 						}))

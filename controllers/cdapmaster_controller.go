@@ -198,9 +198,9 @@ func ApplyDefaults(resource interface{}) {
 	finalizer.EnsureStandard(r)
 }
 
-/////////////////////////////////////////////////////////
-///// Handling reconciling ConfigMapHandler objects /////
-/////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////
+// /// Handling reconciling ConfigMapHandler objects /////
+// ///////////////////////////////////////////////////////
 type ConfigMapHandler struct{}
 
 func (h *ConfigMapHandler) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
@@ -289,9 +289,9 @@ func buildConfigMapObject(spec *ConfigMapSpec) reconciler.Object {
 	return obj
 }
 
-///////////////////////////////////////////////////////////
-///// Handling reconciling deployment of all services /////
-///////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////
+// /// Handling reconciling deployment of all services /////
+// /////////////////////////////////////////////////////////
 type ServiceHandler struct{}
 
 func (h *ServiceHandler) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
@@ -369,9 +369,9 @@ func CopyNodePortIfAny(expected, observed []reconciler.Object) {
 	}
 }
 
-///////////////////////////////////////////////////////
-///// Handler for image version upgrade/downgrade /////
-///////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////
+// /// Handler for image version upgrade/downgrade /////
+// /////////////////////////////////////////////////////
 type VersionUpdateHandler struct{}
 
 func (h *VersionUpdateHandler) Observables(rsrc interface{}, labels map[string]string, dependent []reconciler.Object) []reconciler.Observable {
