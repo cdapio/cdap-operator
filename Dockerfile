@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.13 as builder
+FROM golang:1.19 as builder
 
 # Copy everything in the go src
 WORKDIR /go/src/cdap.io/cdap-operator
