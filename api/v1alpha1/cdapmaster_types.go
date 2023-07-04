@@ -184,8 +184,12 @@ type CDAPExternalServiceSpec struct {
 	CDAPScalableServiceSpec `json:",inline"`
 	// ServiceType is the service type in kubernetes, default is NodePort.
 	ServiceType *string `json:"serviceType,omitempty"`
+	// LoadBalancerIP is the static IP address reserved for the service's load balancer.
+	LoadBalancerIP *string `json:"loadBalancerIP,omitempty"`
 	// ServicePort is the port number for the service.
 	ServicePort *int32 `json:"servicePort,omitempty"`
+	// Annotations are the metadata annotations for the kubernetes service. They can be used to configure cloud provider specific behavior for LoadBalancer services.
+	Annotations map[string]string `json:"Annotations,omitempty"`
 }
 
 // CDAPStatefulServiceSpec defines the base specification for stateful master services.

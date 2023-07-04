@@ -24801,6 +24801,13 @@ spec:
               router:
                 description: Router is specification for the CDAP router service.
                 properties:
+                  Annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations are the metadata annotations for the
+                      kubernetes service. They can be used to configure cloud provider
+                      specific behavior for LoadBalancer services.
+                    type: object
                   additionalVolumeMounts:
                     description: AdditionalVolumeMounts defines a list of additional
                       volume mounts for the service. For information on supported
@@ -27576,6 +27583,10 @@ spec:
                             type: object
                         type: object
                     type: object
+                  loadBalancerIP:
+                    description: LoadBalancerIP is the static IP address reserved
+                      for the service's load balancer.
+                    type: string
                   metadata:
                     description: Metadata for the service.
                     type: object
@@ -39317,6 +39328,13 @@ spec:
               userInterface:
                 description: UserInterface is specification for the CDAP UI service.
                 properties:
+                  Annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations are the metadata annotations for the
+                      kubernetes service. They can be used to configure cloud provider
+                      specific behavior for LoadBalancer services.
+                    type: object
                   additionalVolumeMounts:
                     description: AdditionalVolumeMounts defines a list of additional
                       volume mounts for the service. For information on supported
@@ -42092,6 +42110,10 @@ spec:
                             type: object
                         type: object
                     type: object
+                  loadBalancerIP:
+                    description: LoadBalancerIP is the static IP address reserved
+                      for the service's load balancer.
+                    type: string
                   metadata:
                     description: Metadata for the service.
                     type: object

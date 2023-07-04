@@ -251,6 +251,11 @@
       "replicas": 2
     },
     "router": {
+      "Annotations": {
+        "networking.gke.io/load-balancer-type":"Internal"
+      },
+      "loadBalancerIP": "172.25.80.9",
+      "serviceType": "LoadBalancer",
       "affinity": {
         "podAntiAffinity": {
           "preferredDuringSchedulingIgnoredDuringExecution": [

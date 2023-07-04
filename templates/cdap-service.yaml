@@ -28,6 +28,9 @@ metadata:
     {{end}}
 {{end}}
 spec:
+{{if .LoadBalancerIP}}
+  loadBalancerIP: {{.LoadBalancerIP}}
+{{end}}
 {{if .ServiceType}}
   type: {{.ServiceType}}
 {{else}}
@@ -38,7 +41,6 @@ spec:
     {{$k}}: "{{$v}}"
     {{end}}
   ports:
-
   - protocol: TCP
     port: {{.ServicePort}}
     targetPort: {{.ServicePort}}
