@@ -554,7 +554,7 @@ func buildNetworkService(master *v1alpha1.CDAPMaster, name NetworkServiceName, t
 		return nil, err
 	}
 	objName := getObjName(master, name)
-	return newNetworkServiceSpec(objName, labels, s.ServiceType, s.ServicePort, master).
+	return newNetworkServiceSpec(objName, labels, s.Annotations, s.ServiceType, s.LoadBalancerIP, s.ServicePort, master).
 		addSelector(labelContainerKeyPrefix+target, master.Name), nil
 }
 

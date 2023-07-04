@@ -83,10 +83,22 @@ func (in *CDAPExternalServiceSpec) DeepCopyInto(out *CDAPExternalServiceSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.LoadBalancerIP != nil {
+		in, out := &in.LoadBalancerIP, &out.LoadBalancerIP
+		*out = new(string)
+		**out = **in
+	}
 	if in.ServicePort != nil {
 		in, out := &in.ServicePort, &out.ServicePort
 		*out = new(int32)
 		**out = **in
+	}
+	if in.Annotations != nil {
+		in, out := &in.Annotations, &out.Annotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
 	}
 }
 

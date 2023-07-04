@@ -480,25 +480,26 @@ func (s *StatefulSpec) setSecurityContext(securityContext *v1alpha1.SecurityCont
 }
 
 type NetworkServiceSpec struct {
-	Name        string             `json:"name,omitempty"`
-	Namespace   string             `json:"namespace,omitempty"`
-	Annotations *map[string]string `json:"annotations,omitempty"`
-	Labels      map[string]string  `json:"labels,omitempty"`
-	Selectors   map[string]string  `json:"selectors,omitempty"`
-	ServiceType *string            `json:"serviceType,omitempty"`
-	ServicePort *int32             `json:"servicePort,omitempty"`
+	Name           string            `json:"name,omitempty"`
+	Namespace      string            `json:"namespace,omitempty"`
+	Annotations    map[string]string `json:"annotations,omitempty"`
+	Labels         map[string]string `json:"labels,omitempty"`
+	Selectors      map[string]string `json:"selectors,omitempty"`
+	ServiceType    *string           `json:"serviceType,omitempty"`
+	ServicePort    *int32            `json:"servicePort,omitempty"`
+	LoadBalancerIP *string           `json:"loadBalancerIP,omitempty"`
 }
 
-func newNetworkServiceSpec(name string, labels map[string]string, serviceType *string, port *int32, master *v1alpha1.CDAPMaster) *NetworkServiceSpec {
+func newNetworkServiceSpec(name string, labels, annotations map[string]string, serviceType, loadBalancerIP *string, port *int32, master *v1alpha1.CDAPMaster) *NetworkServiceSpec {
 	s := new(NetworkServiceSpec)
 	s.Name = name
 	s.Namespace = master.Namespace
-	// TODO: are annotations needed?
-	s.Annotations = nil
+	s.Annotations = mergeMaps(annotations, map[string]string{})
 	s.Labels = mergeMaps(labels, map[string]string{})
 	s.Selectors = mergeMaps(labels, map[string]string{})
 	s.ServiceType = serviceType
 	s.ServicePort = port
+	s.LoadBalancerIP = loadBalancerIP
 	return s
 }
 func (s *NetworkServiceSpec) addLabel(key, val string) *NetworkServiceSpec {

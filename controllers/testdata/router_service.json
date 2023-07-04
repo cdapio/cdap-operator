@@ -2,6 +2,9 @@
   "apiVersion": "v1",
   "kind": "Service",
   "metadata": {
+    "annotations": {
+        "networking.gke.io/load-balancer-type": "Internal"
+    },
     "creationTimestamp": null,
     "labels": {
       "cdap.instance": "test",
@@ -30,6 +33,7 @@
   "spec": {
     "clusterIP": "10.47.252.214",
     "externalTrafficPolicy": "Cluster",
+    "loadBalancerIP": "172.25.80.9",
     "ports": [
       {
         "nodePort": 32588,
@@ -47,7 +51,7 @@
       "using": "controllers.ServiceHandler"
     },
     "sessionAffinity": "None",
-    "type": "NodePort"
+    "type": "LoadBalancer"
   },
   "status": {
     "loadBalancer": {}
