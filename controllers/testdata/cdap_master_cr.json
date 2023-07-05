@@ -251,7 +251,7 @@
       "replicas": 2
     },
     "router": {
-      "Annotations": {
+      "annotations": {
         "networking.gke.io/load-balancer-type":"Internal"
       },
       "loadBalancerIP": "172.25.80.9",
