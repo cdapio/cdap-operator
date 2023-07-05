@@ -24801,13 +24801,6 @@ spec:
               router:
                 description: Router is specification for the CDAP router service.
                 properties:
-                  Annotations:
-                    additionalProperties:
-                      type: string
-                    description: Annotations are the metadata annotations for the
-                      kubernetes service. They can be used to configure cloud provider
-                      specific behavior for LoadBalancer services.
-                    type: object
                   additionalVolumeMounts:
                     description: AdditionalVolumeMounts defines a list of additional
                       volume mounts for the service. For information on supported
@@ -27264,6 +27257,13 @@ spec:
                               type: object
                             type: array
                         type: object
+                    type: object
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations are the metadata annotations for the
+                      kubernetes service. They can be used to configure cloud provider
+                      specific behavior for LoadBalancer services.
                     type: object
                   configMapVolumes:
                     additionalProperties:
@@ -39328,13 +39328,6 @@ spec:
               userInterface:
                 description: UserInterface is specification for the CDAP UI service.
                 properties:
-                  Annotations:
-                    additionalProperties:
-                      type: string
-                    description: Annotations are the metadata annotations for the
-                      kubernetes service. They can be used to configure cloud provider
-                      specific behavior for LoadBalancer services.
-                    type: object
                   additionalVolumeMounts:
                     description: AdditionalVolumeMounts defines a list of additional
                       volume mounts for the service. For information on supported
@@ -41791,6 +41784,13 @@ spec:
                               type: object
                             type: array
                         type: object
+                    type: object
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations are the metadata annotations for the
+                      kubernetes service. They can be used to configure cloud provider
+                      specific behavior for LoadBalancer services.
                     type: object
                   configMapVolumes:
                     additionalProperties:

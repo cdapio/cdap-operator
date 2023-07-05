@@ -189,7 +189,7 @@ type CDAPExternalServiceSpec struct {
 	// ServicePort is the port number for the service.
 	ServicePort *int32 `json:"servicePort,omitempty"`
 	// Annotations are the metadata annotations for the kubernetes service. They can be used to configure cloud provider specific behavior for LoadBalancer services.
-	Annotations map[string]string `json:"Annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // CDAPStatefulServiceSpec defines the base specification for stateful master services.
