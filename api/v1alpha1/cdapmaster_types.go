@@ -27,10 +27,10 @@ import (
 // CDAPMasterSpec defines the desired state of CDAPMaster
 //
 // Important notes:
-// * The field name of each service MUST match the constant values of ServiceName in constants.go as reflection
-//   is used to find field value.
-// * For services that are optional (i.e. may or may not be required for CDAP to be operational), their service
-//   specification fields are pointers. By default, these optional services are disabled. Set to non-nil to enable them.
+//   - The field name of each service MUST match the constant values of ServiceName in constants.go as reflection
+//     is used to find field value.
+//   - For services that are optional (i.e. may or may not be required for CDAP to be operational), their service
+//     specification fields are pointers. By default, these optional services are disabled. Set to non-nil to enable them.
 type CDAPMasterSpec struct {
 	// Image is the docker image name for the CDAP backend.
 	Image string `json:"image,omitempty"`
