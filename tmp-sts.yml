@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: my-statefulset
+  labels:
+    cdap.instance: "yes"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      cdap.instance: "yes"
+  template:
+    metadata:
+      labels:
+        cdap.instance: "yes"
+    spec:
+      containers:
+      - name: my-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80

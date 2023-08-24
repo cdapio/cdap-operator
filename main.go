@@ -30,9 +30,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	cdapv1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
 	"cdap.io/cdap-operator/controllers"
+	cdapwebhooks "cdap.io/cdap-operator/webhooks"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -85,6 +87,9 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "CDAPMaster")
 		os.Exit(1)
 	}
+
+	mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{Handler: cdapwebhooks.NewPodMutator(mgr.GetClient())})
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
