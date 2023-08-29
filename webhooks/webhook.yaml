@@ -1,0 +1,26 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: cdap-webhook
+  annotations:
+    cert-manager.io/inject-ca-from: default/cdap-webhook-cert
+webhooks:
+  - name: cdap-webhook-server.default.svc.cluster.local
+    admissionReviewVersions:
+      - "v1"
+    sideEffects: "None"
+    timeoutSeconds: 30
+    objectSelector:
+      matchExpressions:
+      - { key: "cdap.instance", operator: Exists }
+    clientConfig:
+      service:
+        name: cdap-webhook-server
+        namespace: default
+        path: "/mutate-v1-pod"
+      caBundle: ""
+    rules:
+      - operations: ["CREATE"]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    cdap.instance: "arjan-developer"
+    cdap.io/outbound: "true"
+  name: my-pod
+  namespace: default
+spec:
+  containers:
+  - image: nginx:latest
+    imagePullPolicy: Always
+    name: my-container
+    ports:
+    - containerPort: 80
+      protocol: TCP
