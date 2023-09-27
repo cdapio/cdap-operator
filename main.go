@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -30,9 +31,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	cdapv1alpha1 "cdap.io/cdap-operator/api/v1alpha1"
 	"cdap.io/cdap-operator/controllers"
+	cdapwebhooks "cdap.io/cdap-operator/webhooks"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -52,11 +55,17 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var enableWebhook bool
+	var webhookPort int
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&enableWebhook, "enable-webhook", false,
+		"Enable the admission controller webhook server. "+
+			"Enabling this will allow the operator to mutate CDAP pods based on the mutation configuration in the CR.")
+	flag.IntVar(&webhookPort, "webhook-server-port", 9443, "The port on which the webhook server will listen.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -68,7 +77,7 @@ func main() {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Port:                   webhookPort,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "548f2421.cdap.io",
@@ -85,6 +94,12 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "CDAPMaster")
 		os.Exit(1)
 	}
+
+	if enableWebhook {
+		setupLog.Info(fmt.Sprintf("Starting webhook server at port %d", webhookPort))
+		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{Handler: cdapwebhooks.NewPodMutator(mgr.GetClient())})
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
