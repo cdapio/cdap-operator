@@ -120,6 +120,10 @@ type CDAPMasterSpec struct {
 	// AdditionalVolumeMounts defines a list of additional volume mounts for all services.
 	// For information on supported volume mount types, see https://kubernetes.io/docs/concepts/storage/volumes/.
 	AdditionalVolumeMounts []corev1.VolumeMount `json:"additionalVolumeMounts,omitempty"`
+	// MutationConfigs specifies mutations that can be applied to resources with the "cdap.instance" label.
+	// Mutations can include adding init containers, tolerations and node selectors to pods. To use mutations,
+	// the admission control webhook should be enabled in the cdap operator.
+	MutationConfigs []MutationConfig `json:"mutationConfigs,omitempty"`
 }
 
 // CDAPServiceSpec defines the base set of specifications applicable to all master services.
@@ -340,6 +344,27 @@ type SecurityContext struct {
 	// ReadOnlyRootFilesystem specifies whether the container's root filesystem is read-only.
 	// It is applied at the container level.
 	ReadOnlyRootFilesystem *bool `json:"readOnlyRootFilesystem,omitempty"`
+}
+
+// MutationConfig defines mutations that can be applied to resources with the "cdap.instance" label and that
+// satisfy a label selector.
+type MutationConfig struct {
+	// LabelSelector selects resources to apply the mutation to.
+	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
+	// PodMutations specifies mutations that are be applied to pods which satisfy specified label selectors.
+	// Pod mutations can include adding init containers, tolerations and node selectors etc.
+	PodMutations PodMutationConfig `json:"podMutations,omitempty"`
+}
+
+// PodMutationConfig specifies a mutation along with the selector to identify target pods.
+type PodMutationConfig struct {
+	// InitContainersBefore specifies a list of init containers that will be added before the
+	// the init containers specified in the pod spec.
+	InitContainersBefore []corev1.Container `json:"initContainersBefore,omitempty"`
+	// NodeSelectors specifies additional node selectors that will be added to the pod.
+	NodeSelector *map[string]string `json:"nodeSelectors,omitempty"`
+	// Tolerations specifies additional tolerations that will be added to the pod.
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 func init() {

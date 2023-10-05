@@ -1,0 +1,23 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cdap-webhook-cert
+  namespace: {CDAP_NAMESPACE}
+spec:
+  isCA: true
+  commonName: selfsigned-ca
+  secretName: cdap-webhook-server-cert
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
+  dnsNames:
+  - cdap-webhook-server
+  - cdap-webhook-server.{CDAP_NAMESPACE}.svc.cluster.local
+  - cdap-webhook-server.{CDAP_NAMESPACE}.svc
