@@ -172,6 +172,10 @@ type CDAPServiceSpec struct {
 	Lifecycle *corev1.Lifecycle `json:"lifecycle,omitempty"`
 	// Affinity describes node affinity scheduling rules for the service.
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// Containers define any additional containers a service has
+	// This is a list of containers and can be left blank
+	// A typical use is to add sidecars for a deployment
+	Containers []*corev1.Container `json:"containers,omitempty"`
 }
 
 // CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance.

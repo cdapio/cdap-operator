@@ -46,6 +46,25 @@ type ContainerSpec struct {
 	ResourceLimits   map[string]*resource.Quantity `json:"resourceLimits,omitempty"`
 	DataDir          string                        `json:"dataDir,omitempty"`
 	Lifecycle        *corev1.Lifecycle             `json:"lifecycle,omitempty"`
+	Ports            []corev1.ContainerPort        `json:"ports,omitempty" patchStrategy:"merge" patchMergeKey:"containerPort" protobuf:"bytes,6,rep,name=ports"`
+	LivenessProbe    *corev1.Probe                 `json:"livenessProbe,omitempty" protobuf:"bytes,10,opt,name=livenessProbe"`
+	ReadinessProbe   *corev1.Probe                 `json:"readinessProbe,omitempty" protobuf:"bytes,11,opt,name=readinessProbe"`
+}
+
+func containerSpecFromContainer(container *corev1.Container, dataDir string) *ContainerSpec {
+	additionalContainer := new(ContainerSpec)
+	additionalContainer.Name = strings.ToLower(container.Name)
+	additionalContainer.Image = container.Image
+	additionalContainer.ImagePullPolicy = container.ImagePullPolicy
+	additionalContainer.WorkingDir = container.WorkingDir
+	additionalContainer.Args = container.Args
+	additionalContainer.Env = container.Env
+	additionalContainer.DataDir = dataDir
+	additionalContainer.LivenessProbe = container.LivenessProbe
+	additionalContainer.ReadinessProbe = container.ReadinessProbe
+	additionalContainer.Ports = container.Ports
+
+	return additionalContainer
 }
 
 func newContainerSpec(master *v1alpha1.CDAPMaster, name, dataDir string) *ContainerSpec {

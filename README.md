@@ -187,3 +187,10 @@ rm /tmp/setup_envtest.sh
 ```
 
 4. Run `make test`
+
+#### Running Unit Tests in a Docker image
+
+From the project root folder build, execute and then remove the test image by running the following
+```
+docker build -f Dockerfile.test . -t test && docker run --rm -it test; docker image rm test
+```

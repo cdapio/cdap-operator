@@ -256,6 +256,160 @@ var _ = Describe("Controller Suite", func() {
 			}
 		})
 	})
+
+	Describe("Add additional generic container", func() {
+		readMaster := func(fileName string) *v1alpha1.CDAPMaster {
+			master := &v1alpha1.CDAPMaster{}
+			err := fromJson(fileName, master)
+			Expect(err).To(BeNil())
+			return master
+		}
+		readExpectedJson := func(fileName string) []byte {
+			json, err := ioutil.ReadFile("testdata/" + fileName)
+			Expect(err).To(BeNil())
+			return json
+		}
+		diffJson := func(expected, actual []byte) {
+			opts := jsondiff.DefaultConsoleOptions()
+			diff, text := jsondiff.Compare(expected, actual, &opts)
+			Expect(diff.String()).To(Equal(jsondiff.SupersetMatch.String()), text)
+		}
+		diffAdditionalContainers := func(containers []corev1.Container, containerName, expectedJsonFilename string) {
+			var additionalContainer *corev1.Container
+			for _, c := range containers {
+				if c.Name == containerName {
+					additionalContainer = &c
+					break
+				}
+			}
+
+			actualContainerJson, _ := json.Marshal(additionalContainer)
+			expectedContainerJson := readExpectedJson(expectedJsonFilename)
+			diffJson(actualContainerJson, expectedContainerJson)
+		}
+		It("It should add multiple containers for Router", func() {
+			master := readMaster("testdata/cdap_master_cr_multi_additional_containers.json")
+			emptyLabels := make(map[string]string)
+			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
+			Expect(err).To(BeNil())
+			objs, err := buildObjectsForDeploymentPlan(spec)
+			Expect(err).To(BeNil())
+
+			var strategyHandler DeploymentPlan
+			strategyHandler.Init()
+
+			for _, obj := range objs {
+				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.Deployment); ok {
+
+					if o.Name == getObjName(master, "router") {
+						containers := o.Spec.Template.Spec.Containers
+
+						Expect(len(containers)).To(BeIdenticalTo(3))
+
+						diffAdditionalContainers(containers, "test-router-container-a", "additional_router_container_a.json")
+						diffAdditionalContainers(containers, "test-router-container-b", "additional_router_container_b.json")
+					}
+				}
+			}
+		})
+		It("It should add multiple containers for AppFabric", func() {
+			master := readMaster("testdata/cdap_master_cr_multi_additional_containers.json")
+			emptyLabels := make(map[string]string)
+			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
+			Expect(err).To(BeNil())
+			objs, err := buildObjectsForDeploymentPlan(spec)
+			Expect(err).To(BeNil())
+
+			var strategyHandler DeploymentPlan
+			strategyHandler.Init()
+
+			for _, obj := range objs {
+				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.StatefulSet); ok {
+					if o.Name == getObjName(master, "appFabric") {
+						containers := o.Spec.Template.Spec.Containers
+
+						Expect(len(containers)).To(BeIdenticalTo(3))
+
+						diffAdditionalContainers(containers, "test-appfabric-container-a", "additional_appfabric_container_a.json")
+						diffAdditionalContainers(containers, "test-appfabric-container-b", "additional_appfabric_container_b.json")
+					}
+				}
+			}
+		})
+		It("It should add no additional containers for Router", func() {
+			master := readMaster("testdata/cdap_master_cr.json")
+			emptyLabels := make(map[string]string)
+			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
+			Expect(err).To(BeNil())
+			objs, err := buildObjectsForDeploymentPlan(spec)
+			Expect(err).To(BeNil())
+
+			var strategyHandler DeploymentPlan
+			strategyHandler.Init()
+
+			for _, obj := range objs {
+				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.Deployment); ok {
+					if o.Name == getObjName(master, "router") {
+						containers := o.Spec.Template.Spec.Containers
+
+						Expect(len(containers)).To(BeIdenticalTo(1))
+						Expect(containers[0].Name).To(BeIdenticalTo("router"))
+						Expect(containers[0].Env).To(ConsistOf([]corev1.EnvVar{
+							{
+								Name:      "all-services-test",
+								Value:     "some-value",
+								ValueFrom: nil,
+							},
+							{
+								Name:      "JAVA_HEAPMAX",
+								Value:     "-Xmx62914560",
+								ValueFrom: nil,
+							},
+						}))
+					}
+				}
+			}
+		})
+		It("It should add no additional containers for AppFabric", func() {
+			master := readMaster("testdata/cdap_master_cr.json")
+			emptyLabels := make(map[string]string)
+			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
+			Expect(err).To(BeNil())
+			objs, err := buildObjectsForDeploymentPlan(spec)
+			Expect(err).To(BeNil())
+
+			var strategyHandler DeploymentPlan
+			strategyHandler.Init()
+
+			for _, obj := range objs {
+				if o, ok := obj.Obj.(*k8s.Object).Obj.(*appsv1.StatefulSet); ok {
+					if o.Name == getObjName(master, "appFabric") {
+						containers := o.Spec.Template.Spec.Containers
+
+						Expect(len(containers)).To(BeIdenticalTo(1))
+						Expect(containers[0].Name).To(BeIdenticalTo("appfabric"))
+						Expect(containers[0].Env).To(ConsistOf([]corev1.EnvVar{
+							{
+								Name:      "all-services-test",
+								Value:     "some-value-overridden",
+								ValueFrom: nil,
+							},
+							{
+								Name:      "appfabric-env-var-test",
+								Value:     "some-value",
+								ValueFrom: nil,
+							},
+							{
+								Name:      "JAVA_HEAPMAX",
+								Value:     "-Xmx62914560",
+								ValueFrom: nil,
+							},
+						}))
+					}
+				}
+			}
+		})
+	})
 })
 
 func TestMergeEnvVars(t *testing.T) {

@@ -202,6 +202,14 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 			return nil, err
 		}
 		spec = spec.withContainer(c)
+
+		if ss.Containers != nil {
+			for _, container := range ss.Containers {
+				additionalContainer := containerSpecFromContainer(container, dataDir)
+				spec = spec.withContainer(additionalContainer)
+			}
+		}
+
 		if err := addSystemMetricsServiceIfEnabled(spec, master, ss, dataDir, c); err != nil {
 			return nil, err
 		}
@@ -344,6 +352,13 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		}
 		spec = spec.withContainer(c)
 
+		if ss.Containers != nil {
+			for _, container := range ss.Containers {
+				additionalContainer := containerSpecFromContainer(container, dataDir)
+				spec = spec.withContainer(additionalContainer)
+			}
+		}
+
 		// Adding a label to allow k8s service selector to easily find the pod
 		spec = spec.addLabel(labelContainerKeyPrefix+s, master.Name)
 
@@ -477,10 +492,15 @@ func buildStatefulSetsObject(spec *StatefulSpec) (*reconciler.Object, error) {
 		}
 	}
 	for index, _ := range statefulSetObj.Spec.Template.Spec.Containers {
-		if err := addVolumeMountToContainer(&statefulSetObj.Spec.Template.Spec.Containers[index], spec.Base.AdditionalVolumeMounts); err != nil {
+		container := &statefulSetObj.Spec.Template.Spec.Containers[index]
+		if err := addVolumeMountToContainer(container, spec.Base.AdditionalVolumeMounts); err != nil {
 			return nil, err
 		}
-		setLifecycleHookForContainer(&statefulSetObj.Spec.Template.Spec.Containers[index], spec.Containers[index].Lifecycle)
+		setEnvForContainer(container, spec.Containers[index].Env)
+		setLifecycleHookForContainer(container, spec.Containers[index].Lifecycle)
+		setLivenessProbeForContainer(container, spec.Containers[index].LivenessProbe)
+		setReadinessProbeForContainer(container, spec.Containers[index].ReadinessProbe)
+		setPortsForContainer(container, spec.Containers[index].Ports)
 	}
 	return obj, nil
 }
@@ -511,10 +531,15 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 		}
 	}
 	for index, _ := range deploymentObj.Spec.Template.Spec.Containers {
-		if err := addVolumeMountToContainer(&deploymentObj.Spec.Template.Spec.Containers[index], spec.Base.AdditionalVolumeMounts); err != nil {
+		container := &deploymentObj.Spec.Template.Spec.Containers[index]
+		if err := addVolumeMountToContainer(container, spec.Base.AdditionalVolumeMounts); err != nil {
 			return nil, err
 		}
-		setLifecycleHookForContainer(&deploymentObj.Spec.Template.Spec.Containers[index], spec.Containers[index].Lifecycle)
+		setEnvForContainer(container, spec.Containers[index].Env)
+		setLifecycleHookForContainer(container, spec.Containers[index].Lifecycle)
+		setLivenessProbeForContainer(container, spec.Containers[index].LivenessProbe)
+		setReadinessProbeForContainer(container, spec.Containers[index].ReadinessProbe)
+		setPortsForContainer(container, spec.Containers[index].Ports)
 	}
 	return obj, nil
 }
@@ -543,8 +568,24 @@ func addVolumeMountToContainer(container *corev1.Container, volumeMountsToAdd []
 	return nil
 }
 
+func setEnvForContainer(container *corev1.Container, env []corev1.EnvVar) {
+	container.Env = env
+}
+
 func setLifecycleHookForContainer(container *corev1.Container, lifecycle *corev1.Lifecycle) {
 	container.Lifecycle = lifecycle
+}
+
+func setLivenessProbeForContainer(container *corev1.Container, livenessProbe *corev1.Probe) {
+	container.LivenessProbe = livenessProbe
+}
+
+func setReadinessProbeForContainer(container *corev1.Container, readinessProbe *corev1.Probe) {
+	container.ReadinessProbe = readinessProbe
+}
+
+func setPortsForContainer(container *corev1.Container, ports []corev1.ContainerPort) {
+	container.Ports = ports
 }
 
 // Return a NodePort service to expose the supplied target service
