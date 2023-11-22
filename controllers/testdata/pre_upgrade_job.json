@@ -111,7 +111,7 @@
           {
             "name": "cdap-security",
             "secret": {
-              "defaultMode": 420,
+              "defaultMode": 256,
               "secretName": "cdap-secret"
             }
           }

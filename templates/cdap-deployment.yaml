@@ -164,6 +164,7 @@ spec:
         {{if .Base.SecuritySecret}}
         - name: cdap-security
           secret:
+            defaultMode: 256
             secretName: {{.Base.SecuritySecret}}
         {{end}}
         {{range $k,$v := $.Base.ConfigMapVolumes}}
@@ -174,5 +175,6 @@ spec:
         {{range $k,$v := $.Base.SecretVolumes}}
         - name: cdap-se-vol-{{$k}}
           secret:
+            defaultMode: 256
             secretName: {{$k}}
         {{end}}
