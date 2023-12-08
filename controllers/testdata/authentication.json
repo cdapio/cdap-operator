@@ -240,6 +240,7 @@
           {
             "name": "cdap-se-vol-secret-key",
             "secret": {
+              "defaultMode": 420,
               "secretName": "secret-key"
             }
           },

@@ -64,13 +64,15 @@ const (
 	confTwillSecurityWorkerSecretDiskName = "twill.security.worker.secret.disk.name"
 	confTwillSecurityWorkerSecretDiskPath = "twill.security.worker.secret.disk.path"
 	confJMXServerPort                     = "jmx.metrics.collector.server.port"
+	confSecretMountDefaultMode            = "secret.mount.default.mode"
 
 	// default values
-	defaultImage              = "gcr.io/cdapio/cdap:latest"
-	defaultRouterPort         = 11015
-	defaultUserInterfacePort  = 11011
-	defaultStorageSize        = "200Gi"
-	defaultSecuritySecretPath = "/etc/cdap/security"
+	defaultImage                  = "gcr.io/cdapio/cdap:latest"
+	defaultRouterPort             = 11015
+	defaultUserInterfacePort      = 11011
+	defaultStorageSize            = "200Gi"
+	defaultSecuritySecretPath     = "/etc/cdap/security"
+	defaultSecretMountDefaultMode = 420
 
 	// kubernetes labels
 	labelInstanceKey        = "cdap.instance"
