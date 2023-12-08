@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 
 	"cdap.io/cdap-operator/api/v1alpha1"
@@ -172,6 +173,11 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		return nil, err
 	}
 
+	defaultMode, err := getSecretMountDefaultMode(master)
+	if err != nil {
+		return nil, err
+	}
+
 	spec := newStatefulSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
 		setNodeSelector(nodeSelector).
@@ -179,7 +185,8 @@ func buildStatefulSets(master *v1alpha1.CDAPMaster, name string, services Servic
 		setPriorityClassName(priorityClass).
 		setSecurityContext(securityContext).
 		setReplicas(replicas).
-		setAffinity(affinity)
+		setAffinity(affinity).
+		setSecretMountDefaultMode(defaultMode)
 
 	// Add init container
 	spec = spec.withInitContainer(
@@ -317,6 +324,11 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		return nil, err
 	}
 
+	defaultMode, err := getSecretMountDefaultMode(master)
+	if err != nil {
+		return nil, err
+	}
+
 	spec := newDeploymentSpec(master, objName, labels, cconf, hconf, sysappconf).
 		setServiceAccountName(serviceAccount).
 		setNodeSelector(nodeSelector).
@@ -324,7 +336,8 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		setPriorityClassName(priorityClass).
 		setReplicas(replicas).
 		setSecurityContext(securityContext).
-		setAffinity(affinity)
+		setAffinity(affinity).
+		setSecretMountDefaultMode(defaultMode)
 
 	// Add each service as a container
 	for _, s := range services {
@@ -701,6 +714,19 @@ func getAffinity(master *v1alpha1.CDAPMaster, services ServiceGroup) (*corev1.Af
 		return &affinity, nil
 	}
 	return nil, fmt.Errorf("unable to cast value of type %T into Affinity", val)
+}
+
+// Return the default secret mount permissions.
+func getSecretMountDefaultMode(master *v1alpha1.CDAPMaster) (int32, error) {
+	val, ok := master.Spec.Config[confSecretMountDefaultMode]
+	if !ok {
+		return defaultSecretMountDefaultMode, nil
+	}
+	i, err := strconv.ParseInt(val, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	return int32(i), nil
 }
 
 // getReplicas returns the Replicas if all supplied services have the same setting, otherwise return an error

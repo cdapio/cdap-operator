@@ -102,6 +102,7 @@
           {
             "name":"cdap-security",
             "secret":{
+              "defaultMode": 420,
               "secretName":"cdap-secret"
             }
           },
@@ -120,6 +121,7 @@
           {
             "name":"cdap-se-vol-my-secret-1",
             "secret":{
+              "defaultMode": 420,
               "secretName":"my-secret-1"
             }
           },

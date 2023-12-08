@@ -147,6 +147,7 @@ type BaseSpec struct {
 	AdditionalVolumeMounts []corev1.VolumeMount      `json:"additionalVolumeMounts,omitempty"`
 	SecurityContext        *v1alpha1.SecurityContext `json:"securityContext,omitempty"`
 	Affinity               *corev1.Affinity          `json:"affinity,omitemtpy"`
+	SecretMountDefaultMode int32                     `json:"secretMountDefaultSecret,omitemtpy"`
 }
 
 func newBaseSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf, sysappconf string) *BaseSpec {
@@ -177,6 +178,11 @@ func (s *BaseSpec) setServiceAccountName(name string) *BaseSpec {
 
 func (s *BaseSpec) setAffinity(affinity *corev1.Affinity) *BaseSpec {
 	s.Affinity = affinity
+	return s
+}
+
+func (s *BaseSpec) setSecretMountDefaultMode(mode int32) *BaseSpec {
+	s.SecretMountDefaultMode = mode
 	return s
 }
 
@@ -369,6 +375,11 @@ func (s *DeploymentSpec) setAffinity(affinity *corev1.Affinity) *DeploymentSpec 
 	return s
 }
 
+func (s *DeploymentSpec) setSecretMountDefaultMode(mode int32) *DeploymentSpec {
+	s.Base.setSecretMountDefaultMode(mode)
+	return s
+}
+
 // For VolumnClaimTemplate in Statefulset
 type StorageSpec struct {
 	StorageClassName string `json:"storageClassName,omitempty"`
@@ -408,6 +419,11 @@ func (s *StatefulSpec) setServiceAccountName(name string) *StatefulSpec {
 
 func (s *StatefulSpec) setAffinity(affinity *corev1.Affinity) *StatefulSpec {
 	s.Base.setAffinity(affinity)
+	return s
+}
+
+func (s *StatefulSpec) setSecretMountDefaultMode(mode int32) *StatefulSpec {
+	s.Base.setSecretMountDefaultMode(mode)
 	return s
 }
 
