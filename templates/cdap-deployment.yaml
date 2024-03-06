@@ -94,6 +94,9 @@ spec:
           {{if $c.ImagePullPolicy}}
           imagePullPolicy: {{$c.ImagePullPolicy}}
           {{end}}
+          {{if $c.ImagePullSecret}}
+          imagePullSecret: {{$c.ImagePullSecret}}
+          {{end}}
           env:
           {{range $e := $c.Env }}
           - name: "{{$e.Name}}"
