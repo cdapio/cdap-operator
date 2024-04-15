@@ -10,7 +10,7 @@
       "custom-resource-namespace": "default",
       "using": "controllers.VersionUpdateHandler"
     },
-    "name": "cdap-test-pre-upgrade-job-1581238669880",
+    "name": "cdap-test-pre-upgrade-job-1581238669",
     "namespace": "default",
     "ownerReferences": [
       {
@@ -30,7 +30,7 @@
       }
     ],
     "resourceVersion": "1896807",
-    "selfLink": "/apis/batch/v1/namespaces/default/jobs/cdap-test-pre-upgrade-job-1581238669880",
+    "selfLink": "/apis/batch/v1/namespaces/default/jobs/cdap-test-pre-upgrade-job-1581238669",
     "uid": "401828eb-4b1a-11ea-8611-42010a800022"
   },
   "spec": {
@@ -51,7 +51,7 @@
           "custom-resource": "v1alpha1.CDAPMaster",
           "custom-resource-name": "test",
           "custom-resource-namespace": "default",
-          "job-name": "cdap-test-pre-upgrade-job-1581238669880",
+          "job-name": "cdap-test-pre-upgrade-job-1581238669",
           "using": "controllers.VersionUpdateHandler"
         }
       },
