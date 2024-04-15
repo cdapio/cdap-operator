@@ -243,19 +243,22 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 
 // For upgrade:
 // - When succeeded:
-//   * PreUpgradeSucceeded, PostUpgradeSucceeded and UpgradeSucceeded are set
-//   * Status.ImageToUse (new image) == Spec.Image (new image)
+//   - PreUpgradeSucceeded, PostUpgradeSucceeded and UpgradeSucceeded are set
+//   - Status.ImageToUse (new image) == Spec.Image (new image)
+//
 // - When failed, two cases
-//   1) Preupgrade failed
-//      * PreUpgradeFailed and UpgradeFailed are set
-//      * Status.ImageToUse (new image) != Spec.Image (current image)
-//   2) Postupgrade failed
-//      * PostUpgradeFailed and UpgradeFailed are set
-//      * Status.ImageToUse (new image) == Spec.Image (new image)
+//  1. Preupgrade failed
+//     * PreUpgradeFailed and UpgradeFailed are set
+//     * Status.ImageToUse (new image) != Spec.Image (current image)
+//  2. Postupgrade failed
+//     * PostUpgradeFailed and UpgradeFailed are set
+//     * Status.ImageToUse (new image) == Spec.Image (new image)
+//
 // For downgrade:
 // - When succeeded:
-//   * DowngradeSucceeded is set
-//   * Status.ImageToUse (new image) == Spec.Image (new image)
+//   - DowngradeSucceeded is set
+//   - Status.ImageToUse (new image) == Spec.Image (new image)
+//
 // - When failed (currently not possible, as we just set the new version directly)
 type VersionUpdateStatus struct {
 	// common states
@@ -404,8 +407,8 @@ func parseImageString(imageString string) (*Version, error) {
 
 // compare two parsed versions
 // -1: left < right
-//  0: left = right
-//  1: left > right
+// 0: left = right
+// 1: left > right
 func compareVersion(l, r *Version) int {
 	if l.latest && r.latest {
 		return 0
@@ -501,12 +504,12 @@ func getCurrentTimeMs() int64 {
 
 // The returned name is just the suffix of actual k8s object name, as we prepend it with const string + CR name
 func getPreUpgradeJobName(startTimeMs int64) string {
-	return fmt.Sprintf("pre-upgrade-job-%d", startTimeMs)
+	return fmt.Sprintf("pre-upgrade-job-%d", startTimeMs / 1000)
 }
 
 // The returned name is just the suffix of actual k8s object name, as we prepend it with const string + CR name
 func getPostUpgradeJobName(startTimeMs int64) string {
-	return fmt.Sprintf("post-upgrade-job-%d", startTimeMs)
+	return fmt.Sprintf("post-upgrade-job-%d", startTimeMs / 1000)
 }
 
 // Return pre-upgrade job spec
