@@ -292,6 +292,9 @@ func (h *ServiceHandler) Objects(rsrc interface{}, rsrclabels map[string]string,
 	// Copy NodePort from observed to ensure k8s services' nodePorts stay the same across reconciling iterators
 	CopyNodePortIfAny(expected, observed)
 
+	// Update status section of CR with status of CDAP service readiness.
+	updateServiceStatus(m)
+
 	return expected, nil
 }
 
