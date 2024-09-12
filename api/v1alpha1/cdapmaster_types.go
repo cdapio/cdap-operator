@@ -218,7 +218,7 @@ type CDAPScalableStatefulServiceSpec struct {
 
 // AppFabricSpec defines the specification for the AppFabric service.
 type AppFabricSpec struct {
-	CDAPStatefulServiceSpec `json:",inline"`
+	CDAPScalableServiceSpec `json:",inline"`
 }
 
 // LogsSpec defines the specification for the Logs service.
