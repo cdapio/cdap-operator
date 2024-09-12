@@ -29,7 +29,7 @@ var _ = Describe("Controller Suite", func() {
 			}
 			serviceToScalableSpec = map[string]*v1alpha1.CDAPScalableServiceSpec{
 				serviceLogs:          nil,
-				serviceAppFabric:     nil,
+				serviceAppFabric:     &master.Spec.AppFabric.CDAPScalableServiceSpec,
 				serviceMetrics:       nil,
 				serviceRouter:        &master.Spec.Router.CDAPScalableServiceSpec,
 				serviceMessaging:     nil,
@@ -39,7 +39,7 @@ var _ = Describe("Controller Suite", func() {
 			}
 			serviceToStatefulSpec = map[string]*v1alpha1.CDAPStatefulServiceSpec{
 				serviceLogs:          &master.Spec.Logs.CDAPStatefulServiceSpec,
-				serviceAppFabric:     &master.Spec.AppFabric.CDAPStatefulServiceSpec,
+				serviceAppFabric:     nil,
 				serviceMetrics:       &master.Spec.Metrics.CDAPStatefulServiceSpec,
 				serviceRouter:        nil,
 				serviceMessaging:     &master.Spec.Messaging.CDAPStatefulServiceSpec,

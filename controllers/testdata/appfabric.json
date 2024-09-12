@@ -1,6 +1,6 @@
 {
   "apiVersion": "apps/v1",
-  "kind": "StatefulSet",
+  "kind": "Deployment",
   "metadata": {
     "annotations": {
       "deployment.kubernetes.io/revision": "8"

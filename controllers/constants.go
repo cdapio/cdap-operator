@@ -9,6 +9,9 @@ const (
 	// serviceAppFabric defines the service type for app-fabric
 	serviceAppFabric ServiceName = "AppFabric"
 
+	// serviceAppFabricProcessor defines the service type for app-fabric processor
+	serviceAppFabricProcessor ServiceName = "AppFabricProcessor"
+
 	// serviceLogs defines the service type for log processing and serving service
 	serviceLogs ServiceName = "Logs"
 
