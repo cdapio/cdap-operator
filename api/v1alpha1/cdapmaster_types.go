@@ -65,6 +65,8 @@ type CDAPMasterSpec struct {
 	LogLevels map[string]string `json:"logLevels,omitempty"`
 	// AppFabric is specification for the CDAP app-fabric service.
 	AppFabric AppFabricSpec `json:"appFabric,omitempty"`
+	// AppFabricProcessor is specification for the CDAP app-fabric processor service.
+	AppFabricProcessor AppFabricProcessorSpec `json:"appFabric,omitempty"`
 	// Logs is specification for the CDAP logging service.
 	Logs LogsSpec `json:"logs,omitempty"`
 	// Messaging is specification for the CDAP messaging service.
@@ -219,6 +221,11 @@ type CDAPScalableStatefulServiceSpec struct {
 // AppFabricSpec defines the specification for the AppFabric service.
 type AppFabricSpec struct {
 	CDAPScalableServiceSpec `json:",inline"`
+}
+
+// AppFabricProcessorSpec defines the specification for the AppFabric Processor service.
+type AppFabricProcessorSpec struct {
+	CDAPStatefulServiceSpec `json:",inline"`
 }
 
 // LogsSpec defines the specification for the Logs service.
