@@ -66,7 +66,7 @@ type CDAPMasterSpec struct {
 	// AppFabric is specification for the CDAP app-fabric service.
 	AppFabric AppFabricSpec `json:"appFabric,omitempty"`
 	// AppFabricProcessor is specification for the CDAP app-fabric processor service.
-	AppFabricProcessor AppFabricProcessorSpec `json:"appFabric,omitempty"`
+	AppFabricProcessor AppFabricProcessorSpec `json:"appFabricProcessor,omitempty"`
 	// Logs is specification for the CDAP logging service.
 	Logs LogsSpec `json:"logs,omitempty"`
 	// Messaging is specification for the CDAP messaging service.
