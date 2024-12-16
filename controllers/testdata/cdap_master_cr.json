@@ -102,6 +102,18 @@
         }
       }
     },
+   "appfabricprocessor": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "2000m",
+          "memory": "2000Mi"
+        }
+      },
+      "storageSize": "200Gi"
+    },
     "authentication": {
       "metadata": {
         "creationTimestamp": null
