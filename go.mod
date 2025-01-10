@@ -1,6 +1,6 @@
 module cdap.io/cdap-operator
 
-go 1.19
+go 1.23
 
 require (
 	github.com/go-logr/logr v1.2.3

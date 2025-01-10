@@ -1,6 +1,6 @@
 {
   "apiVersion": "apps/v1",
-  "kind": "Deployment",
+  "kind": "StatefulSet",
   "metadata": {
     "annotations": {
       "deployment.kubernetes.io/revision": "8"
@@ -8,14 +8,14 @@
     "creationTimestamp": null,
     "generation": 535,
     "labels": {
-      "cdap.container.AppFabric": "test",
+      "cdap.container.AppFabricProcessor": "test",
       "cdap.instance": "test",
       "custom-resource": "v1alpha1.CDAPMaster",
       "custom-resource-name": "test",
       "custom-resource-namespace": "default",
       "using": "controllers.ServiceHandler"
     },
-    "name": "cdap-test-appfabric",
+    "name": "cdap-test-appfabricprocessor",
     "namespace": "default",
     "ownerReferences": [
       {
@@ -37,7 +37,7 @@
     "revisionHistoryLimit": 10,
     "selector": {
       "matchLabels": {
-        "cdap.container.AppFabric": "test",
+        "cdap.container.AppFabricProcessor": "test",
         "cdap.instance": "test",
         "custom-resource": "v1alpha1.CDAPMaster",
         "custom-resource-name": "test",
@@ -52,12 +52,12 @@
       },
       "type": "RollingUpdate"
     },
-    "serviceName": "cdap-test-appfabric",
+    "serviceName": "cdap-test-appfabricprocessor",
     "template": {
       "metadata": {
         "creationTimestamp": null,
         "labels": {
-          "cdap.container.AppFabric": "test",
+          "cdap.container.AppFabricProcessor": "test",
           "cdap.instance": "test",
           "custom-resource": "v1alpha1.CDAPMaster",
           "custom-resource-name": "test",
@@ -90,34 +90,30 @@
         "containers": [
           {
             "args": [
-              "io.cdap.cdap.master.environment.k8s.AppFabricServiceMain",
+              "io.cdap.cdap.master.environment.k8s.AppFabricProcessorServiceMain",
               "--env=k8s"
             ],
             "env": [
               {
                 "name": "all-services-test",
-                "value": "some-value-overridden"
-              },
-              {
-                "name": "appfabric-env-var-test",
                 "value": "some-value"
               },
               {
                 "name": "JAVA_HEAPMAX",
-                "value": "-Xmx62914560"
+                "value": "-Xmx1291845632"
               }
             ],
             "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
             "imagePullPolicy": "IfNotPresent",
-            "name": "appfabric",
+            "name": "appfabricprocessor",
             "resources": {
               "requests": {
-                "cpu": "100m",
-                "memory": "100Mi"
+                "cpu": "2",
+                "memory": "2000Mi"
               }
             },
             "securityContext": {
-              "allowPrivilegeEscalation": true,
+              "allowPrivilegeEscalation": false,
               "privileged": false,
               "readOnlyRootFilesystem": false
             },
@@ -149,6 +145,11 @@
               {
                 "mountPath": "/opt/cdap/master/system-app-config",
                 "name": "cdap-sysappconf",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/data",
+                "name": "cdap-test-appfabricprocessor-data",
                 "readOnly": true
               },
               {
@@ -209,7 +210,7 @@
               },
               {
                 "mountPath": "/data",
-                "name": "cdap-test-appfabric-data"
+                "name": "cdap-test-appfabricprocessor-data"
               },
               {
                 "name": "cdap-security",
@@ -232,10 +233,10 @@
         "restartPolicy": "Always",
         "schedulerName": "default-scheduler",
         "securityContext": {
-          "fsGroup": 4000,
-          "runAsGroup": 3000,
-          "runAsUser": 3000,
-          "runAsNonRoot": false
+          "fsGroup": 2000,
+          "runAsGroup": 1000,
+          "runAsUser": 1000,
+          "runAsNonRoot": true
         },
         "serviceAccount": "cdap",
         "serviceAccountName": "cdap",
@@ -359,7 +360,7 @@
     "volumeClaimTemplates": [
       {
         "metadata": {
-          "name": "cdap-test-appfabric-data",
+          "name": "cdap-test-appfabricprocessor-data",
           "creationTimestamp": null
         },
         "spec": {
