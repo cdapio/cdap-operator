@@ -504,12 +504,12 @@ func getCurrentTimeMs() int64 {
 
 // The returned name is just the suffix of actual k8s object name, as we prepend it with const string + CR name
 func getPreUpgradeJobName(startTimeMs int64) string {
-	return fmt.Sprintf("pre-upgrade-job-%d", startTimeMs / 1000)
+	return fmt.Sprintf("pre-upgrade-job-%d", startTimeMs/1000)
 }
 
 // The returned name is just the suffix of actual k8s object name, as we prepend it with const string + CR name
 func getPostUpgradeJobName(startTimeMs int64) string {
-	return fmt.Sprintf("post-upgrade-job-%d", startTimeMs / 1000)
+	return fmt.Sprintf("post-upgrade-job-%d", startTimeMs/1000)
 }
 
 // Return pre-upgrade job spec

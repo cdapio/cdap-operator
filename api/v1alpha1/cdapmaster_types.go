@@ -70,7 +70,7 @@ type CDAPMasterSpec struct {
 	// Logs is specification for the CDAP logging service.
 	Logs LogsSpec `json:"logs,omitempty"`
 	// Messaging is specification for the CDAP messaging service.
-	Messaging MessagingSpec `json:"messaging,omitempty"`
+	Messaging *MessagingSpec `json:"messaging,omitempty"`
 	// Metadata is specification for the CDAP metadata service.
 	Metadata MetadataSpec `json:"metadata,omitempty"`
 	// Metrics is specification for the CDAP metrics service.
