@@ -99,7 +99,8 @@ var _ = Describe("Controller Suite", func() {
 		})
 		It("k8s objs for just essential services", func() {
 			master.Spec.Runtime = nil
-			numOptionalServices := 1
+			master.Spec.Messaging = nil
+			numOptionalServices := 2
 
 			emptyLabels := make(map[string]string)
 			spec, err := buildDeploymentPlanSpec(master, emptyLabels)
