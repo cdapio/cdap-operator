@@ -100,7 +100,8 @@
             }
           ]
         }
-      }
+      },
+      "enableStartupProbe": true
     },
    "appfabricprocessor": {
       "metadata": {
@@ -339,6 +340,11 @@
         }
       },
       "storageSize": "100Gi"
+    },
+    "startupProbe": {
+      "periodSeconds": 2,
+      "timeoutSeconds": 1,
+      "failureThreshold": 60
     },
     "systemMetricsExporter": {
       "metadata": {

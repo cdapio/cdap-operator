@@ -127,11 +127,6 @@ func (s *ContainerSpec) setLifecycle(lifecycle *corev1.Lifecycle) *ContainerSpec
 	return s
 }
 
-func (s *ContainerSpec) setStartupProbe(startupProbe *corev1.Probe) *ContainerSpec {
-	s.StartupProbe = startupProbe
-	return s
-}
-
 // BaseSpec contains command fields for both StatefulSet and Deployment
 type BaseSpec struct {
 	Name                   string                    `json:"name,omitempty"`
