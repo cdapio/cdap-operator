@@ -176,6 +176,9 @@ type CDAPServiceSpec struct {
 	Lifecycle *corev1.Lifecycle `json:"lifecycle,omitempty"`
 	// Affinity describes node affinity scheduling rules for the service.
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// StartupProbe describes the startupProbe to indicates that the Pod has
+	// successfully initialized.
+	StartupProbe *corev1.Probe `json:"startupProbe,omitempty"`
 }
 
 // CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance.

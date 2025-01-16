@@ -428,7 +428,7 @@ func serviceContainerSpec(ss *v1alpha1.CDAPServiceSpec,
 		return nil, fmt.Errorf("failed to merge env vars for service %q with error: %v", service, err)
 	}
 	env = addJavaMaxHeapEnvIfNotPresent(env, ss.Resources)
-	c := newContainerSpec(master, service, dataDir).setResources(ss.Resources).setEnv(env).setLifecycle(ss.Lifecycle)
+	c := newContainerSpec(master, service, dataDir).setResources(ss.Resources).setEnv(env).setLifecycle(ss.Lifecycle).setStartupProbe(ss.StartupProbe)
 	if service == serviceUserInterface {
 		c = updateSpecForUserInterface(master, c)
 	}
