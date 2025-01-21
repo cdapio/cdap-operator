@@ -4411,6 +4411,14 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  storageClassName:
+                    description: StorageClassName is the name of the StorageClass
+                      for the persistent volume used by the service.
+                    type: string
+                  storageSize:
+                    description: StorageSize is specification for the persistent volume
+                      size used by the service.
+                    type: string
                 type: object
               appFabricProcessor:
                 description: AppFabricProcessor is specification for the CDAP app-fabric
