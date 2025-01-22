@@ -3995,6 +3995,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -6793,6 +6798,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -9590,6 +9600,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -12387,6 +12402,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -15316,6 +15336,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -18112,6 +18137,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -20905,6 +20935,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -23694,6 +23729,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -27852,6 +27892,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -30652,6 +30697,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -33457,6 +33507,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -33940,6 +33995,41 @@ spec:
                 description: ServiceAccountName is the service account for all the
                   service pods.
                 type: string
+              startupProbe:
+                description: |-
+                  StartupProbe is specification for the startup probe for CDAP system services.
+                  This is an optional field which ensures that the application is fully initialized
+                  before it starts receiving traffic.
+                  To disable the startup probe: either omit or set the field to nil.
+                  To enable the startup probe: set it to a pointer to a SystemMetricsExporterSpec
+                  struct (can be an empty struct). CDAPServiceSpec.EnableStartupProbe field also needs
+                  to be set to true for the deployment services which require startup probe to be enabled.
+                properties:
+                  failureThreshold:
+                    description: |-
+                      Number of consecutive failures before considering the service not ready.
+                      Defaults to 3. Minimum value is 1.
+                    format: int32
+                    type: integer
+                  initialDelaySeconds:
+                    description: |-
+                      Number of seconds after the container has started before probes are initiated.
+                      Defaults to 0 seconds. Minimum value is 0.
+                    format: int32
+                    type: integer
+                  periodSeconds:
+                    description: |-
+                      How often (in seconds) to perform the probe.
+                      Default to 10 seconds. The minimum value is 1.
+                    format: int32
+                    type: integer
+                  timeoutSeconds:
+                    description: |-
+                      Number of seconds after which the probe times out.
+                      Defaults to 1 second. Minimum value is 1.
+                    format: int32
+                    type: integer
+                type: object
               supportBundle:
                 description: |-
                   SupportBundle is specification for the CDAP support-bundle service.
@@ -36316,6 +36406,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -39116,6 +39211,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -41913,6 +42013,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter
@@ -44713,6 +44818,11 @@ spec:
                       Key is the configmap object name. Value is the mount path.
                       This adds ConfigMap data to the directory specified by the volume mount path.
                     type: object
+                  enableStartupProbe:
+                    description: |-
+                      EnableStartupProbe is an optional field to indicate if StatusProbe should
+                      be enabled for the container.
+                    type: boolean
                   enableSystemMetrics:
                     description: |-
                       EnableSystemMetrics is an optional field that is considered along with CDAPMasterSpec.SystemMetricsExporter

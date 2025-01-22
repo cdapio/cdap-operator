@@ -128,6 +128,14 @@ type CDAPMasterSpec struct {
 	// Mutations can include adding init containers, tolerations and node selectors to pods. To use mutations,
 	// the admission control webhook should be enabled in the cdap operator.
 	MutationConfigs []MutationConfig `json:"mutationConfigs,omitempty"`
+	// StartupProbe is specification for the startup probe for CDAP system services.
+	// This is an optional field which ensures that the application is fully initialized
+	// before it starts receiving traffic.
+	// To disable the startup probe: either omit or set the field to nil.
+	// To enable the startup probe: set it to a pointer to a SystemMetricsExporterSpec
+	// struct (can be an empty struct). CDAPServiceSpec.EnableStartupProbe field also needs
+	// to be set to true for the deployment services which require startup probe to be enabled.
+	StartupProbe *StartupProbeSpec `json:"startupProbe,omitempty"`
 }
 
 // CDAPServiceSpec defines the base set of specifications applicable to all master services.
@@ -176,6 +184,9 @@ type CDAPServiceSpec struct {
 	Lifecycle *corev1.Lifecycle `json:"lifecycle,omitempty"`
 	// Affinity describes node affinity scheduling rules for the service.
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// EnableStartupProbe is an optional field to indicate if StatusProbe should
+	// be enabled for the container.
+	EnableStartupProbe *bool `json:"enableStartupProbe,omitempty"`
 }
 
 // CDAPScalableServiceSpec defines the base specification for master services that can have more than one instance.
@@ -301,6 +312,24 @@ type ArtifactCacheSpec struct {
 // SystemMetricExporterSpec defines the specification for the SystemMetricsExporter service.
 type SystemMetricExporterSpec struct {
 	CDAPServiceSpec `json:",inline"`
+}
+
+type StartupProbeSpec struct {
+	// For Probe config see:
+	// https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes.
+
+	// Number of seconds after the container has started before probes are initiated.
+	// Defaults to 0 seconds. Minimum value is 0.
+	InitialDelaySeconds *int32 `json:"initialDelaySeconds,omitempty"`
+	// How often (in seconds) to perform the probe.
+	// Default to 10 seconds. The minimum value is 1.
+	PeriodSeconds *int32 `json:"periodSeconds,omitempty"`
+	// Number of seconds after which the probe times out.
+	// Defaults to 1 second. Minimum value is 1.
+	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
+	// Number of consecutive failures before considering the service not ready.
+	// Defaults to 3. Minimum value is 1.
+	FailureThreshold *int32 `json:"failureThreshold,omitempty"`
 }
 
 // CDAPMasterStatus defines the observed state of CDAPMaster

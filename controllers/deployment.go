@@ -293,6 +293,77 @@ func addSystemMetricsServiceIfEnabled(stsSpec *StatefulSpec, master *v1alpha1.CD
 	return nil
 }
 
+// addStartupProbeIfEnabled adds a startupProbe to the mainContainer if enabled in service spec.
+func addStartupProbeIfEnabled(master *v1alpha1.CDAPMaster, service ServiceName,
+	mainContainer *ContainerSpec, serviceSpec *v1alpha1.CDAPServiceSpec) error {
+	if master.Spec.StartupProbe == nil || serviceSpec == nil {
+		return nil
+	}
+	if serviceSpec.EnableStartupProbe == nil {
+		return nil
+	}
+	if *serviceSpec.EnableStartupProbe == false {
+		return nil
+	}
+
+	svc := strings.ToLower(service)
+	endpoint := fmt.Sprintf("https://localhost:$(cat /tmp/%s.port)/v3/system/services/%s/status", svc, svc)
+	probe, err := startupProbeSpec(master, endpoint)
+	if err != nil {
+	  return err
+	}
+	mainContainer.StartupProbe = probe
+	return nil
+}
+
+func startupProbeSpec(master *v1alpha1.CDAPMaster, endpoint string) (*corev1.Probe, error) {
+	if master.Spec.StartupProbe == nil {
+		return nil, fmt.Errorf("master.Spec.StartupProbe is nil")
+	}
+
+	id, err :=  probeConfig("initialDelaySeconds", master.Spec.StartupProbe.InitialDelaySeconds, 0, 0)
+	if err != nil {
+		return nil, err
+	}
+	ps, err := probeConfig("periodSeconds", master.Spec.StartupProbe.PeriodSeconds, 10, 1)
+	if err != nil {
+		return nil, err
+	}
+	ts, err := probeConfig("timeoutSeconds", master.Spec.StartupProbe.TimeoutSeconds, 1, 1)
+	if err != nil {
+		return nil, err
+	}
+	ft, err := probeConfig("failureThreshold", master.Spec.StartupProbe.FailureThreshold, 3, 1)
+	if err != nil {
+		return nil, err
+	}
+
+	return &corev1.Probe{
+	  ProbeHandler: corev1.ProbeHandler{
+	  	// Use exec to execute a command inside the container
+	  	Exec: &corev1.ExecAction{
+	  		// Command to execute
+	  		Command: []string{"sh", "-c", "curl -s -f -k " + endpoint},
+	  	},
+		},
+		// Probe settings
+		InitialDelaySeconds: id,
+		PeriodSeconds: ps,
+		TimeoutSeconds: ts,
+		FailureThreshold: ft,
+	}, nil
+}
+
+func probeConfig(key string, config *int32, defaultVal int32, min int32) (int32, error) {
+	if config == nil {
+		return defaultVal, nil
+	}
+	if *config < min {
+		return defaultVal, fmt.Errorf("minimum value of %q should be %d", key, min)
+	}
+	return *config, nil
+}
+
 // Return a single single-/multi- container deployment containing a list of supplied services
 func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceGroup, labels map[string]string, cconf, hconf, sysappconf, dataDir string) (*DeploymentSpec, error) {
 	objName := getObjName(master, name)
@@ -372,6 +443,9 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 			return nil, err
 		}
 		if _, err := spec.addAdditionalVolumeMounts(ss.AdditionalVolumeMounts); err != nil {
+			return nil, err
+		}
+		if err := addStartupProbeIfEnabled(master, s, c, ss); err != nil {
 			return nil, err
 		}
 	}
@@ -529,6 +603,7 @@ func buildDeploymentObject(spec *DeploymentSpec) (*reconciler.Object, error) {
 			return nil, err
 		}
 		setLifecycleHookForContainer(&deploymentObj.Spec.Template.Spec.Containers[index], spec.Containers[index].Lifecycle)
+		setStartupProbeForContainer(&deploymentObj.Spec.Template.Spec.Containers[index], spec.Containers[index].StartupProbe)
 	}
 	return obj, nil
 }
@@ -559,6 +634,10 @@ func addVolumeMountToContainer(container *corev1.Container, volumeMountsToAdd []
 
 func setLifecycleHookForContainer(container *corev1.Container, lifecycle *corev1.Lifecycle) {
 	container.Lifecycle = lifecycle
+}
+
+func setStartupProbeForContainer(container *corev1.Container, startupProbe *corev1.Probe) {
+	container.StartupProbe = startupProbe
 }
 
 // Return a NodePort service to expose the supplied target service
