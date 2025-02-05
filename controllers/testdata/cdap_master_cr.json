@@ -100,6 +100,12 @@
             }
           ]
         }
+      },
+      "startupProbe": {
+        "port": 11017,
+        "periodSeconds": 2,
+        "timeoutSeconds": 1,
+        "failureThreshold": 60
       }
     },
    "appfabricprocessor": {
