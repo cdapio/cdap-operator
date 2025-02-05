@@ -32,10 +32,12 @@ func init() {
 /////////////////////////////////////////////////////////////
 
 func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object) ([]reconciler.Object, error) {
+  versionComparison := compareVersion(curVersion, newVersion)
+  isPatchUpgrade := versionComparison == -2
 	// Let the current update complete if there is any
 	if isConditionTrue(master, updateStatus.Inprogress) {
 		log.Printf("Version update ingress. Continue... ")
-		return upgradeForBackend(master, labels, observed)
+		return upgradeForBackend(master, labels, observed, isPatchUpgrade)
 	}
 
 	if objs, versionUpdated, err := updateForUserInterface(master); err != nil {
@@ -58,7 +60,6 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		return []reconciler.Object{}, nil
 	}
 
-  versionComparison := compareVersion(curVersion, newVersion)
 	switch versionComparison {
 	case -2, -1:
 		// Upgrade case
@@ -76,7 +77,6 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		master.Status.UpgradeStartTimeMillis = getCurrentTimeMs()
 		log.Printf("Version update: start upgrading %s -> %s ", curVersion.rawString, newVersion.rawString)
 
-		isPatchUpgrade := versionComparison == -2
     return upgradeForBackend(master, labels, observed, isPatchUpgrade)
 	case 0:
 		// Reset all condition so that failed upgraded/downgrade can be retried later if needed.
