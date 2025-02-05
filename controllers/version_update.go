@@ -32,8 +32,17 @@ func init() {
 /////////////////////////////////////////////////////////////
 
 func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object) ([]reconciler.Object, error) {
+  curVersion, err := getCurrentImageVersion(master)
+	if err != nil {
+		return nil, err
+	}
+	newVersion, err := getNewImageVersion(master)
+	if err != nil {
+		return nil, err
+	}
   versionComparison := compareVersion(curVersion, newVersion)
   isPatchUpgrade := versionComparison == -2
+
 	// Let the current update complete if there is any
 	if isConditionTrue(master, updateStatus.Inprogress) {
 		log.Printf("Version update ingress. Continue... ")
@@ -47,14 +56,6 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 	}
 
 	// Update backend service image version
-	curVersion, err := getCurrentImageVersion(master)
-	if err != nil {
-		return nil, err
-	}
-	newVersion, err := getNewImageVersion(master)
-	if err != nil {
-		return nil, err
-	}
 	if len(curVersion.rawString) == 0 {
 		setImageToUse(master)
 		return []reconciler.Object{}, nil
