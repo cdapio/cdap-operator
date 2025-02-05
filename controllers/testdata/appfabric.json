@@ -121,6 +121,18 @@
               "privileged": false,
               "readOnlyRootFilesystem": false
             },
+            "startupProbe": {
+              "periodSeconds": 2,
+              "failureThreshold": 60,
+              "exec": {
+                "command": [
+                  "sh",
+                  "-c",
+                  "curl -s -f -k https://localhost:11017/v3/system/services/appfabric/status"
+                ]
+              },
+              "timeoutSeconds": 1
+            },
             "lifecycle": {
               "preStop": {
                 "exec": {
