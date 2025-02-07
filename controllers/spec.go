@@ -597,11 +597,11 @@ func newUpgradeJobSpec(master *v1alpha1.CDAPMaster, name string, labels map[stri
 	s.CConf = cconf
 	s.HConf = hconf
 
-	if val, exists := master.Spec.Config[confSkipPreUpgradeFlag]; exists {
-    s.SkipPreUpgradeFlag = (val == "true")
-  } else {
-    s.SkipPreUpgradeFlag = false
-  }
+// 	if val, exists := master.Spec.Config[confSkipPreUpgradeFlag]; exists {
+//     s.SkipPreUpgradeFlag = (val == "true")
+//   } else {
+  s.SkipPreUpgradeFlag = false
+//   }
 	s.SkipPreUpgrade = false
 
 	return s
@@ -619,6 +619,6 @@ func (s *VersionUpgradeJobSpec) SetPostUpgrade(isPostUpgrade bool) *VersionUpgra
 
 func (s *VersionUpgradeJobSpec) SetSkipPreUpgrade(isPatchUpgrade bool) *VersionUpgradeJobSpec {
   // If it is a patch revision and the flag is true, skip the pre upgrade job
-	s.SkipPreUpgrade = false
+	s.SkipPreUpgrade = isPatchUpgrade && s.SkipPreUpgradeFlag
 	return s
 }
