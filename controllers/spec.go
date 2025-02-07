@@ -576,7 +576,7 @@ type VersionUpgradeJobSpec struct {
 	HConf              string            `json:"hadoopConf,omitempty"`
 	PreUpgrade         bool              `json:"preUpgrade,omitempty"`
 	PostUpgrade        bool              `json:"postUpgrade,omitempty"`
-	SkipPreUpgradeFlag bool              `json:"skipPreUpgrade,omitempty"`
+	SkipPreUpgradeFlag bool              `json:"skipPreUpgradeFlag,omitempty"`
 	SkipPreUpgrade     bool              `json:"skipPreUpgrade,omitempty"`
 }
 
