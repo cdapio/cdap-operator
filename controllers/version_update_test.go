@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"cdap.io/cdap-operator/api/v1alpha1"
 	"encoding/json"
 	"github.com/nsf/jsondiff"
@@ -220,8 +221,8 @@ var _ = Describe("Controller Suite", func() {
 
 			json, _ := json.Marshal(object.Obj.(*k8s.Object).Obj.(*batchv1.Job))
 			expectedJson, err := ioutil.ReadFile("testdata/pre_upgrade_job.json")
-			GinkgoWriter.Println("EXPECTED JOB JSON FILE CONTENT:")
-			GinkgoWriter.Println(string(expectedJson))
+			fmt.Println("EXPECTED JOB JSON FILE CONTENT:")
+			fmt.Println(string(expectedJson))
 			opts := jsondiff.DefaultConsoleOptions()
 			diff, text := jsondiff.Compare(expectedJson, json, &opts)
 			Expect(diff.String()).To(Equal(jsondiff.SupersetMatch.String()), text)
