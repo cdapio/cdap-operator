@@ -576,6 +576,8 @@ type VersionUpgradeJobSpec struct {
 	HConf              string            `json:"hadoopConf,omitempty"`
 	PreUpgrade         bool              `json:"preUpgrade,omitempty"`
 	PostUpgrade        bool              `json:"postUpgrade,omitempty"`
+	SkipPreUpgradeFlag bool              `json:"skipPreUpgrade,omitempty"`
+	SkipPreUpgrade     bool              `json:"skipPreUpgrade,omitempty"`
 }
 
 func newUpgradeJobSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, startTimeMs int64, cconf, hconf string) *VersionUpgradeJobSpec {
@@ -594,6 +596,8 @@ func newUpgradeJobSpec(master *v1alpha1.CDAPMaster, name string, labels map[stri
 	s.StartTimeMs = startTimeMs
 	s.CConf = cconf
 	s.HConf = hconf
+	s.SkipPreUpgradeFlag = (master.Spec.Config[confSkipPreUpgradeFlag] == "true")
+	s.SkipPreUpgrade = false
 	return s
 }
 
@@ -604,5 +608,11 @@ func (s *VersionUpgradeJobSpec) SetPreUpgrade(isPreUpgrade bool) *VersionUpgrade
 
 func (s *VersionUpgradeJobSpec) SetPostUpgrade(isPostUpgrade bool) *VersionUpgradeJobSpec {
 	s.PostUpgrade = isPostUpgrade
+	return s
+}
+
+func (s *VersionUpgradeJobSpec) SetSkipPreUpgrade(isPatchUpgrade bool) *VersionUpgradeJobSpec {
+  // If it is a patch revision and the flag is true, skip the pre upgrade job
+	s.SkipPreUpgrade = isPatchUpgrade && s.SkipPreUpgradeFlag
 	return s
 }
