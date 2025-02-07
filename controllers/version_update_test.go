@@ -214,7 +214,7 @@ var _ = Describe("Controller Suite", func() {
 					ImageToUse:             curUIImage,
 				},
 			}
-			postJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, emptyLabels, true)
+			postJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, emptyLabels, false)
 			object, err := buildUpgradeJobObject(postJobSpec)
 			Expect(err).To(BeNil())
 

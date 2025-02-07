@@ -603,7 +603,7 @@ func newUpgradeJobSpec(master *v1alpha1.CDAPMaster, name string, labels map[stri
     s.SkipPreUpgradeFlag = false
   }
 	s.SkipPreUpgrade = false
-	
+
 	return s
 }
 
@@ -619,6 +619,6 @@ func (s *VersionUpgradeJobSpec) SetPostUpgrade(isPostUpgrade bool) *VersionUpgra
 
 func (s *VersionUpgradeJobSpec) SetSkipPreUpgrade(isPatchUpgrade bool) *VersionUpgradeJobSpec {
   // If it is a patch revision and the flag is true, skip the pre upgrade job
-	s.SkipPreUpgrade = isPatchUpgrade && s.SkipPreUpgradeFlag
+	s.SkipPreUpgrade = false
 	return s
 }
