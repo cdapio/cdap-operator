@@ -42,7 +42,7 @@ var _ = Describe("Controller Suite", func() {
 		It("Compare image versions", func() {
 			imagePairs := []Pair{
 				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:latest"},
-				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.1"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.1.0"},
 				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.1.0"},
 				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:7"},
 			}
@@ -52,6 +52,21 @@ var _ = Describe("Controller Suite", func() {
 				high, err := parseImageString(imagePair.second.(string))
 				Expect(err).To(BeNil())
 				Expect(compareVersion(low, high)).To(Equal(-1))
+				Expect(compareVersion(high, low)).To(Equal(1))
+			}
+		})
+		It("Compare image versions in patch upgrade", func() {
+			imagePairs := []Pair{
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.1"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.3"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.9"},
+			}
+			for _, imagePair := range imagePairs {
+				low, err := parseImageString(imagePair.first.(string))
+				Expect(err).To(BeNil())
+				high, err := parseImageString(imagePair.second.(string))
+				Expect(err).To(BeNil())
+				Expect(compareVersion(low, high)).To(Equal(-2))
 				Expect(compareVersion(high, low)).To(Equal(1))
 			}
 		})
@@ -199,7 +214,8 @@ var _ = Describe("Controller Suite", func() {
 					ImageToUse:             curUIImage,
 				},
 			}
-			postJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, emptyLabels)
+			// Force the pre upgrade job configurations
+			postJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, emptyLabels, false)
 			object, err := buildUpgradeJobObject(postJobSpec)
 			Expect(err).To(BeNil())
 

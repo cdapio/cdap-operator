@@ -32,10 +32,21 @@ func init() {
 /////////////////////////////////////////////////////////////
 
 func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object) ([]reconciler.Object, error) {
+	curVersion, err := getCurrentImageVersion(master)
+	if err != nil {
+		return nil, err
+	}
+	newVersion, err := getNewImageVersion(master)
+	if err != nil {
+		return nil, err
+	}
+	versionComparison := compareVersion(curVersion, newVersion)
+	isPatchUpgrade := versionComparison == -2
+
 	// Let the current update complete if there is any
 	if isConditionTrue(master, updateStatus.Inprogress) {
 		log.Printf("Version update ingress. Continue... ")
-		return upgradeForBackend(master, labels, observed)
+		return upgradeForBackend(master, labels, observed, isPatchUpgrade)
 	}
 
 	if objs, versionUpdated, err := updateForUserInterface(master); err != nil {
@@ -45,21 +56,13 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 	}
 
 	// Update backend service image version
-	curVersion, err := getCurrentImageVersion(master)
-	if err != nil {
-		return nil, err
-	}
-	newVersion, err := getNewImageVersion(master)
-	if err != nil {
-		return nil, err
-	}
 	if len(curVersion.rawString) == 0 {
 		setImageToUse(master)
 		return []reconciler.Object{}, nil
 	}
 
-	switch compareVersion(curVersion, newVersion) {
-	case -1:
+	switch versionComparison {
+	case -2, -1:
 		// Upgrade case
 
 		// Don't retry upgrade if it failed.
@@ -73,7 +76,7 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		setCondition(master, updateStatus.Inprogress)
 		master.Status.UpgradeStartTimeMillis = getCurrentTimeMs()
 		log.Printf("Version update: start upgrading %s -> %s ", curVersion.rawString, newVersion.rawString)
-		return upgradeForBackend(master, labels, observed)
+		return upgradeForBackend(master, labels, observed, isPatchUpgrade)
 	case 0:
 		// Reset all condition so that failed upgraded/downgrade can be retried later if needed.
 		// This is needed when last upgrade failed and user has reset the version in spec.
@@ -120,7 +123,7 @@ func downgradeForBackend(master *v1alpha1.CDAPMaster) ([]reconciler.Object, erro
 	return []reconciler.Object{}, nil
 }
 
-func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object) ([]reconciler.Object, error) {
+func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object, isPatchUpgrade bool) ([]reconciler.Object, error) {
 	// Find either pre- or post- upgrade job
 	findJob := func(jobName string) *batchv1.Job {
 		var job *batchv1.Job = nil
@@ -163,7 +166,7 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	if !isConditionTrue(master, updateStatus.PreUpgradeSucceeded) {
 		log.Printf("Version update: pre-upgrade job not completed")
 		preJobName := getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis)
-		preJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
+		preJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels, isPatchUpgrade)
 		job := findJob(preJobName)
 		if job == nil {
 			obj, err := createJob(preJobSpec)
@@ -406,6 +409,7 @@ func parseImageString(imageString string) (*Version, error) {
 }
 
 // compare two parsed versions
+// -2: left < right, patch upgrade
 // -1: left < right
 // 0: left = right
 // 1: left > right
@@ -418,9 +422,24 @@ func compareVersion(l, r *Version) int {
 		return -1
 	}
 
+  lenL, lenR := len(l.components), len(r.components)
+  // Check if it only a patch upgrade
+  if lenL == lenR && lenL > 0 && l.components[lenL-1] < r.components[lenL-1] {
+    allEqual := true
+    for i := 0; i < lenL-1; i++ {
+      if l.components[i] != r.components[i] {
+        allEqual = false
+        break
+      }
+    }
+    if allEqual {
+      return -2
+    }
+  }
+
 	i := 0
 	j := 0
-	for i < len(l.components) && j < len(r.components) {
+	for i < lenL && j < lenR {
 		if l.components[i] > r.components[j] {
 			return 1
 		} else if l.components[i] < r.components[j] {
@@ -429,13 +448,13 @@ func compareVersion(l, r *Version) int {
 		i++
 		j++
 	}
-	for i < len(l.components) {
+	for i < lenL {
 		if l.components[i] > 0 {
 			return 1
 		}
 		i++
 	}
-	for j < len(r.components) {
+	for j < lenR {
 		if r.components[j] > 0 {
 			return 1
 		}
@@ -513,12 +532,19 @@ func getPostUpgradeJobName(startTimeMs int64) string {
 }
 
 // Return pre-upgrade job spec
-func buildPreUpgradeJobSpec(jobName string, master *v1alpha1.CDAPMaster, labels map[string]string) *VersionUpgradeJobSpec {
+func buildPreUpgradeJobSpec(jobName string, master *v1alpha1.CDAPMaster, labels map[string]string, isPatchUpgrade bool) *VersionUpgradeJobSpec {
 	startTimeMs := master.Status.UpgradeStartTimeMillis
 	cconf := getObjName(master, configMapCConf)
 	hconf := getObjName(master, configMapHConf)
 	name := getObjName(master, jobName)
-	return newUpgradeJobSpec(master, name, labels, startTimeMs, cconf, hconf).SetPreUpgrade(true)
+
+  excludeProgramTypes := []string{}
+  if isPatchUpgrade {
+    // Add "WORKERS" to ExcludeProgramTypes for patch upgrade
+    excludeProgramTypes = append(excludeProgramTypes, "WORKERS")
+  }
+
+	return newUpgradeJobSpec(master, name, labels, startTimeMs, cconf, hconf).SetPreUpgrade(true).SetExcludeProgramTypes(excludeProgramTypes)
 }
 
 // Return post-upgrade job spec
