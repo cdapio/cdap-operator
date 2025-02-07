@@ -46,6 +46,7 @@ type ContainerSpec struct {
 	ResourceLimits   map[string]*resource.Quantity `json:"resourceLimits,omitempty"`
 	DataDir          string                        `json:"dataDir,omitempty"`
 	Lifecycle        *corev1.Lifecycle             `json:"lifecycle,omitempty"`
+	StartupProbe     *corev1.Probe                 `json:"startupProbe,omitempty"`
 }
 
 func newContainerSpec(master *v1alpha1.CDAPMaster, name, dataDir string) *ContainerSpec {

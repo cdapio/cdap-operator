@@ -4411,13 +4411,53 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                   storageClassName:
-                    description: StorageClassName is the name of the StorageClass
-                      for the persistent volume used by the service.
+                    description: |-
+                      StorageClassName is the name of the StorageClass for the persistent volume used by the service.
+                      Note: This is added for backward compatibility where Appfabric runs as CDAP stateful service.
+                      This field can be set to nil if appfabric is run as CDAP scalable service.
                     type: string
                   storageSize:
-                    description: StorageSize is specification for the persistent volume
-                      size used by the service.
+                    description: |-
+                      StorageSize is specification for the persistent volume size used by the service.
+                      Note: This is added for backward compatibility where Appfabric runs as CDAP stateful service.
+                      This field can be set to nil if appfabric is run as CDAP scalable service.
                     type: string
                 type: object
               appFabricProcessor:
@@ -7205,6 +7245,42 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                   storageClassName:
                     description: StorageClassName is the name of the StorageClass
                       for the persistent volume used by the service.
@@ -10002,6 +10078,42 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                   storageClassName:
                     description: StorageClassName is the name of the StorageClass
                       for the persistent volume used by the service.
@@ -12803,6 +12915,42 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                 type: object
               config:
                 additionalProperties:
@@ -15728,6 +15876,42 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                   storageClassName:
                     description: StorageClassName is the name of the StorageClass
                       for the persistent volume used by the service.
@@ -18524,6 +18708,42 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                   storageClassName:
                     description: StorageClassName is the name of the StorageClass
                       for the persistent volume used by the service.
@@ -21321,6 +21541,42 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                 type: object
               metrics:
                 description: Metrics is specification for the CDAP metrics service.
@@ -24106,6 +24362,42 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                   storageClassName:
                     description: StorageClassName is the name of the StorageClass
                       for the persistent volume used by the service.
@@ -28264,6 +28556,42 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                   storageClassName:
                     description: StorageClassName is the name of the StorageClass
                       for the persistent volume used by the service.
@@ -31080,6 +31408,42 @@ spec:
                     description: ServiceType is the service type in kubernetes, default
                       is NodePort.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                 type: object
               runtime:
                 description: |-
@@ -33873,6 +34237,42 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                   storageClassName:
                     description: StorageClassName is the name of the StorageClass
                       for the persistent volume used by the service.
@@ -36728,6 +37128,42 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                   storageClassName:
                     description: StorageClassName is the name of the StorageClass
                       for the persistent volume used by the service.
@@ -39528,6 +39964,42 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                 type: object
               systemappconfigs:
                 additionalProperties:
@@ -42325,6 +42797,42 @@ spec:
                     description: ServiceAccountName overrides the service account
                       for the service pods.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                   storageClassName:
                     description: StorageClassName is the name of the StorageClass
                       for the persistent volume used by the service.
@@ -45141,6 +45649,42 @@ spec:
                     description: ServiceType is the service type in kubernetes, default
                       is NodePort.
                     type: string
+                  startupProbe:
+                    description: |-
+                      StartupProbe is an optional field to configure startup probe for the main container in the service pods.
+                      To disable startup probe: either omit or set the field to nil.
+                      To enable startup probe: set it to a pointer to a StartupProbe struct.
+                    properties:
+                      failureThreshold:
+                        description: |-
+                          Number of consecutive failures before considering the service not ready.
+                          Defaults to 3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        description: |-
+                          Number of seconds after the container has started before probes are initiated.
+                          Defaults to 0 seconds. Minimum value is 0.
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: |-
+                          How often (in seconds) to perform the probe.
+                          Default to 10 seconds. The minimum value is 1.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the port on which the CDAP service is
+                          running in the container.
+                        format: int32
+                        type: integer
+                      timeoutSeconds:
+                        description: |-
+                          Number of seconds after which the probe times out.
+                          Defaults to 1 second. Minimum value is 1.
+                        format: int32
+                        type: integer
+                    type: object
                 type: object
               userInterfaceImage:
                 description: UserInterfaceImage is the docker image name for the CDAP
