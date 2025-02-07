@@ -620,5 +620,8 @@ func (s *VersionUpgradeJobSpec) SetPostUpgrade(isPostUpgrade bool) *VersionUpgra
 func (s *VersionUpgradeJobSpec) SetSkipPreUpgrade(isPatchUpgrade bool) *VersionUpgradeJobSpec {
   // If it is a patch revision and the flag is true, skip the pre upgrade job
 	s.SkipPreUpgrade = isPatchUpgrade && s.SkipPreUpgradeFlag
+	fmt.Println("LOGS:")
+	fmt.Println(isPatchUpgrade)
+	fmt.Println(s.SkipPreUpgradeFlag)
 	return s
 }
