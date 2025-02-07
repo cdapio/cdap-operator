@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"cdap.io/cdap-operator/api/v1alpha1"
 	"encoding/json"
 	"github.com/nsf/jsondiff"
