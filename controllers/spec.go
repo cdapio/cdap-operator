@@ -596,7 +596,7 @@ func newUpgradeJobSpec(master *v1alpha1.CDAPMaster, name string, labels map[stri
 	s.StartTimeMs = startTimeMs
 	s.CConf = cconf
 	s.HConf = hconf
-  s.SkipPreUpgradeFlag = master.Spec.Config[confSkipPreUpgradeFlag]
+  s.SkipPreUpgradeFlag = (master.Spec.Config[confSkipPreUpgradeFlag] == "true")
 	s.SkipPreUpgrade = false
 	return s
 }
