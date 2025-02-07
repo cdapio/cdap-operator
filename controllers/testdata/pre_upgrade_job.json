@@ -61,7 +61,8 @@
             "args": [
               "io.cdap.cdap.master.upgrade.UpgradeJobMain",
               "cdap-test-router",
-              "11015"
+              "11015",
+              "false",
             ],
             "image": "gcr.io/cloud-data-fusion-images/cloud-data-fusion:6.1.0.5",
             "imagePullPolicy": "IfNotPresent",
