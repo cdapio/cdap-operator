@@ -68,6 +68,7 @@ const (
 	confTwillSecurityWorkerSecretDiskPath = "twill.security.worker.secret.disk.path"
 	confJMXServerPort                     = "jmx.metrics.collector.server.port"
 	confSecretMountDefaultMode            = "secret.mount.default.mode"
+	confSkipPreUpgradeFlag                = "cdap-operator.skip.preupgrade-job"
 
 	// default values
 	defaultImage                  = "gcr.io/cdapio/cdap:latest"
