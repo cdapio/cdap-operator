@@ -223,6 +223,14 @@ type CDAPScalableStatefulServiceSpec struct {
 // AppFabricSpec defines the specification for the AppFabric service.
 type AppFabricSpec struct {
 	CDAPScalableServiceSpec `json:",inline"`
+	// StorageSize is specification for the persistent volume size used by the service.
+	// Note: This is added for backward compatibility where Appfabric runs as CDAP stateful service.
+	// This field can be set to nil if appfabric is run as CDAP scalable service.
+	StorageSize *string `json:"storageSize,omitempty"`
+	// StorageClassName is the name of the StorageClass for the persistent volume used by the service.
+	// Note: This is added for backward compatibility where Appfabric runs as CDAP stateful service.
+  // This field can be set to nil if appfabric is run as CDAP scalable service.
+	StorageClassName *string `json:"storageClassName,omitempty"`
 }
 
 // AppFabricProcessorSpec defines the specification for the AppFabric Processor service.
