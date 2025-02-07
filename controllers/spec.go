@@ -611,7 +611,7 @@ func (s *VersionUpgradeJobSpec) SetPostUpgrade(isPostUpgrade bool) *VersionUpgra
 	return s
 }
 
-func (s *VersionUpgradeJobSpec) SetSkipPreUpgrade(isPatchUpgrade bool) *VersionUpgrade
+func (s *VersionUpgradeJobSpec) SetSkipPreUpgrade(isPatchUpgrade bool) *VersionUpgrade {
 	s.SkipPreUpgrade = isPatchUpgrade && s.SkipPreUpgradeFlag
 	return s
 }
