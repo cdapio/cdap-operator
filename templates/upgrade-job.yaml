@@ -45,7 +45,7 @@ spec:
         {{end}}
         {{if .PreUpgrade}}
         - name: pre-upgrade
-          args: ["io.cdap.cdap.master.upgrade.UpgradeJobMain", "{{.HostName}}", "11015"]
+          args: ["io.cdap.cdap.master.upgrade.UpgradeJobMain", "{{.HostName}}", "11015", "{{.SkipPreUpgrade}}"]
         {{end}}
           image: {{.Image}}
           volumeMounts:
