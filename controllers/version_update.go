@@ -32,6 +32,17 @@ func init() {
 /////////////////////////////////////////////////////////////
 
 func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object) ([]reconciler.Object, error) {
+	curVersion, err := getCurrentImageVersion(master)
+	if err != nil {
+		return nil, err
+	}
+	newVersion, err := getNewImageVersion(master)
+	if err != nil {
+		return nil, err
+	}
+	versionComparison := compareVersion(curVersion, newVersion)
+	isPatchRevision := versionComparison == -2
+
 	// Let the current update complete if there is any
 	if isConditionTrue(master, updateStatus.Inprogress) {
 		log.Printf("Version update ingress. Continue... ")
@@ -45,21 +56,13 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 	}
 
 	// Update backend service image version
-	curVersion, err := getCurrentImageVersion(master)
-	if err != nil {
-		return nil, err
-	}
-	newVersion, err := getNewImageVersion(master)
-	if err != nil {
-		return nil, err
-	}
 	if len(curVersion.rawString) == 0 {
 		setImageToUse(master)
 		return []reconciler.Object{}, nil
 	}
 
-	switch compareVersion(curVersion, newVersion) {
-	case -1:
+	switch versionComparison {
+	case -2, -1:
 		// Upgrade case
 
 		// Don't retry upgrade if it failed.
@@ -73,7 +76,7 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		setCondition(master, updateStatus.Inprogress)
 		master.Status.UpgradeStartTimeMillis = getCurrentTimeMs()
 		log.Printf("Version update: start upgrading %s -> %s ", curVersion.rawString, newVersion.rawString)
-		return upgradeForBackend(master, labels, observed)
+		return upgradeForBackend(master, labels, observed, isPatchRevision)
 	case 0:
 		// Reset all condition so that failed upgraded/downgrade can be retried later if needed.
 		// This is needed when last upgrade failed and user has reset the version in spec.
@@ -120,7 +123,7 @@ func downgradeForBackend(master *v1alpha1.CDAPMaster) ([]reconciler.Object, erro
 	return []reconciler.Object{}, nil
 }
 
-func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object) ([]reconciler.Object, error) {
+func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object, isPatchRevision bool) ([]reconciler.Object, error) {
 	// Find either pre- or post- upgrade job
 	findJob := func(jobName string) *batchv1.Job {
 		var job *batchv1.Job = nil
@@ -153,6 +156,17 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 		}
 		return jobObj
 	}
+
+	// Skip pre-upgrade and post-upgrade jobs for patch revision
+  if isPatchRevision {
+    log.Printf("Version update: patch revision detected, skipping pre-upgrade and post-upgrade jobs.")
+    setImageToUse(master)
+    setCondition(master, updateStatus.VersionUpdated)
+    setCondition(master, updateStatus.UpgradeSucceeded)
+    clearCondition(master, updateStatus.Inprogress)
+    log.Printf("Version update: patch revision completed.")
+    return []reconciler.Object{}, nil
+  }
 
 	// First, run pre-upgrade job
 	//
@@ -406,6 +420,7 @@ func parseImageString(imageString string) (*Version, error) {
 }
 
 // compare two parsed versions
+// -2: left < right, patch revision
 // -1: left < right
 // 0: left = right
 // 1: left > right
@@ -418,9 +433,24 @@ func compareVersion(l, r *Version) int {
 		return -1
 	}
 
+  lenL, lenR := len(l.components), len(r.components)
+  // Check if it only a patch revision
+  if lenL == lenR && lenL > 0 && l.components[lenL-1] < r.components[lenL-1] {
+    allEqual := true
+    for i := 0; i < lenL-1; i++ {
+      if l.components[i] != r.components[i] {
+        allEqual = false
+        break
+      }
+    }
+    if allEqual {
+      return -2
+    }
+  }
+
 	i := 0
 	j := 0
-	for i < len(l.components) && j < len(r.components) {
+	for i < lenL && j < lenR {
 		if l.components[i] > r.components[j] {
 			return 1
 		} else if l.components[i] < r.components[j] {
@@ -429,13 +459,13 @@ func compareVersion(l, r *Version) int {
 		i++
 		j++
 	}
-	for i < len(l.components) {
+	for i < lenL {
 		if l.components[i] > 0 {
 			return 1
 		}
 		i++
 	}
-	for j < len(r.components) {
+	for j < lenR {
 		if r.components[j] > 0 {
 			return 1
 		}
