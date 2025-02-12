@@ -46,7 +46,7 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 	// Let the current update complete if there is any
 	if isConditionTrue(master, updateStatus.Inprogress) {
 		log.Printf("Version update ingress. Continue... ")
-		return upgradeForBackend(master, labels, observed)
+		return upgradeForBackend(master, labels, observed, isPatchRevision)
 	}
 
 	if objs, versionUpdated, err := updateForUserInterface(master); err != nil {

@@ -55,7 +55,7 @@ var _ = Describe("Controller Suite", func() {
 				Expect(compareVersion(high, low)).To(Equal(1))
 			}
 		})
-		It("Compare image versions in patch revision", func() {
+    It("Compare image versions in patch revision", func() {
       imagePairs := []Pair{
         Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.1"},
         Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.3"},
