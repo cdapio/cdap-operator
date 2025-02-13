@@ -41,12 +41,12 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		return nil, err
 	}
 	versionComparison := compareVersion(curVersion, newVersion)
-	isPatchRevision := versionComparison == -2
+	patchRevision := versionComparison == -4
 
 	// Let the current update complete if there is any
 	if isConditionTrue(master, updateStatus.Inprogress) {
 		log.Printf("Version update ingress. Continue... ")
-		return upgradeForBackend(master, labels, observed, isPatchRevision)
+		return upgradeForBackend(master, labels, observed, patchRevision)
 	}
 
 	if objs, versionUpdated, err := updateForUserInterface(master); err != nil {
@@ -62,7 +62,7 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 	}
 
 	switch versionComparison {
-	case -2, -1:
+	case -1, -2, -3, -4:
 		// Upgrade case
 
 		// Don't retry upgrade if it failed.
@@ -76,7 +76,7 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		setCondition(master, updateStatus.Inprogress)
 		master.Status.UpgradeStartTimeMillis = getCurrentTimeMs()
 		log.Printf("Version update: start upgrading %s -> %s ", curVersion.rawString, newVersion.rawString)
-		return upgradeForBackend(master, labels, observed, isPatchRevision)
+		return upgradeForBackend(master, labels, observed, patchRevision)
 	case 0:
 		// Reset all condition so that failed upgraded/downgrade can be retried later if needed.
 		// This is needed when last upgrade failed and user has reset the version in spec.
@@ -123,7 +123,7 @@ func downgradeForBackend(master *v1alpha1.CDAPMaster) ([]reconciler.Object, erro
 	return []reconciler.Object{}, nil
 }
 
-func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object, isPatchRevision bool) ([]reconciler.Object, error) {
+func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object, patchRevision bool) ([]reconciler.Object, error) {
 	// Find either pre- or post- upgrade job
 	findJob := func(jobName string) *batchv1.Job {
 		var job *batchv1.Job = nil
@@ -157,17 +157,12 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 		return jobObj
 	}
 
-	SkipPreUpgradeFlag := !(master.Spec.Config[confSkipPreUpgradeFlag] == "false")
+	skipPreUpgrade := !(master.Spec.Config[confSkipPreUpgrade] == "false")
 
-	// Skip pre-upgrade and post-upgrade jobs for patch revision
-	if isPatchRevision && SkipPreUpgradeFlag {
+	// Skip pre-upgrade and post-upgrade jobs for patch revisions
+	if patchRevision && skipPreUpgrade {
 		log.Printf("Version update: patch revision detected, skipping pre-upgrade and post-upgrade jobs.")
-		setImageToUse(master)
-		setCondition(master, updateStatus.VersionUpdated)
-		setCondition(master, updateStatus.UpgradeSucceeded)
-		clearCondition(master, updateStatus.Inprogress)
-		log.Printf("Version update: patch revision completed.")
-		return []reconciler.Object{}, nil
+		skipPreUpgrade := true
 	}
 
 	// First, run pre-upgrade job
@@ -176,7 +171,7 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	// try as many as imageVersionUpgradeJobMaxRetryCount times before giving up. If we ever
 	// needed to set an overall deadline for the pre-upgrade job, the logic below needs to check
 	// deadline exceeded condition on job's status
-	if !isConditionTrue(master, updateStatus.PreUpgradeSucceeded) {
+	if !isConditionTrue(master, updateStatus.PreUpgradeSucceeded) && !skipPreUpgrade {
 		log.Printf("Version update: pre-upgrade job not completed")
 		preJobName := getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis)
 		preJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
@@ -219,7 +214,7 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	// try as many as imageVersionUpgradeJobMaxRetryCount times before giving up. If we ever
 	// needed to set an overall deadline for the post-upgrade job, the logic below needs to check
 	// deadline exceeded condition on job's status
-	if !isConditionTrue(master, updateStatus.PostUpgradeSucceeded) {
+	if !isConditionTrue(master, updateStatus.PostUpgradeSucceeded) && !skipPreUpgrade {
 		log.Printf("Version update: post-upgrade job not completed")
 		postJobName := getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis)
 		postJobSpec := buildPostUpgradeJobSpec(getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
@@ -422,8 +417,7 @@ func parseImageString(imageString string) (*Version, error) {
 }
 
 // compare two parsed versions
-// -2: left < right, patch revision
-// -1: left < right
+// -n: left < right, nth component differs (1-indexed)
 // 0: left = right
 // 1: left > right
 func compareVersion(l, r *Version) int {
@@ -436,44 +430,32 @@ func compareVersion(l, r *Version) int {
 	}
 
 	lenL, lenR := len(l.components), len(r.components)
-	// Check if it only a patch revision
-	if lenL == lenR && lenL > 0 && l.components[lenL-1] < r.components[lenL-1] {
-		allEqual := true
-		for i := 0; i < lenL-1; i++ {
-			if l.components[i] != r.components[i] {
-				allEqual = false
-				break
-			}
-		}
-		if allEqual {
-			return -2
+	minLen := lenL
+	if lenR < lenL {
+		minLen = lenR
+	}
+
+	for i := 0; i < minLen; i++ {
+		if l.components[i] > r.components[i] {
+			return 1
+		} else if l.components[i] < r.components[i] {
+			return -(i + 1) // Return negative index (1-based)
 		}
 	}
 
-	i := 0
-	j := 0
-	for i < lenL && j < lenR {
-		if l.components[i] > r.components[j] {
-			return 1
-		} else if l.components[i] < r.components[j] {
-			return -1
-		}
-		i++
-		j++
-	}
-	for i < lenL {
+	// If one version has extra components that are non-zero, it's greater
+	for i := minLen; i < lenL; i++ {
 		if l.components[i] > 0 {
 			return 1
 		}
-		i++
 	}
-	for j < lenR {
-		if r.components[j] > 0 {
-			return 1
+	for i := minLen; i < lenR; i++ {
+		if r.components[i] > 0 {
+			return -(i + 1) // Return negative index (1-based)
 		}
-		j++
 	}
-	return 0
+
+	return 0 // Versions are equal
 }
 
 //////////////////////////////////
