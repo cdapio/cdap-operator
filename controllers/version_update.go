@@ -157,18 +157,18 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 		return jobObj
 	}
 
-  SkipPreUpgradeFlag := !(master.Spec.Config[confSkipPreUpgradeFlag] == "false")
+	SkipPreUpgradeFlag := !(master.Spec.Config[confSkipPreUpgradeFlag] == "false")
 
 	// Skip pre-upgrade and post-upgrade jobs for patch revision
-  if isPatchRevision && SkipPreUpgradeFlag {
-    log.Printf("Version update: patch revision detected, skipping pre-upgrade and post-upgrade jobs.")
-    setImageToUse(master)
-    setCondition(master, updateStatus.VersionUpdated)
-    setCondition(master, updateStatus.UpgradeSucceeded)
-    clearCondition(master, updateStatus.Inprogress)
-    log.Printf("Version update: patch revision completed.")
-    return []reconciler.Object{}, nil
-  }
+	if isPatchRevision && SkipPreUpgradeFlag {
+		log.Printf("Version update: patch revision detected, skipping pre-upgrade and post-upgrade jobs.")
+		setImageToUse(master)
+		setCondition(master, updateStatus.VersionUpdated)
+		setCondition(master, updateStatus.UpgradeSucceeded)
+		clearCondition(master, updateStatus.Inprogress)
+		log.Printf("Version update: patch revision completed.")
+		return []reconciler.Object{}, nil
+	}
 
 	// First, run pre-upgrade job
 	//
@@ -435,20 +435,20 @@ func compareVersion(l, r *Version) int {
 		return -1
 	}
 
-  lenL, lenR := len(l.components), len(r.components)
-  // Check if it only a patch revision
-  if lenL == lenR && lenL > 0 && l.components[lenL-1] < r.components[lenL-1] {
-    allEqual := true
-    for i := 0; i < lenL-1; i++ {
-      if l.components[i] != r.components[i] {
-        allEqual = false
-        break
-      }
-    }
-    if allEqual {
-      return -2
-    }
-  }
+	lenL, lenR := len(l.components), len(r.components)
+	// Check if it only a patch revision
+	if lenL == lenR && lenL > 0 && l.components[lenL-1] < r.components[lenL-1] {
+		allEqual := true
+		for i := 0; i < lenL-1; i++ {
+			if l.components[i] != r.components[i] {
+				allEqual = false
+				break
+			}
+		}
+		if allEqual {
+			return -2
+		}
+	}
 
 	i := 0
 	j := 0
@@ -536,12 +536,12 @@ func getCurrentTimeMs() int64 {
 
 // The returned name is just the suffix of actual k8s object name, as we prepend it with const string + CR name
 func getPreUpgradeJobName(startTimeMs int64) string {
-	return fmt.Sprintf("pre-upgrade-job-%d", startTimeMs / 1000)
+	return fmt.Sprintf("pre-upgrade-job-%d", startTimeMs/1000)
 }
 
 // The returned name is just the suffix of actual k8s object name, as we prepend it with const string + CR name
 func getPostUpgradeJobName(startTimeMs int64) string {
-	return fmt.Sprintf("post-upgrade-job-%d", startTimeMs / 1000)
+	return fmt.Sprintf("post-upgrade-job-%d", startTimeMs/1000)
 }
 
 // Return pre-upgrade job spec

@@ -55,21 +55,21 @@ var _ = Describe("Controller Suite", func() {
 				Expect(compareVersion(high, low)).To(Equal(1))
 			}
 		})
-    It("Compare image versions in patch revision", func() {
-      imagePairs := []Pair{
-        Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.1"},
-        Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.3"},
-        Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.9"},
-      }
-      for _, imagePair := range imagePairs {
-        low, err := parseImageString(imagePair.first.(string))
-        Expect(err).To(BeNil())
-        high, err := parseImageString(imagePair.second.(string))
-        Expect(err).To(BeNil())
-        Expect(compareVersion(low, high)).To(Equal(-2))
-        Expect(compareVersion(high, low)).To(Equal(1))
-      }
-    })
+		It("Compare image versions in patch revision", func() {
+			imagePairs := []Pair{
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.1"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.3"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.9"},
+			}
+			for _, imagePair := range imagePairs {
+				low, err := parseImageString(imagePair.first.(string))
+				Expect(err).To(BeNil())
+				high, err := parseImageString(imagePair.second.(string))
+				Expect(err).To(BeNil())
+				Expect(compareVersion(low, high)).To(Equal(-2))
+				Expect(compareVersion(high, low)).To(Equal(1))
+			}
+		})
 		It("Compare same image versions", func() {
 			imagePairs := []Pair{
 				Pair{"gcr.io/cdapio/cdap:latest", "gcr.io/cdapio/cdap:latest"},
