@@ -157,8 +157,10 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 		return jobObj
 	}
 
+  SkipPreUpgradeFlag := !(master.Spec.Config[confSkipPreUpgradeFlag] == "false")
+
 	// Skip pre-upgrade and post-upgrade jobs for patch revision
-  if isPatchRevision {
+  if isPatchRevision && SkipPreUpgradeFlag {
     log.Printf("Version update: patch revision detected, skipping pre-upgrade and post-upgrade jobs.")
     setImageToUse(master)
     setCondition(master, updateStatus.VersionUpdated)
