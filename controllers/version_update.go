@@ -157,12 +157,10 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 		return jobObj
 	}
 
-	skipPreUpgrade := !(master.Spec.Config[confSkipPreUpgrade] == "false")
-
 	// Skip pre-upgrade and post-upgrade jobs for patch revisions
-	if patchRevision && skipPreUpgrade {
+	skipPreUpgrade := patchRevision && !(master.Spec.Config[confSkipPreUpgrade] == "false")
+	if skipPreUpgrade {
 		log.Printf("Version update: patch revision detected, skipping pre-upgrade and post-upgrade jobs.")
-		skipPreUpgrade := true
 	}
 
 	// First, run pre-upgrade job
