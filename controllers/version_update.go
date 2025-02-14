@@ -61,7 +61,8 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		return []reconciler.Object{}, nil
 	}
 
-	if versionComparison < 0 { // Upgrade case
+	if versionComparison < 0 {
+		// Upgrade case.
 		// Don't retry upgrade if it failed.
 		if isConditionTrue(master, updateStatus.UpgradeFailed) {
 			return []reconciler.Object{}, nil
@@ -74,11 +75,13 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		master.Status.UpgradeStartTimeMillis = getCurrentTimeMs()
 		log.Printf("Version update: start upgrading %s -> %s ", curVersion.rawString, newVersion.rawString)
 		return upgradeForBackend(master, labels, observed, patchRevision)
-	} else if versionComparison == 0 { // No change
+	} else if versionComparison == 0 {
+		// No change.
 		// Reset all condition so that failed upgraded/downgrade can be retried later if needed.
 		// This is needed when last upgrade failed and user has reset the version in spec.
 		updateStatus.clearAllConditions(master)
-	} else { // Downgrade
+	} else {
+		// Downgrade case.
 		// At the moment, downgrade never fails, so no need to check if isConditionTrue(downgrade failed)
 		updateStatus.clearAllConditions(master)
 		setCondition(master, updateStatus.Inprogress)
@@ -120,13 +123,6 @@ func downgradeForBackend(master *v1alpha1.CDAPMaster) ([]reconciler.Object, erro
 func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object, patchRevision bool) ([]reconciler.Object, error) {
 	// Skip pre-upgrade and post-upgrade jobs for patch revisions
 	skipPreUpgrade := patchRevision && !(master.Spec.Config[confSkipPreUpgrade] == "false")
-	if skipPreUpgrade {
-		log.Printf("Version update: patch revision detected, skipping pre-upgrade and post-upgrade jobs.")
-		// Mark pre and post upgrade jobs as succeeded so they don't get triggered when reconciling
-		// versionComparison will become 0 after reconciliation -> patchRevision will become false
-		setCondition(master, updateStatus.PreUpgradeSucceeded)
-		setCondition(master, updateStatus.PostUpgradeSucceeded)
-	}
 
 	// Find either pre- or post- upgrade job
 	findJob := func(jobName string) *batchv1.Job {
@@ -161,46 +157,59 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 		return jobObj
 	}
 
-	// First, run pre-upgrade job
-	//
-	// Note that pre-upgrade job doesn't have an "activeDeadlineSeconds" set it on, so it will
-	// try as many as imageVersionUpgradeJobMaxRetryCount times before giving up. If we ever
-	// needed to set an overall deadline for the pre-upgrade job, the logic below needs to check
-	// deadline exceeded condition on job's status
-	if !isConditionTrue(master, updateStatus.PreUpgradeSucceeded) {
-		log.Printf("Version update: pre-upgrade job not completed")
-		preJobName := getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis)
-		preJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
-		job := findJob(preJobName)
-		if job == nil {
-			obj, err := createJob(preJobSpec)
-			if err != nil {
-				return nil, err
+	if !skipPreUpgrade {
+		// First, run pre-upgrade job
+		//
+		// Note that pre-upgrade job doesn't have an "activeDeadlineSeconds" set it on, so it will
+		// try as many as imageVersionUpgradeJobMaxRetryCount times before giving up. If we ever
+		// needed to set an overall deadline for the pre-upgrade job, the logic below needs to check
+		// deadline exceeded condition on job's status
+		if !isConditionTrue(master, updateStatus.PreUpgradeSucceeded) {
+			log.Printf("Version update: pre-upgrade job not completed")
+			preJobName := getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis)
+			preJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
+			job := findJob(preJobName)
+			if job == nil {
+				obj, err := createJob(preJobSpec)
+				if err != nil {
+					return nil, err
+				}
+				log.Printf("Version update: creating pre-upgrade job")
+				return []reconciler.Object{*obj}, nil
+			} else if job.Status.Succeeded > 0 {
+				setCondition(master, updateStatus.PreUpgradeSucceeded)
+				log.Printf("Version update: pre-upgrade job succeeded")
+				// Return empty to delete preUpgrade jobObj
+				return []reconciler.Object{}, nil
+			} else if job.Status.Failed > imageVersionUpgradeJobMaxRetryCount {
+				setCondition(master, updateStatus.PreUpgradeFailed)
+				setCondition(master, updateStatus.UpgradeFailed)
+				clearCondition(master, updateStatus.Inprogress)
+				log.Printf("Version update: pre-upgrade job failed, exceeded max retries.")
+				return []reconciler.Object{}, nil
+			} else {
+				log.Printf("Version update: pre-upgrade job inprogress.")
+				return []reconciler.Object{*buildObject(job)}, nil
 			}
-			log.Printf("Version update: creating pre-upgrade job")
-			return []reconciler.Object{*obj}, nil
-		} else if job.Status.Succeeded > 0 {
-			setCondition(master, updateStatus.PreUpgradeSucceeded)
-			log.Printf("Version update: pre-upgrade job succeeded")
-			// Return empty to delete preUpgrade jobObj
-			return []reconciler.Object{}, nil
-		} else if job.Status.Failed > imageVersionUpgradeJobMaxRetryCount {
-			setCondition(master, updateStatus.PreUpgradeFailed)
-			setCondition(master, updateStatus.UpgradeFailed)
-			clearCondition(master, updateStatus.Inprogress)
-			log.Printf("Version update: pre-upgrade job failed, exceeded max retries.")
-			return []reconciler.Object{}, nil
-		} else {
-			log.Printf("Version update: pre-upgrade job inprogress.")
-			return []reconciler.Object{*buildObject(job)}, nil
 		}
 	}
 
 	// Then, actually update the image version
 	if !isConditionTrue(master, updateStatus.VersionUpdated) {
+		// If it's a patch revision, skip the pre and post upgrade jobs. Mark the update as succeeded.
+		if skipPreUpgrade {
+			log.Printf("Version update: patch revision detected, skipping pre-upgrade and post-upgrade jobs.")
+		}
+
 		setImageToUse(master)
 		setCondition(master, updateStatus.VersionUpdated)
 		log.Printf("Version update: set new version.")
+
+		if skipPreUpgrade {
+			setCondition(master, updateStatus.UpgradeSucceeded)
+			clearCondition(master, updateStatus.Inprogress)
+			log.Printf("Version update: upgrade succeeded.")
+		}
 		return []reconciler.Object{}, nil
 	}
 
