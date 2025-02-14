@@ -61,10 +61,7 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		return []reconciler.Object{}, nil
 	}
 
-	switch versionComparison {
-	case -1, -2, -3, -4:
-		// Upgrade case
-
+	if versionComparison < 0 { // Upgrade case
 		// Don't retry upgrade if it failed.
 		if isConditionTrue(master, updateStatus.UpgradeFailed) {
 			return []reconciler.Object{}, nil
@@ -77,14 +74,11 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		master.Status.UpgradeStartTimeMillis = getCurrentTimeMs()
 		log.Printf("Version update: start upgrading %s -> %s ", curVersion.rawString, newVersion.rawString)
 		return upgradeForBackend(master, labels, observed, patchRevision)
-	case 0:
+	} else if versionComparison == 0 { // No change
 		// Reset all condition so that failed upgraded/downgrade can be retried later if needed.
 		// This is needed when last upgrade failed and user has reset the version in spec.
 		updateStatus.clearAllConditions(master)
-		break
-	case 1:
-		// Downgrade
-
+	} else { // Downgrade
 		// At the moment, downgrade never fails, so no need to check if isConditionTrue(downgrade failed)
 		updateStatus.clearAllConditions(master)
 		setCondition(master, updateStatus.Inprogress)
@@ -124,6 +118,16 @@ func downgradeForBackend(master *v1alpha1.CDAPMaster) ([]reconciler.Object, erro
 }
 
 func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object, patchRevision bool) ([]reconciler.Object, error) {
+	// Skip pre-upgrade and post-upgrade jobs for patch revisions
+	skipPreUpgrade := patchRevision && !(master.Spec.Config[confSkipPreUpgrade] == "false")
+	if skipPreUpgrade {
+		log.Printf("Version update: patch revision detected, skipping pre-upgrade and post-upgrade jobs.")
+		// Mark pre and post upgrade jobs as succeeded so they don't get triggered when reconciling
+		// versionComparison will become 0 after reconciliation -> patchRevision will become false
+		setCondition(master, updateStatus.PreUpgradeSucceeded)
+		setCondition(master, updateStatus.PostUpgradeSucceeded)
+	}
+
 	// Find either pre- or post- upgrade job
 	findJob := func(jobName string) *batchv1.Job {
 		var job *batchv1.Job = nil
@@ -155,16 +159,6 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 			},
 		}
 		return jobObj
-	}
-
-	// Skip pre-upgrade and post-upgrade jobs for patch revisions
-	skipPreUpgrade := patchRevision && !(master.Spec.Config[confSkipPreUpgrade] == "false")
-	if skipPreUpgrade {
-		log.Printf("Version update: patch revision detected, skipping pre-upgrade and post-upgrade jobs.")
-		// Mark pre and post upgrade jobs as succeeded so they don't get triggered when reconciling
-		// patchRevision will become false after reconciliation
-		setCondition(master, updateStatus.PreUpgradeSucceeded)
-		setCondition(master, updateStatus.PostUpgradeSucceeded)
 	}
 
 	// First, run pre-upgrade job
@@ -419,9 +413,9 @@ func parseImageString(imageString string) (*Version, error) {
 }
 
 // compare two parsed versions
-// -n: left < right, nth component differs (1-indexed)
+// n: left > right, nth component differs (1-indexed)
 // 0: left = right
-// 1: left > right
+// -n: left < right, nth component differs (1-indexed)
 func compareVersion(l, r *Version) int {
 	if l.latest && r.latest {
 		return 0
@@ -432,28 +426,24 @@ func compareVersion(l, r *Version) int {
 	}
 
 	lenL, lenR := len(l.components), len(r.components)
-	minLen := lenL
-	if lenR < lenL {
-		minLen = lenR
+	maxLen := lenL
+	if lenR > lenL {
+		maxLen = lenR
 	}
 
-	for i := 0; i < minLen; i++ {
-		if l.components[i] > r.components[i] {
-			return 1
-		} else if l.components[i] < r.components[i] {
-			return -(i + 1) // Return negative index (1-based)
+	for i := 0; i < maxLen; i++ {
+		valL, valR := 0, 0
+		if i < lenL {
+			valL = l.components[i]
 		}
-	}
+		if i < lenR {
+			valR = r.components[i]
+		}
 
-	// If one version has extra components that are non-zero, it's greater
-	for i := minLen; i < lenL; i++ {
-		if l.components[i] > 0 {
-			return 1
-		}
-	}
-	for i := minLen; i < lenR; i++ {
-		if r.components[i] > 0 {
-			return -(i + 1) // Return negative index (1-based)
+		if valL > valR {
+			return i + 1 // Return positive index (1-based) for left > right
+		} else if valL < valR {
+			return -(i + 1) // Return negative index (1-based) for left < right
 		}
 	}
 

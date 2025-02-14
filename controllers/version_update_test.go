@@ -83,7 +83,7 @@ var _ = Describe("Controller Suite", func() {
 				high, err := parseImageString(imagePair.second.(string))
 				Expect(err).To(BeNil())
 				Expect(compareVersion(low, high)).To(Equal(-2))
-				Expect(compareVersion(high, low)).To(Equal(1))
+				Expect(compareVersion(high, low)).To(Equal(2))
 			}
 		})
 		It("Compare image versions for difference in 3rd component", func() {
@@ -98,7 +98,7 @@ var _ = Describe("Controller Suite", func() {
 				high, err := parseImageString(imagePair.second.(string))
 				Expect(err).To(BeNil())
 				Expect(compareVersion(low, high)).To(Equal(-3))
-				Expect(compareVersion(high, low)).To(Equal(1))
+				Expect(compareVersion(high, low)).To(Equal(3))
 			}
 		})
 		It("Compare image versions for difference in 4th component", func() {
@@ -112,7 +112,7 @@ var _ = Describe("Controller Suite", func() {
 				high, err := parseImageString(imagePair.second.(string))
 				Expect(err).To(BeNil())
 				Expect(compareVersion(low, high)).To(Equal(-4))
-				Expect(compareVersion(high, low)).To(Equal(1))
+				Expect(compareVersion(high, low)).To(Equal(4))
 			}
 		})
 		It("Fail to parse invalid image string", func() {
