@@ -61,10 +61,7 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		return []reconciler.Object{}, nil
 	}
 
-	switch versionComparison {
-	case -1, -2, -3, -4:
-		// Upgrade case
-
+	if versionComparison < 0 { // Upgrade case
 		// Don't retry upgrade if it failed.
 		if isConditionTrue(master, updateStatus.UpgradeFailed) {
 			return []reconciler.Object{}, nil
@@ -77,14 +74,11 @@ func handleVersionUpdate(master *v1alpha1.CDAPMaster, labels map[string]string, 
 		master.Status.UpgradeStartTimeMillis = getCurrentTimeMs()
 		log.Printf("Version update: start upgrading %s -> %s ", curVersion.rawString, newVersion.rawString)
 		return upgradeForBackend(master, labels, observed, patchRevision)
-	case 0:
+	} else if versionComparison == 0 { // No change
 		// Reset all condition so that failed upgraded/downgrade can be retried later if needed.
 		// This is needed when last upgrade failed and user has reset the version in spec.
 		updateStatus.clearAllConditions(master)
-		break
-	case 1:
-		// Downgrade
-
+	} else { // Downgrade
 		// At the moment, downgrade never fails, so no need to check if isConditionTrue(downgrade failed)
 		updateStatus.clearAllConditions(master)
 		setCondition(master, updateStatus.Inprogress)
@@ -124,125 +118,133 @@ func downgradeForBackend(master *v1alpha1.CDAPMaster) ([]reconciler.Object, erro
 }
 
 func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, observed []reconciler.Object, patchRevision bool) ([]reconciler.Object, error) {
-	// Find either pre- or post- upgrade job
-	findJob := func(jobName string) *batchv1.Job {
-		var job *batchv1.Job = nil
-		objName := getObjName(master, jobName)
-		item := k8s.GetItem(observed, &batchv1.Job{}, objName, master.Namespace)
-		if item != nil {
-			job = item.(*batchv1.Job)
-		}
-		return job
-	}
-
-	// Create either pre- or post- upgrade job object based on the supplied job spec
-	createJob := func(jobSpec *VersionUpgradeJobSpec) (*reconciler.Object, error) {
-		jobObject, err := buildUpgradeJobObject(jobSpec)
-		if err != nil {
-			return nil, err
-		}
-		return jobObject, nil
-	}
-
-	// Build reconciler object based on the given job
-	buildObject := func(job *batchv1.Job) *reconciler.Object {
-		jobObj := &reconciler.Object{
-			Type:      k8s.Type,
-			Lifecycle: reconciler.LifecycleManaged,
-			Obj: &k8s.Object{
-				Obj:     job.DeepCopyObject().(metav1.Object),
-				ObjList: &batchv1.JobList{},
-			},
-		}
-		return jobObj
-	}
-
 	// Skip pre-upgrade and post-upgrade jobs for patch revisions
 	skipPreUpgrade := patchRevision && !(master.Spec.Config[confSkipPreUpgrade] == "false")
-	if skipPreUpgrade {
+	if !skipPreUpgrade {
 		log.Printf("Version update: patch revision detected, skipping pre-upgrade and post-upgrade jobs.")
 		// Mark pre and post upgrade jobs as succeeded so they don't get triggered when reconciling
-		// patchRevision will become false after reconciliation
-		setCondition(master, updateStatus.PreUpgradeSucceeded)
-		setCondition(master, updateStatus.PostUpgradeSucceeded)
-	}
+		// versionComparison will become 0 after reconciliation -> patchRevision will become false
+// 		setCondition(master, updateStatus.PreUpgradeSucceeded)
+// 		setCondition(master, updateStatus.PostUpgradeSucceeded)
+// 	}
 
-	// First, run pre-upgrade job
-	//
-	// Note that pre-upgrade job doesn't have an "activeDeadlineSeconds" set it on, so it will
-	// try as many as imageVersionUpgradeJobMaxRetryCount times before giving up. If we ever
-	// needed to set an overall deadline for the pre-upgrade job, the logic below needs to check
-	// deadline exceeded condition on job's status
-	if !isConditionTrue(master, updateStatus.PreUpgradeSucceeded) {
-		log.Printf("Version update: pre-upgrade job not completed")
-		preJobName := getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis)
-		preJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
-		job := findJob(preJobName)
-		if job == nil {
-			obj, err := createJob(preJobSpec)
-			if err != nil {
-				return nil, err
-			}
-			log.Printf("Version update: creating pre-upgrade job")
-			return []reconciler.Object{*obj}, nil
-		} else if job.Status.Succeeded > 0 {
-			setCondition(master, updateStatus.PreUpgradeSucceeded)
-			log.Printf("Version update: pre-upgrade job succeeded")
-			// Return empty to delete preUpgrade jobObj
-			return []reconciler.Object{}, nil
-		} else if job.Status.Failed > imageVersionUpgradeJobMaxRetryCount {
-			setCondition(master, updateStatus.PreUpgradeFailed)
-			setCondition(master, updateStatus.UpgradeFailed)
-			clearCondition(master, updateStatus.Inprogress)
-			log.Printf("Version update: pre-upgrade job failed, exceeded max retries.")
-			return []reconciler.Object{}, nil
-		} else {
-			log.Printf("Version update: pre-upgrade job inprogress.")
-			return []reconciler.Object{*buildObject(job)}, nil
-		}
+    // Find either pre- or post- upgrade job
+    findJob := func(jobName string) *batchv1.Job {
+      var job *batchv1.Job = nil
+      objName := getObjName(master, jobName)
+      item := k8s.GetItem(observed, &batchv1.Job{}, objName, master.Namespace)
+      if item != nil {
+        job = item.(*batchv1.Job)
+      }
+      return job
+    }
+
+    // Create either pre- or post- upgrade job object based on the supplied job spec
+    createJob := func(jobSpec *VersionUpgradeJobSpec) (*reconciler.Object, error) {
+      jobObject, err := buildUpgradeJobObject(jobSpec)
+      if err != nil {
+        return nil, err
+      }
+      return jobObject, nil
+    }
+
+    // Build reconciler object based on the given job
+    buildObject := func(job *batchv1.Job) *reconciler.Object {
+      jobObj := &reconciler.Object{
+        Type:      k8s.Type,
+        Lifecycle: reconciler.LifecycleManaged,
+        Obj: &k8s.Object{
+          Obj:     job.DeepCopyObject().(metav1.Object),
+          ObjList: &batchv1.JobList{},
+        },
+      }
+      return jobObj
+    }
+
+    // First, run pre-upgrade job
+    //
+    // Note that pre-upgrade job doesn't have an "activeDeadlineSeconds" set it on, so it will
+    // try as many as imageVersionUpgradeJobMaxRetryCount times before giving up. If we ever
+    // needed to set an overall deadline for the pre-upgrade job, the logic below needs to check
+    // deadline exceeded condition on job's status
+    if !isConditionTrue(master, updateStatus.PreUpgradeSucceeded) {
+      log.Printf("Version update: pre-upgrade job not completed")
+      preJobName := getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis)
+      preJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
+      job := findJob(preJobName)
+      if job == nil {
+        obj, err := createJob(preJobSpec)
+        if err != nil {
+          return nil, err
+        }
+        log.Printf("Version update: creating pre-upgrade job")
+        return []reconciler.Object{*obj}, nil
+      } else if job.Status.Succeeded > 0 {
+        setCondition(master, updateStatus.PreUpgradeSucceeded)
+        log.Printf("Version update: pre-upgrade job succeeded")
+        // Return empty to delete preUpgrade jobObj
+        return []reconciler.Object{}, nil
+      } else if job.Status.Failed > imageVersionUpgradeJobMaxRetryCount {
+        setCondition(master, updateStatus.PreUpgradeFailed)
+        setCondition(master, updateStatus.UpgradeFailed)
+        clearCondition(master, updateStatus.Inprogress)
+        log.Printf("Version update: pre-upgrade job failed, exceeded max retries.")
+        return []reconciler.Object{}, nil
+      } else {
+        log.Printf("Version update: pre-upgrade job inprogress.")
+        return []reconciler.Object{*buildObject(job)}, nil
+      }
+    }
 	}
 
 	// Then, actually update the image version
 	if !isConditionTrue(master, updateStatus.VersionUpdated) {
 		setImageToUse(master)
 		setCondition(master, updateStatus.VersionUpdated)
+		if skipPreUpgrade {
+		  setCondition(master, updateStatus.UpgradeSucceeded)
+    	clearCondition(master, updateStatus.Inprogress)
+    	log.Printf("Version update: upgrade succeeded.")
+		}
 		log.Printf("Version update: set new version.")
 		return []reconciler.Object{}, nil
 	}
 
-	// At last, run post-upgrade job
-	//
-	// Note that post-upgrade job doesn't have an "activeDeadlineSeconds" set it on, so it will
-	// try as many as imageVersionUpgradeJobMaxRetryCount times before giving up. If we ever
-	// needed to set an overall deadline for the post-upgrade job, the logic below needs to check
-	// deadline exceeded condition on job's status
-	if !isConditionTrue(master, updateStatus.PostUpgradeSucceeded) {
-		log.Printf("Version update: post-upgrade job not completed")
-		postJobName := getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis)
-		postJobSpec := buildPostUpgradeJobSpec(getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
-		job := findJob(postJobName)
-		if job == nil {
-			obj, err := createJob(postJobSpec)
-			if err != nil {
-				return nil, err
-			}
-			log.Printf("Version update: creating post-upgrade job")
-			return []reconciler.Object{*obj}, nil
-		} else if job.Status.Succeeded > 0 {
-			setCondition(master, updateStatus.PostUpgradeSucceeded)
-			log.Printf("Version update: post-upgrade job succeeded")
-			// Return empty to delete postUpgrade job
-			return []reconciler.Object{}, nil
-		} else if job.Status.Failed > imageVersionUpgradeJobMaxRetryCount {
-			setCondition(master, updateStatus.PostUpgradeFailed)
-			setCondition(master, updateStatus.UpgradeFailed)
-			clearCondition(master, updateStatus.Inprogress)
-			log.Printf("Version update: post-upgrade job failed, exceeded max retries.")
-			return []reconciler.Object{*buildObject(job)}, nil
-		} else {
-			log.Printf("Version update: post-upgrade job inprogress.")
-			return []reconciler.Object{*buildObject(job)}, nil
-		}
+  if !skipPreUpgrade {
+    // At last, run post-upgrade job
+    //
+    // Note that post-upgrade job doesn't have an "activeDeadlineSeconds" set it on, so it will
+    // try as many as imageVersionUpgradeJobMaxRetryCount times before giving up. If we ever
+    // needed to set an overall deadline for the post-upgrade job, the logic below needs to check
+    // deadline exceeded condition on job's status
+    if !isConditionTrue(master, updateStatus.PostUpgradeSucceeded) {
+      log.Printf("Version update: post-upgrade job not completed")
+      postJobName := getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis)
+      postJobSpec := buildPostUpgradeJobSpec(getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
+      job := findJob(postJobName)
+      if job == nil {
+        obj, err := createJob(postJobSpec)
+        if err != nil {
+          return nil, err
+        }
+        log.Printf("Version update: creating post-upgrade job")
+        return []reconciler.Object{*obj}, nil
+      } else if job.Status.Succeeded > 0 {
+        setCondition(master, updateStatus.PostUpgradeSucceeded)
+        log.Printf("Version update: post-upgrade job succeeded")
+        // Return empty to delete postUpgrade job
+        return []reconciler.Object{}, nil
+      } else if job.Status.Failed > imageVersionUpgradeJobMaxRetryCount {
+        setCondition(master, updateStatus.PostUpgradeFailed)
+        setCondition(master, updateStatus.UpgradeFailed)
+        clearCondition(master, updateStatus.Inprogress)
+        log.Printf("Version update: post-upgrade job failed, exceeded max retries.")
+        return []reconciler.Object{*buildObject(job)}, nil
+      } else {
+        log.Printf("Version update: post-upgrade job inprogress.")
+        return []reconciler.Object{*buildObject(job)}, nil
+      }
+    }
 	}
 	setCondition(master, updateStatus.UpgradeSucceeded)
 	clearCondition(master, updateStatus.Inprogress)
@@ -419,9 +421,9 @@ func parseImageString(imageString string) (*Version, error) {
 }
 
 // compare two parsed versions
-// -n: left < right, nth component differs (1-indexed)
+// n: left > right, nth component differs (1-indexed)
 // 0: left = right
-// 1: left > right
+// -n: left < right, nth component differs (1-indexed)
 func compareVersion(l, r *Version) int {
 	if l.latest && r.latest {
 		return 0
@@ -432,28 +434,24 @@ func compareVersion(l, r *Version) int {
 	}
 
 	lenL, lenR := len(l.components), len(r.components)
-	minLen := lenL
-	if lenR < lenL {
-		minLen = lenR
+	maxLen := lenL
+	if lenR > lenL {
+		maxLen = lenR
 	}
 
-	for i := 0; i < minLen; i++ {
-		if l.components[i] > r.components[i] {
-			return 1
-		} else if l.components[i] < r.components[i] {
-			return -(i + 1) // Return negative index (1-based)
+	for i := 0; i < maxLen; i++ {
+		valL, valR := 0, 0
+		if i < lenL {
+			valL = l.components[i]
 		}
-	}
+		if i < lenR {
+			valR = r.components[i]
+		}
 
-	// If one version has extra components that are non-zero, it's greater
-	for i := minLen; i < lenL; i++ {
-		if l.components[i] > 0 {
-			return 1
-		}
-	}
-	for i := minLen; i < lenR; i++ {
-		if r.components[i] > 0 {
-			return -(i + 1) // Return negative index (1-based)
+		if valL > valR {
+			return i + 1 // Return positive index (1-based) for left > right
+		} else if valL < valR {
+			return -(i + 1) // Return negative index (1-based) for left < right
 		}
 	}
 
