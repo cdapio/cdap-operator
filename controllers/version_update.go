@@ -161,6 +161,10 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	skipPreUpgrade := patchRevision && !(master.Spec.Config[confSkipPreUpgrade] == "false")
 	if skipPreUpgrade {
 		log.Printf("Version update: patch revision detected, skipping pre-upgrade and post-upgrade jobs.")
+		// Mark pre and post upgrade jobs as succeeded so they don't get triggered when reconciling
+		// patchRevision will become false after reconciliation
+		setCondition(master, updateStatus.PreUpgradeSucceeded)
+		setCondition(master, updateStatus.PostUpgradeSucceeded)
 	}
 
 	// First, run pre-upgrade job
@@ -169,7 +173,7 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	// try as many as imageVersionUpgradeJobMaxRetryCount times before giving up. If we ever
 	// needed to set an overall deadline for the pre-upgrade job, the logic below needs to check
 	// deadline exceeded condition on job's status
-	if !isConditionTrue(master, updateStatus.PreUpgradeSucceeded) && !skipPreUpgrade {
+	if !isConditionTrue(master, updateStatus.PreUpgradeSucceeded) {
 		log.Printf("Version update: pre-upgrade job not completed")
 		preJobName := getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis)
 		preJobSpec := buildPreUpgradeJobSpec(getPreUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
@@ -212,7 +216,7 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 	// try as many as imageVersionUpgradeJobMaxRetryCount times before giving up. If we ever
 	// needed to set an overall deadline for the post-upgrade job, the logic below needs to check
 	// deadline exceeded condition on job's status
-	if !isConditionTrue(master, updateStatus.PostUpgradeSucceeded) && !skipPreUpgrade {
+	if !isConditionTrue(master, updateStatus.PostUpgradeSucceeded) {
 		log.Printf("Version update: post-upgrade job not completed")
 		postJobName := getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis)
 		postJobSpec := buildPostUpgradeJobSpec(getPostUpgradeJobName(master.Status.UpgradeStartTimeMillis), master, labels)
