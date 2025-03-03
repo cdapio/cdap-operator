@@ -308,7 +308,13 @@
         "secret-key": "/my/secret/key"
       },
       "replicas": 2,
-      "servicePort": 11015
+      "servicePort": 11015,
+      "startupProbe": {
+        "port": 11015,
+        "periodSeconds": 2,
+        "timeoutSeconds": 1,
+        "failureThreshold": 60
+      }
     },
     "supportBundle": {
       "metadata": {
