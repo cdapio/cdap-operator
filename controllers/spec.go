@@ -293,8 +293,9 @@ func (s *BaseSpec) setSecurityContext(securityContext *v1alpha1.SecurityContext)
 
 // For Deployment
 type DeploymentSpec struct {
-	Base       *BaseSpec        `json:"base,inline"`
-	Containers []*ContainerSpec `json:"containers,omitempty"`
+	Base           *BaseSpec        `json:"base,inline"`
+	InitContainers []*ContainerSpec `json:"initContainer,omitempty"`
+	Containers     []*ContainerSpec `json:"containers,omitempty"`
 }
 
 func newDeploymentSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, cconf, hconf, sysappconf string) *DeploymentSpec {
@@ -330,6 +331,11 @@ func (s *DeploymentSpec) setPriorityClassName(name string) *DeploymentSpec {
 
 func (s *DeploymentSpec) addLabel(key, val string) *DeploymentSpec {
 	s.Base.Labels = mergeMaps(s.Base.Labels, map[string]string{key: val})
+	return s
+}
+
+func (s *DeploymentSpec) withInitContainer(containerSpec *ContainerSpec) *DeploymentSpec {
+	s.InitContainers = append(s.InitContainers, containerSpec)
 	return s
 }
 
