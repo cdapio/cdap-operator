@@ -577,6 +577,7 @@ type VersionUpgradeJobSpec struct {
 	HConf              string            `json:"hadoopConf,omitempty"`
 	PreUpgrade         bool              `json:"preUpgrade,omitempty"`
 	PostUpgrade        bool              `json:"postUpgrade,omitempty"`
+	StorageInit        bool              `json:"storageInit,omitempty"`
 }
 
 func newUpgradeJobSpec(master *v1alpha1.CDAPMaster, name string, labels map[string]string, startTimeMs int64, cconf, hconf string) *VersionUpgradeJobSpec {
@@ -606,4 +607,9 @@ func (s *VersionUpgradeJobSpec) SetPreUpgrade(isPreUpgrade bool) *VersionUpgrade
 func (s *VersionUpgradeJobSpec) SetPostUpgrade(isPostUpgrade bool) *VersionUpgradeJobSpec {
 	s.PostUpgrade = isPostUpgrade
 	return s
+}
+
+func (s *VersionUpgradeJobSpec) SetStorageInit(isStorageInit bool) *VersionUpgradeJobSpec {
+  s.StorageInit = isStorageInit
+  return s
 }
