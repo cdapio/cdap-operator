@@ -340,6 +340,14 @@ func buildDeployment(master *v1alpha1.CDAPMaster, name string, services ServiceG
 		setAffinity(affinity).
 		setSecretMountDefaultMode(defaultMode)
 
+	// Run storage init for appfabic deployment pod.
+	// TODO(CDAP-21152): Either run storage init once during upgrade or enable
+	// for more deployments.
+	if name == "appfabric" {
+		spec = spec.withInitContainer(
+			newContainerSpec(master, "StorageInit", dataDir).setArgs(containerStorageMain))
+	}
+
 	// Add each service as a container
 	for _, s := range services {
 		ss, err := getCDAPServiceSpec(master, s)
