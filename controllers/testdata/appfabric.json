@@ -220,10 +220,6 @@
                 "mountPath": "/opt/cdap/master/system-app-config"
               },
               {
-                "mountPath": "/data",
-                "name": "cdap-test-appfabric-data"
-              },
-              {
                 "name": "cdap-security",
                 "readOnly": true,
                 "mountPath": "/etc/cdap/security"
