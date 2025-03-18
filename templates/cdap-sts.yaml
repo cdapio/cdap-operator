@@ -20,7 +20,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{.Base.Name}}
+  name: {{ printf "%.52s" .Base.Name }}
   namespace: {{.Base.Namespace}}
   {{if .Base.Labels}}
   labels:
