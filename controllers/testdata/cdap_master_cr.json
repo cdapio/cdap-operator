@@ -375,7 +375,13 @@
           "memory": "100Mi"
         }
       },
-      "servicePort": 11011
+      "servicePort": 11011,
+      "startupProbe": {
+        "port": 11011,
+        "periodSeconds": 2,
+        "timeoutSeconds": 1,
+        "failureThreshold": 60
+      }
     },
     "userInterfaceImage": "gcr.io/cloud-data-fusion-images/cloud-data-fusion-ui:6.1.0.5"
   },
