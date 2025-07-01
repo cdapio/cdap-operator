@@ -332,7 +332,7 @@ func startupProbeSpec(serviceSpec *v1alpha1.CDAPServiceSpec, service string) (*c
 
 	serviceName := strings.ToLower(service)
 	var endpoint string
-	if serviceName == "router" {
+	if serviceName == "router" || serviceName == "userinterface" {
 	  endpoint = fmt.Sprintf("http://localhost:%d/status", port)
 	} else {
 	  endpoint = fmt.Sprintf("https://localhost:%d/v3/system/services/%s/status", port, serviceName)
