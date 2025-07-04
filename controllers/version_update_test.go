@@ -39,22 +39,6 @@ var _ = Describe("Controller Suite", func() {
 			Expect(version.latest).To(BeFalse())
 			Expect(version.components).To(Equal([]int{6, 0, 0, 0}))
 		})
-		It("Compare image versions", func() {
-			imagePairs := []Pair{
-				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:latest"},
-				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.1"},
-				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.1.0"},
-				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:7"},
-			}
-			for _, imagePair := range imagePairs {
-				low, err := parseImageString(imagePair.first.(string))
-				Expect(err).To(BeNil())
-				high, err := parseImageString(imagePair.second.(string))
-				Expect(err).To(BeNil())
-				Expect(compareVersion(low, high)).To(Equal(-1))
-				Expect(compareVersion(high, low)).To(Equal(1))
-			}
-		})
 		It("Compare same image versions", func() {
 			imagePairs := []Pair{
 				Pair{"gcr.io/cdapio/cdap:latest", "gcr.io/cdapio/cdap:latest"},
@@ -68,6 +52,67 @@ var _ = Describe("Controller Suite", func() {
 				second, err := parseImageString(imagePair.second.(string))
 				Expect(err).To(BeNil())
 				Expect(compareVersion(first, second)).To(Equal(0))
+			}
+		})
+		It("Compare image versions for difference in 1st component", func() {
+			imagePairs := []Pair{
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:latest"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:7.0.0.0"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:7.1.0"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:7"},
+			}
+			for _, imagePair := range imagePairs {
+				low, err := parseImageString(imagePair.first.(string))
+				Expect(err).To(BeNil())
+				high, err := parseImageString(imagePair.second.(string))
+				Expect(err).To(BeNil())
+				Expect(compareVersion(low, high)).To(Equal(-1))
+				Expect(compareVersion(high, low)).To(Equal(1))
+			}
+		})
+		It("Compare image versions for difference in 2nd component", func() {
+			imagePairs := []Pair{
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.1.0.0"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.1.0"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.1.2"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.1"},
+			}
+			for _, imagePair := range imagePairs {
+				low, err := parseImageString(imagePair.first.(string))
+				Expect(err).To(BeNil())
+				high, err := parseImageString(imagePair.second.(string))
+				Expect(err).To(BeNil())
+				Expect(compareVersion(low, high)).To(Equal(-2))
+				Expect(compareVersion(high, low)).To(Equal(2))
+			}
+		})
+		It("Compare image versions for difference in 3rd component", func() {
+			imagePairs := []Pair{
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.1.0"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.1.2"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.1"},
+			}
+			for _, imagePair := range imagePairs {
+				low, err := parseImageString(imagePair.first.(string))
+				Expect(err).To(BeNil())
+				high, err := parseImageString(imagePair.second.(string))
+				Expect(err).To(BeNil())
+				Expect(compareVersion(low, high)).To(Equal(-3))
+				Expect(compareVersion(high, low)).To(Equal(3))
+			}
+		})
+		It("Compare image versions for difference in 4th component", func() {
+			imagePairs := []Pair{
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.1"},
+				Pair{"gcr.io/cdapio/cdap:6.0.0.0", "gcr.io/cdapio/cdap:6.0.0.2"},
+			}
+			for _, imagePair := range imagePairs {
+				low, err := parseImageString(imagePair.first.(string))
+				Expect(err).To(BeNil())
+				high, err := parseImageString(imagePair.second.(string))
+				Expect(err).To(BeNil())
+				Expect(compareVersion(low, high)).To(Equal(-4))
+				Expect(compareVersion(high, low)).To(Equal(4))
 			}
 		})
 		It("Fail to parse invalid image string", func() {
