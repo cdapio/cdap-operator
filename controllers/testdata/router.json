@@ -116,6 +116,18 @@
               "readOnlyRootFilesystem": false,
               "allowPrivilegeEscalation": false
             },
+            "startupProbe": {
+              "periodSeconds": 2,
+              "failureThreshold": 60,
+              "exec": {
+                "command": [
+                  "sh",
+                  "-c",
+                  "curl -s -f -k http://localhost:11015/status"
+                ]
+              },
+              "timeoutSeconds": 1
+            },
             "terminationMessagePath": "/dev/termination-log",
             "terminationMessagePolicy": "File",
             "volumeMounts": [
