@@ -1,12 +1,12 @@
 module sigs.k8s.io/controller-reconciler
 
-go 1.23
+go 1.23.0
 
 require (
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.20.1
-	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783
+	golang.org/x/oauth2 v0.27.0
 	google.golang.org/api v0.84.0
 	k8s.io/api v0.22.1
 	k8s.io/apiextensions-apiserver v0.22.1
