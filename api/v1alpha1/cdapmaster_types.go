@@ -372,6 +372,10 @@ type SecurityContext struct {
 	// FSGroup mounts volumes as the specified group ID and gives the primary user access
 	// to that group. It is applied at the pod level.
 	FSGroup *int64 `json:"fsGroup,omitempty"`
+	// FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+	// before being mounted. Refer to official Kubernetes docs.
+	// +kubebuilder:validation:Enum=Always;OnRootMismatch
+	FSGroupChangePolicy *corev1.PodFSGroupChangePolicy `json:"fsGroupChangePolicy,omitempty"`
 	// AllowPrivilegeEscalation prevents the container process from running SUID binaries.
 	// It is applied at the container level.
 	AllowPrivilegeEscalation *bool `json:"allowPrivilegeEscalation,omitempty"`
