@@ -4380,6 +4380,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -7214,6 +7222,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -10047,6 +10063,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -12884,6 +12908,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -15845,6 +15877,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -18677,6 +18717,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -21510,6 +21558,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -24331,6 +24387,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -28525,6 +28589,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -31369,6 +31441,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -34206,6 +34286,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -34305,6 +34393,14 @@ spec:
                       to that group. It is applied at the pod level.
                     format: int64
                     type: integer
+                  fsGroupChangePolicy:
+                    description: |-
+                      FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                      before being mounted. Refer to official Kubernetes docs.
+                    enum:
+                    - Always
+                    - OnRootMismatch
+                    type: string
                   privileged:
                     description: |-
                       Privileged runs container in privileged mode. It is applied at the container level.
@@ -37097,6 +37193,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -39933,6 +40037,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -42766,6 +42878,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
@@ -45610,6 +45730,14 @@ spec:
                           to that group. It is applied at the pod level.
                         format: int64
                         type: integer
+                      fsGroupChangePolicy:
+                        description: |-
+                          FSGroupChangePolicy defines behavior of changing ownership and permission of the volume
+                          before being mounted. Refer to official Kubernetes docs.
+                        enum:
+                        - Always
+                        - OnRootMismatch
+                        type: string
                       privileged:
                         description: |-
                           Privileged runs container in privileged mode. It is applied at the container level.
