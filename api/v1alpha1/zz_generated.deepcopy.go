@@ -652,6 +652,11 @@ func (in *SecurityContext) DeepCopyInto(out *SecurityContext) {
 		*out = new(int64)
 		**out = **in
 	}
+	if in.FSGroupChangePolicy != nil {
+		in, out := &in.FSGroupChangePolicy, &out.FSGroupChangePolicy
+		*out = new(v1.PodFSGroupChangePolicy)
+		**out = **in
+	}
 	if in.AllowPrivilegeEscalation != nil {
 		in, out := &in.AllowPrivilegeEscalation, &out.AllowPrivilegeEscalation
 		*out = new(bool)
