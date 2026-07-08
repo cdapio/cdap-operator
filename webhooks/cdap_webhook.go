@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	labelInstanceKey           = "cdap.instance"
+	labelInstanceKey = "cdap.instance"
 	// cdapMasterNamespaceKey is the label added by CDAP on pods launched by CDAP.
-	cdapMasterNamespaceKey     = "cdap.k8s.namespace"
+	cdapMasterNamespaceKey = "cdap.k8s.namespace"
 	// customResourceNamespaceKey is the label added by controller-reconciler on resources
 	// managed by the CDAP operator.
 	customResourceNamespaceKey = "custom-resource-namespace"
