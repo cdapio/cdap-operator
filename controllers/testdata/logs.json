@@ -192,6 +192,7 @@
         "schedulerName": "default-scheduler",
         "securityContext": {
           "fsGroup": 2000,
+          "fsGroupChangePolicy": "OnRootMismatch",
           "runAsGroup": 1000,
           "runAsUser": 1000,
           "runAsNonRoot": true
