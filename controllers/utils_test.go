@@ -16,7 +16,11 @@ var _ = Describe("Controller Suite", func() {
 			serviceToExternalSpec map[string]*v1alpha1.CDAPExternalServiceSpec
 		)
 		BeforeEach(func() {
-			master = &v1alpha1.CDAPMaster{}
+			master = &v1alpha1.CDAPMaster{
+				Spec: v1alpha1.CDAPMasterSpec{
+					TaskManager: &v1alpha1.TaskManagerSpec{},
+				},
+			}
 			serviceToSpec = map[string]*v1alpha1.CDAPServiceSpec{
 				serviceLogs:               &master.Spec.Logs.CDAPServiceSpec,
 				serviceAppFabric:          &master.Spec.AppFabric.CDAPServiceSpec,
@@ -26,6 +30,7 @@ var _ = Describe("Controller Suite", func() {
 				serviceMetadata:           &master.Spec.Metadata.CDAPServiceSpec,
 				servicePreview:            &master.Spec.Preview.CDAPServiceSpec,
 				serviceUserInterface:      &master.Spec.UserInterface.CDAPServiceSpec,
+				serviceTaskManager:        &master.Spec.TaskManager.CDAPServiceSpec,
 			}
 			serviceToScalableSpec = map[string]*v1alpha1.CDAPScalableServiceSpec{
 				serviceLogs:               nil,
@@ -36,6 +41,7 @@ var _ = Describe("Controller Suite", func() {
 				serviceMetadata:           &master.Spec.Metadata.CDAPScalableServiceSpec,
 				servicePreview:            nil,
 				serviceUserInterface:      &master.Spec.UserInterface.CDAPScalableServiceSpec,
+				serviceTaskManager:        nil,
 			}
 			serviceToStatefulSpec = map[string]*v1alpha1.CDAPStatefulServiceSpec{
 				serviceLogs:               &master.Spec.Logs.CDAPStatefulServiceSpec,
@@ -46,6 +52,7 @@ var _ = Describe("Controller Suite", func() {
 				serviceMetadata:           nil,
 				servicePreview:            &master.Spec.Preview.CDAPStatefulServiceSpec,
 				serviceUserInterface:      nil,
+				serviceTaskManager:        nil,
 			}
 			serviceToExternalSpec = map[string]*v1alpha1.CDAPExternalServiceSpec{
 				serviceLogs:               nil,
@@ -56,6 +63,7 @@ var _ = Describe("Controller Suite", func() {
 				serviceMetadata:           nil,
 				servicePreview:            nil,
 				serviceUserInterface:      &master.Spec.UserInterface.CDAPExternalServiceSpec,
+				serviceTaskManager:        nil,
 			}
 		})
 		It("Successfully get pointer to CDAPServiceSpec", func() {

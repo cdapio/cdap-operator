@@ -50,6 +50,9 @@ const (
 	// serviceUserInterface defines the service type for user interface
 	serviceUserInterface ServiceName = "UserInterface"
 
+	// serviceTaskManager defines the service type for task manager / netty proxy service
+	serviceTaskManager ServiceName = "TaskManager"
+
 	// serviceSystemMetricsExporter defines the service type for sidecar metrics collection service
 	serviceSystemMetricsExporter ServiceName = "SystemMetricsExporter"
 )
@@ -109,7 +112,8 @@ const (
 	imageVersionUpgradeJobMaxRetryCount = 10
 
 	// CDAP services
-	containerStorageMain = "io.cdap.cdap.master.environment.k8s.StorageMain"
+	containerStorageMain     = "io.cdap.cdap.master.environment.k8s.StorageMain"
+	containerTaskManagerMain = "io.cdap.cdap.master.environment.k8s.TaskManagerMain"
 
 	// Java heap size
 	javaMinHeapRatio          = float64(0.6)
