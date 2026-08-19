@@ -112,8 +112,7 @@ const (
 	imageVersionUpgradeJobMaxRetryCount = 10
 
 	// CDAP services
-	containerStorageMain     = "io.cdap.cdap.master.environment.k8s.StorageMain"
-	containerTaskManagerMain = "io.cdap.cdap.master.environment.k8s.TaskManagerMain"
+	containerStorageMain = "io.cdap.cdap.master.environment.k8s.StorageMain"
 
 	// Java heap size
 	javaMinHeapRatio          = float64(0.6)

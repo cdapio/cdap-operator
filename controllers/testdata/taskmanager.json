@@ -69,7 +69,7 @@
         "containers": [
           {
             "args": [
-              "io.cdap.cdap.master.environment.k8s.TaskManagerMain",
+              "io.cdap.cdap.master.environment.k8s.TaskManagerServiceMain",
               "--env=k8s"
             ],
             "env": [

@@ -518,9 +518,7 @@ func serviceContainerSpec(ss *v1alpha1.CDAPServiceSpec,
 	if service == serviceUserInterface {
 		c = updateSpecForUserInterface(master, c)
 	}
-	if service == serviceTaskManager {
-		c = c.setArgs(containerTaskManagerMain, "--env=k8s")
-	}
+	return c, nil
 	return c, nil
 }
 
