@@ -61,6 +61,7 @@ func (d *DeploymentPlan) Init() {
 			"metadata":       {serviceMetadata},
 			"router":         {serviceRouter},
 			"userinterface":  {serviceUserInterface},
+			"taskmanager":    {serviceTaskManager},
 		},
 		networkService: map[NetworkServiceName]ServiceName{
 			"router":        serviceRouter,
@@ -333,9 +334,9 @@ func startupProbeSpec(serviceSpec *v1alpha1.CDAPServiceSpec, service string) (*c
 	serviceName := strings.ToLower(service)
 	var endpoint string
 	if serviceName == "router" || serviceName == "userinterface" {
-	  endpoint = fmt.Sprintf("http://localhost:%d/status", port)
+		endpoint = fmt.Sprintf("http://localhost:%d/status", port)
 	} else {
-	  endpoint = fmt.Sprintf("https://localhost:%d/v3/system/services/%s/status", port, serviceName)
+		endpoint = fmt.Sprintf("https://localhost:%d/v3/system/services/%s/status", port, serviceName)
 	}
 
 	return &corev1.Probe{
