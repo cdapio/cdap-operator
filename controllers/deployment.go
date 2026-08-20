@@ -519,7 +519,6 @@ func serviceContainerSpec(ss *v1alpha1.CDAPServiceSpec,
 		c = updateSpecForUserInterface(master, c)
 	}
 	return c, nil
-	return c, nil
 }
 
 // Return a list of reconciler objects (e.g. statefulsets, deployment, NodePort service) for the given deployment plan
