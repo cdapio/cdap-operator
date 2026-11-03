@@ -1,0 +1,75 @@
+# Cloud Build recipe for the gcr.io/cdapio/cdap-controller image.
+#
+# Used by two Cloud Build triggers in GCP project `cdapio`:
+#   * `cdap-controller-docker-nightly` - daily build of `latest` from `develop`
+#     (fired by Cloud Scheduler job `cdap-controller-docker-nightly-schedule`).
+#   * `cdap-controller-docker`         - release builds, run manually with
+#     `_VERSION` overridden (e.g. `_VERSION=1.6.0`).
+# This file replaces `cloudbuild-operator.yaml` from the retired Cloud Source
+# Repositories repo `cdap-oss-build`, so that the build recipe is reviewed in
+# the same pull requests as the Dockerfile it builds.
+#
+# For nightly (`_VERSION=latest`) builds only, after pushing the new `latest`
+# the build retires the digest that *was* `latest` before this run by adding
+# the tag `no-new-use-public-image-<sha256>` to it. Vulnerability scanning
+# treats that tag as "superseded, do not file new findings", so nightly
+# rebuilds stop accumulating open vulnerability bugs against stale images.
+# Release builds never retire anything.
+#
+# Dry run from a checkout (prints what would be retired, tags nothing):
+#   gcloud builds submit --project=cdapio --config=cloudbuild-gcr.yaml \
+#       --substitutions=_TAG_PREVIOUS=false .
+
+steps:
+# Remember which digest is '${_VERSION}' BEFORE anything is built or pushed
+# (only acted upon when _VERSION is 'latest').
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+  id: 'record-previous'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      gcloud container images describe ${_CDAP_OPERATOR_IMAGE}:${_VERSION} \
+        --format='value(image_summary.digest)' > /workspace/prev_digest 2>/dev/null || true
+      echo "previous ${_VERSION}: $(cat /workspace/prev_digest)"
+# Build the CDAP controller docker image from the checked-out source.
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'build-docker'
+  args: ['build', '-t', '${_CDAP_OPERATOR_IMAGE}:${_VERSION}', '.']
+# Explicit push so the retire step provably runs AFTER the new image exists.
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'push'
+  args: ['push', '${_CDAP_OPERATOR_IMAGE}:${_VERSION}']
+# Retire the previous nightly 'latest' so vulnerability scanning stops filing
+# bugs against it. Only ever adds one tag to one digest; never deletes anything.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+  id: 'tag-previous-latest'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      set -euo pipefail
+      if [ "${_VERSION}" != "latest" ]; then
+        echo "release build (${_VERSION}) - not a nightly, nothing to retire"; exit 0
+      fi
+      PREV=$(cat /workspace/prev_digest 2>/dev/null || true)
+      NEW=$(gcloud container images describe ${_CDAP_OPERATOR_IMAGE}:latest --format='value(image_summary.digest)')
+      if [ -z "$${PREV}" ]; then echo "no previous latest - nothing to retire"; exit 0; fi
+      if [ "$${PREV}" = "$${NEW}" ]; then echo "latest unchanged ($${NEW}) - refusing to tag the live image"; exit 0; fi
+      TAG="no-new-use-public-image-$${PREV#sha256:}"
+      if [ "${_TAG_PREVIOUS}" = "true" ]; then
+        gcloud container images add-tag "${_CDAP_OPERATOR_IMAGE}@$${PREV}" "${_CDAP_OPERATOR_IMAGE}:$${TAG}" --quiet
+        echo "retired $${PREV} as $${TAG}"
+      else
+        echo "DRY RUN: would tag $${PREV} as $${TAG}"
+      fi
+
+options:
+  machineType: 'N1_HIGHCPU_8'
+substitutions:
+  _CDAP_OPERATOR_IMAGE: 'gcr.io/cdapio/cdap-controller'
+  _VERSION: 'latest'
+  _TAG_PREVIOUS: 'true'        # set to 'false' for a dry run
+images:
+  - '${_CDAP_OPERATOR_IMAGE}:${_VERSION}'
+timeout: 2h

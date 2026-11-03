@@ -58,6 +58,17 @@ You can also build a docker image containing the CDAP controller and deploy it t
    make deploy
    ```
 
+### Published images (`gcr.io/cdapio/cdap-controller`)
+
+`gcr.io/cdapio/cdap-controller:latest` is built nightly from the `develop`
+branch, and release tags are built on demand, by the Cloud Build triggers
+`cdap-controller-docker-nightly` and `cdap-controller-docker` in GCP project
+`cdapio`, using [`cloudbuild-gcr.yaml`](cloudbuild-gcr.yaml) from this
+repository. After pushing a new nightly `latest`, the build tags the previous
+`latest` digest with `no-new-use-public-image-<sha256>` so that vulnerability
+scanning stops reporting against superseded nightly images. See the header of
+`cloudbuild-gcr.yaml` for how to dry-run it.
+
 ### Using CDAP operator to manage CDAP instances in Kubernetes
 
 A step by step guide of running CDAP in Kubernetes using CDAP operator can be found in the [blog post](https://link.medium.com/hpPbiUYT9X).
