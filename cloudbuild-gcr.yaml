@@ -29,9 +29,11 @@ steps:
   args:
     - '-c'
     - |
-      gcloud container images describe ${_CDAP_OPERATOR_IMAGE}:${_VERSION} \
-        --format='value(image_summary.digest)' > /workspace/prev_digest 2>/dev/null || true
-      echo "previous ${_VERSION}: $(cat /workspace/prev_digest)"
+      if [ "${_VERSION}" = "latest" ]; then
+        gcloud container images describe ${_CDAP_OPERATOR_IMAGE}:${_VERSION} \
+          --format='value(image_summary.digest)' > /workspace/prev_digest 2>/dev/null || true
+      fi
+      echo "previous ${_VERSION}: $(cat /workspace/prev_digest 2>/dev/null || true)"
 # Build the CDAP controller docker image from the checked-out source.
 - name: 'gcr.io/cloud-builders/docker'
   id: 'build-docker'
@@ -53,8 +55,8 @@ steps:
         echo "release build (${_VERSION}) - not a nightly, nothing to retire"; exit 0
       fi
       PREV=$(cat /workspace/prev_digest 2>/dev/null || true)
-      NEW=$(gcloud container images describe ${_CDAP_OPERATOR_IMAGE}:latest --format='value(image_summary.digest)')
       if [ -z "$${PREV}" ]; then echo "no previous latest - nothing to retire"; exit 0; fi
+      NEW=$(gcloud container images describe ${_CDAP_OPERATOR_IMAGE}:latest --format='value(image_summary.digest)')
       if [ "$${PREV}" = "$${NEW}" ]; then echo "latest unchanged ($${NEW}) - refusing to tag the live image"; exit 0; fi
       TAG="no-new-use-public-image-$${PREV#sha256:}"
       if [ "${_TAG_PREVIOUS}" = "true" ]; then
