@@ -1,0 +1,85 @@
+version: 2
+updates:
+  # ============================================================================
+  # 1. `develop` branch updates (Auto-merged via GitHub Actions)
+  # ============================================================================
+  - package-ecosystem: "gomod"
+    directory: "/"
+    target-branch: "develop"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "automerge"
+
+  - package-ecosystem: "gomod"
+    directory: "/vendor_old/sigs.k8s.io/controller-reconciler"
+    target-branch: "develop"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "automerge"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    target-branch: "develop"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    labels:
+      - "dependencies"
+      - "automerge"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "develop"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    labels:
+      - "dependencies"
+      - "automerge"
+
+  # ============================================================================
+  # 2. `release/3.2` branch updates (Human review only — no auto-merge)
+  # ============================================================================
+  - package-ecosystem: "gomod"
+    directory: "/"
+    target-branch: "release/3.2"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "gomod"
+    directory: "/vendor_old/sigs.k8s.io/controller-reconciler"
+    target-branch: "release/3.2"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    target-branch: "release/3.2"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    labels:
+      - "dependencies"
