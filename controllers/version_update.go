@@ -194,6 +194,35 @@ func upgradeForBackend(master *v1alpha1.CDAPMaster, labels map[string]string, ob
 		}
 	}
 
+	if !isConditionTrue(master, updateStatus.StorageInitSucceeded) {
+    log.Printf("Version update: storage-init job not completed")
+    storageInitJobName := getStorageInitJobName(master.Status.UpgradeStartTimeMillis)
+    storageInitJobSpec := buildStorageInitJobSpec(storageInitJobName, master, labels)
+    job := findJob(storageInitJobName)
+    if job == nil {
+      obj, err := createJob(storageInitJobSpec)
+      if err != nil {
+        return nil, err
+      }
+      log.Printf("Version update: creating storage-init job")
+      return []reconciler.Object{*obj}, nil
+    } else if job.Status.Succeeded > 0 {
+      setCondition(master, updateStatus.StorageInitSucceeded)
+      log.Printf("Version update: storage-init job succeeded")
+      // Return empty to delete storageInit jobObj
+      return []reconciler.Object{}, nil
+    } else if job.Status.Failed > imageVersionUpgradeJobMaxRetryCount {
+      setCondition(master, updateStatus.StorageInitFailed)
+      setCondition(master, updateStatus.UpgradeFailed)
+      clearCondition(master, updateStatus.Inprogress)
+      log.Printf("Version update: storage-init job failed, exceeded max retries.")
+      return []reconciler.Object{}, nil
+    } else {
+      log.Printf("Version update: storage-init job inprogress.")
+      return []reconciler.Object{*buildObject(job)}, nil
+    }
+  }
+
 	// Then, actually update the image version
 	if !isConditionTrue(master, updateStatus.VersionUpdated) {
 		// If it's a patch revision, skip the pre and post upgrade jobs. Mark the update as succeeded.
@@ -281,6 +310,10 @@ type VersionUpdateStatus struct {
 	Inprogress     status.Condition
 	VersionUpdated status.Condition
 
+  // States for storage init
+	StorageInitSucceeded status.Condition
+	StorageInitFailed    status.Condition
+
 	// states specifically upgrade
 	PreUpgradeSucceeded  status.Condition
 	PreUpgradeFailed     status.Condition
@@ -305,6 +338,18 @@ func (s *VersionUpdateStatus) init() {
 		Reason:  "Start",
 		Message: "Version to be used has been updated ",
 	}
+
+	// States for storage init
+	s.StorageInitSucceeded = status.Condition{
+    Type:    "VersionStorageInitJobSucceeded",
+    Reason:  "Start",
+    Message: "Version storage-init job is succeeded",
+  }
+  s.StorageInitFailed = status.Condition{
+    Type:    "VersionStorageInitJobFailed",
+    Reason:  "Start",
+    Message: "Version storage-init job is failed",
+  }
 
 	// States for upgrade
 	s.PreUpgradeSucceeded = status.Condition{
@@ -527,6 +572,11 @@ func getPostUpgradeJobName(startTimeMs int64) string {
 	return fmt.Sprintf("post-upgrade-job-%d", startTimeMs/1000)
 }
 
+// The returned name is just the suffix of actual k8s object name, as we prepend it with const string + CR name
+func getStorageInitJobName(startTimeMs int64) string {
+	return fmt.Sprintf("storage-init-job-%d", startTimeMs/1000)
+}
+
 // Return pre-upgrade job spec
 func buildPreUpgradeJobSpec(jobName string, master *v1alpha1.CDAPMaster, labels map[string]string) *VersionUpgradeJobSpec {
 	startTimeMs := master.Status.UpgradeStartTimeMillis
@@ -543,6 +593,14 @@ func buildPostUpgradeJobSpec(jobName string, master *v1alpha1.CDAPMaster, labels
 	hconf := getObjName(master, configMapHConf)
 	name := getObjName(master, jobName)
 	return newUpgradeJobSpec(master, name, labels, startTimeMs, cconf, hconf).SetPostUpgrade(true)
+}
+
+func buildStorageInitJobSpec(jobName string, master *v1alpha1.CDAPMaster, labels map[string]string) *VersionUpgradeJobSpec {
+  startTimeMs := master.Status.UpgradeStartTimeMillis
+  cconf := getObjName(master, configMapCConf)
+  hconf := getObjName(master, configMapHConf)
+  name := getObjName(master, jobName)
+  return newUpgradeJobSpec(master, name, labels, startTimeMs, cconf, hconf).SetStorageInit(true)
 }
 
 // Given an upgrade job spec, return a reconciler object as expected state

@@ -47,6 +47,10 @@ spec:
         - name: pre-upgrade
           args: ["io.cdap.cdap.master.upgrade.UpgradeJobMain", "{{.HostName}}", "11015"]
         {{end}}
+        {{if .StorageInit}}
+        - name: storage-init
+          args: [ "io.cdap.cdap.master.environment.k8s.StorageMain"]
+        {{end}}
           image: {{.Image}}
           volumeMounts:
             - name: cdap-conf
