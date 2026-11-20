@@ -61,6 +61,7 @@ func (d *DeploymentPlan) Init() {
 			"metadata":       {serviceMetadata},
 			"router":         {serviceRouter},
 			"userinterface":  {serviceUserInterface},
+			"taskmanager":    {serviceTaskManager},
 		},
 		networkService: map[NetworkServiceName]ServiceName{
 			"router":        serviceRouter,

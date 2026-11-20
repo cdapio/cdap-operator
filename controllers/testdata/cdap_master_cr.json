@@ -371,6 +371,17 @@
         }
       }
     },
+    "taskManager": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "resources": {
+        "requests": {
+          "cpu": "100m",
+          "memory": "100Mi"
+        }
+      }
+    },
     "securitySecret": "cdap-secret",
     "serviceAccountName": "cdap",
     "userInterface": {

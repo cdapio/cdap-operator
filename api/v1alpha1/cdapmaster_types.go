@@ -116,6 +116,11 @@ type CDAPMasterSpec struct {
 	// collection of system metrics. Services which have CDAPServiceSpec.EnableSystemMetrics as nil, missing or set to false,
 	// will have metrics sidecar container disabled.
 	SystemMetricsExporter *SystemMetricExporterSpec `json:"systemMetricsExporter,omitempty"`
+	// TaskManager is specification for the CDAP Task Manager / Netty Proxy service.
+	// This is an optional service and may not be required for CDAP to be operational.
+	// To disable this service: either omit or set the field to nil
+	// To enable this service: set it to a pointer to a TaskManagerSpec struct (can be an empty struct).
+	TaskManager *TaskManagerSpec `json:"taskManager,omitempty"`
 	// SecurityContext defines the security context for all pods for all services.
 	SecurityContext *SecurityContext `json:"securityContext,omitempty"`
 	// AdditionalVolumes defines a list of additional volumes for all services.
@@ -304,6 +309,11 @@ type ArtifactCacheSpec struct {
 
 // SystemMetricExporterSpec defines the specification for the SystemMetricsExporter service.
 type SystemMetricExporterSpec struct {
+	CDAPServiceSpec `json:",inline"`
+}
+
+// TaskManagerSpec defines the specification for the Task Manager / Netty Proxy service.
+type TaskManagerSpec struct {
 	CDAPServiceSpec `json:",inline"`
 }
 
